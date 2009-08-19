@@ -1,5 +1,19 @@
 #coding = gbk
-
+class Map:
+    def __init__(self,size):
+        self.data = []
+        for i in range(1:size):
+            self.data.append(None)
+    def Set(self,pos,value,playno):
+        data[pos]['value']=value
+        data[pos]['owner']=playno
+    def Get(self,pos):
+        return data[pos]
+    def Remove(self,pos):
+        tmp = data[pos]
+        data[pos]=None
+        return tmp
+    
 class Position:
     def __init__(self,safe,move,x,y,link):
         self.safe=safe
@@ -9,6 +23,7 @@ class Position:
         self.link=link
 
 Pos4 = [
+#0 .. 29
         Position(False,True,6,0,[1,5]),Position(False,False,7,0,[0,2,6]),Position(False,True,8,0,[1,3,7]),
         Position(False,False,9,0,[2,4,8]),Position(False,True,10,0,[3,9]),Position(False,True,6,1,[0,6,10,11]),
         Position(False,True,7,1,[1,5,7,11]),Position(False,True,8,1,[2,6,8,11,12,13]),Position(False,True,9,1,[3,7,9,13]),
@@ -17,9 +32,10 @@ Pos4 = [
         Position(False,True,6,3,[10,11,16,20,21]),Position(False,True,7,3,[11,15,17,21]),Position(True,True,8,3,[11,12,13,16,18,21,22,23]),
         Position(False,True,9,3,[13,17,19,23]),Position(False,True,10,3,[13,14,18,23,24]),Position(False,True,6,4,[15,21,25]),
         Position(True,True,7,4,[15,16,17,20,22,25,26,27]),Position(False,True,8,4,[17,21,23,27]),Position(True,True,9,4,[17,18,19,22,24,27,28,29]),
-        Position(False,True,10,4,[19,23,29]),#25
+        Position(False,True,10,4,[19,23,29]),
         Position(False,True,6,5,[20,21,26,119,127]),Position(False,True,7,5,[21,25,27]),Position(False,True,8,5,[21,22,23,26,28,120]),
-        Position(False,True,9,5,[23,27,29]),Position(False,True,10,5,[23,24,28,55,121]),#29
+        Position(False,True,9,5,[23,27,29]),Position(False,True,10,5,[23,24,28,55,121]),
+#30 .. 59 x=16-y,y=x        
         Position(False,True,16,6,[31,35]),Position(False,False,16,7,[30,32,36]),Position(False,True,16,8,[31,33,37]),
         Position(False,False,16,9,[32,34,38]),Position(False,True,16,10,[33,39]),Position(False,True,15,6,[30,36,40,41]),
         Position(False,True,15,7,[31,35,37,41]),Position(False,True,15,8,[32,36,38,41,42,43]),Position(False,True,15,9,[33,37,39,43]),
@@ -28,11 +44,16 @@ Pos4 = [
         Position(False,True,13,6,[40,41,46,50,51]),Position(False,True,13,7,[41,45,47,51]),Position(True,True,13,8,[41,42,43,46,48,51,52,53]),
         Position(False,True,13,9,[43,47,49,53]),Position(False,True,13,10,[43,44,48,53,54]),Position(False,True,12,6,[45,51,55]),
         Position(True,True,12,7,[45,46,47,50,52,55,56,57]),Position(False,True,12,8,[47,51,53,57]),Position(True,True,12,9,[47,48,49,52,54,57,58,59]),
-        Position(False,True,12,10,[49,53,59]),#55 x = 16-y y=x
+        Position(False,True,12,10,[49,53,59]),
         Position(False,True,11,6,[50,51,56,29,121]),Position(False,True,11,7,[51,55,57]),Position(False,True,11,8,[51,52,53,56,58,122]),
-        Position(False,True,11,9,[53,57,59]),Position(False,True,11,10,[53,54,58,85,123]),#59
-        ]
-#who can finish it?
+        Position(False,True,11,9,[53,57,59]),Position(False,True,11,10,[53,54,58,85,123]),
+#60 .. 89
+#90 .. 119
+#120 .. 128
+        Position(False,True,8,6,[27,121,127,128]),Position(False,True,10,6,[29,55,120,122]),Position(False,True,10,8,[57,121,123,128]),
+        Position(False,True,10,10,[59,85,122,124]),Position(False,True,8,10,[87,123,125,128]),Position(False,True,6,10,[89,115,124,126]),
+        Position(False,True,6,8,[117,125,127,128]),Position(False,True,6,6,[25,119,120,126]),Position(False,True,8,8,[120,122,124,126])]
+#who can finish 60..119?
 """
 position <-> value:
     0  1   2   3   4   5  6   7   8   9  10 11 12 13 14 15 16
