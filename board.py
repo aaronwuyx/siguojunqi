@@ -10,10 +10,11 @@ class Board(Frame):
         self.drawmap()
         self.drawpositions()
     def drawmap(self):
+        #Canvas
         return
     def drawpositions(self):
         return
-    def drawposition(self,position):
+    def drawposition(self,position,highlight):
         return
     
 if __name__=='__main__':
