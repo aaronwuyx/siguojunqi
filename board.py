@@ -1,23 +1,16 @@
 from Tkinter import *
-import os
-import sys
 from defines import *
-def Game():
-    w = Toplevel()
-    w.title('Game')
-    Board(w)
-    w.mainloop()
-    
+
 class Board(Frame):
     def __init__(self,parent = None,**config):
         Frame.__init__(self,parent,config)
-        self.pack()
-        self.drawmap()
-        self.drawpositions()
-    def drawmap(self):
+        self.pack(expand =YES,fill=BOTH)
+        self.draw_Map()
+        self.draw_Positions()
+    def draw_Map(self):
         #Canvas
         return
-    def drawpositions(self):
+    def draw_Positions(self):
         for pos in Pos4:
             self.drawposition(pos)
         return
@@ -25,6 +18,8 @@ class Board(Frame):
         print position
         #draw a rectangle at x y?
         return
-    
+    def draw_Chess(self,somedata):
+        return
+
 if __name__=='__main__':
-    Game()
+    Board().mainloop()
