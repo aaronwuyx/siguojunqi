@@ -18,3 +18,17 @@ class Player():
     def Lost40(self,currentMap):
         return False
 
+def Place(pos,playno,chess):
+    if pos >= playno*30 | pos < (playno-1)*30
+        return False
+    pos = pos % 30
+    if Pos4[pos].safe:
+        return False
+    if chess.prop.initrule == 0:
+        return True
+    elif chess.prop.initrule == 1:
+        return (pos < 10)
+    elif chess.prop.initrule == 2:
+        return (pos < 25)
+    elif chess.prop.initrule == 3:
+        return ((pos == 1) | (pos == 3))
