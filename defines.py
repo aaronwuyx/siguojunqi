@@ -1,10 +1,14 @@
 #coding = gbk
+MAXPLAYER = 4
+MAXPOSITION = 129
+
 class Map:
     def __init__(self,size):
         self.data = []
         for i in range(1:size):
             self.data.append(None)
     def Set(self,pos,value,playno):
+#use chess instead
         data[pos]['value']=value
         data[pos]['owner']=playno
     def Get(self,pos):
@@ -13,7 +17,10 @@ class Map:
         tmp = data[pos]
         data[pos]=None
         return tmp
-    
+
+Term4 = [3,4,1,2]
+Term2 = [None,None]
+
 class Position:
     def __init__(self,safe,move,x,y,link):
         self.safe=safe
@@ -47,7 +54,18 @@ Pos4 = [
         Position(False,True,12,10,[49,53,59]),
         Position(False,True,11,6,[50,51,56,29,121]),Position(False,True,11,7,[51,55,57]),Position(False,True,11,8,[51,52,53,56,58,122]),
         Position(False,True,11,9,[53,57,59]),Position(False,True,11,10,[53,54,58,85,123]),
-#60 .. 89
+#60 .. 89 x=16-x y=16-y
+        Position(False,True,10,16,[61,65]),Position(False,False,9,16,[60,62,66]),Position(False,True,8,16,[61,63,67]),
+        Position(False,False,7,16,[62,64,68]),Position(False,True,6,16,[63,69]),Position(False,True,10,15,[60,66,70,71]),
+        Position(False,True,9,15,[61,65,67,71]),Position(False,True,8,15,[62,66,68,71,72,73]),Position(False,True,7,15,[63,67,69,73]),
+        Position(False,True,6,15,[64,68,73,74]),Position(False,True,10,14,[65,71,75]),Position(True,True,9,14,[65,66,67,70,72,75,76,77]),
+        Position(False,True,8,14,[67,71,73,77]),Position(True,True,7,14,[67,68,69,72,74,77,78,79]),Position(False,True,6,14,[69,73,79]),
+        Position(False,True,10,13,[70,71,76,80,81]),Position(False,True,9,13,[71,75,77,81]),Position(True,True,8,13,[71,72,73,76,78,81,82,83]),
+        Position(False,True,7,13,[73,77,79,83]),Position(False,True,6,13,[73,74,78,83,84]),Position(False,True,10,12,[75,81,85]),
+        Position(True,True,9,12,[75,76,77,80,82,85,86,87]),Position(False,True,8,12,[77,81,83,87]),Position(True,True,7,12,[77,78,79,82,84,87,88,89]),
+        Position(False,True,6,12,[79,83,89]),
+        Position(False,True,10,11,[59,80,81,86,123]),Position(False,True,9,11,[81,85,87]),Position(False,True,8,11,[81,82,83,86,88,124]),
+        Position(False,True,7,11,[83,87,89]),Position(False,True,6,11,[83,84,88,115,125]),
 #90 .. 119
 #120 .. 128
         Position(False,True,8,6,[27,121,127,128]),Position(False,True,10,6,[29,55,120,122]),Position(False,True,10,8,[57,121,123,128]),
@@ -89,6 +107,12 @@ Railways=[[5,6,7,8,9],[9,8,7,6,5],[35,36,37,38,39],[39,38,37,36,35],[65,66,67,68
           [69,74,79,84,89,115,110,105,100,95],[95,100,105,110,115,89,84,79,74,69],
           [117,126,128,122,57],[57,122,128,126,117],
           [27,120,128,124,87],[87,124,128,120,27]]
+
+class Chess:
+    def __init__(self):
+        return
+#        self.prop = ?
+#        self.playerno = ?
 
 class ChessProp:
     def __init__(self,name,value,initnum,initrule=0):
