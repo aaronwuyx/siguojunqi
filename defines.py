@@ -5,7 +5,7 @@ MAXPOSITION = 129
 class Map:
     def __init__(self,size):
         self.data = []
-        for i in range(1:size):
+        for i in range(1,size):
             self.data.append(None)
     def Set(self,pos,value,playno):
 #use chess instead
@@ -66,7 +66,18 @@ Pos4 = [
         Position(False,True,6,12,[79,83,89]),
         Position(False,True,10,11,[59,80,81,86,123]),Position(False,True,9,11,[81,85,87]),Position(False,True,8,11,[81,82,83,86,88,124]),
         Position(False,True,7,11,[83,87,89]),Position(False,True,6,11,[83,84,88,115,125]),
-#90 .. 119
+#90 .. 119 x=y y=16-x
+        Position(False,True,0,10,[91,95]),Position(False,False,0,9,[90,92,96]),Position(False,True,0,8,[91,93,97]),
+        Position(False,False,0,7,[92,94,98]),Position(False,True,0,6,[93,99]),Position(False,True,1,10,[90,96,100,101]),
+        Position(False,True,1,9,[91,95,97,101]),Position(False,True,1,8,[92,96,98,101,102,103]),Position(False,True,1,7,[93,97,99,103]),
+        Position(False,True,1,6,[94,98,103,104]),Position(False,True,2,10,[95,101,105]),Position(True,True,2,9,[95,96,97,100,102,105,106,107]),
+        Position(False,True,2,8,[97,101,103,107]),Position(True,True,2,7,[97,98,99,102,104,107,108,109]),Position(False,True,2,6,[99,103,109]),
+        Position(False,True,3,10,[100,101,106,110,111]),Position(False,True,3,9,[101,105,107,111]),Position(True,True,3,8,[101,102,103,106,108,111,112,113]),
+        Position(False,True,3,7,[103,107,109,113]),Position(False,True,3,6,[103,104,108,113,114]),Position(False,True,4,10,[105,111,115]),
+        Position(True,True,4,9,[105,106,107,110,112,115,116,117]),Position(False,True,4,8,[107,111,113,117]),Position(True,True,4,7,[107,108,109,112,114,117,118,119]),
+        Position(False,True,4,6,[109,113,119]),
+        Position(False,True,5,10,[89,110,111,116,125]),Position(False,True,5,9,[111,115,117]),Position(False,True,5,8,[111,112,113,116,118,126]),
+        Position(False,True,5,7,[113,117,119]),Position(False,True,5,6,[25,113,114,118,127]),
 #120 .. 128
         Position(False,True,8,6,[27,121,127,128]),Position(False,True,10,6,[29,55,120,122]),Position(False,True,10,8,[57,121,123,128]),
         Position(False,True,10,10,[59,85,122,124]),Position(False,True,8,10,[87,123,125,128]),Position(False,True,6,10,[89,115,124,126]),
