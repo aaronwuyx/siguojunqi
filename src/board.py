@@ -52,7 +52,6 @@ class Board( Frame ):
 
     def Draw_Position( self, pos, highlight = False ):
         try:
-            print pos
             x, y, vert = self.getXY( pos )
             if vert == 'V':
                 self.back.create_rectangle( x, y, x + self.buttonheight, y + self.buttonwidth, width = 0, fill = self.textbg )
@@ -64,7 +63,6 @@ class Board( Frame ):
             pass
 
     def getXY( self, pos ):
-        print 'a'
         if ( pos >= MAXPOSITION ) | ( pos < 0 ):
             return
         hinc = self.buttonheight + self.sepheight
