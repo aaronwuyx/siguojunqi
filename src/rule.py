@@ -1,7 +1,7 @@
 from defines import *
 
 class Map:
-    def __init__( selfs, size ):
+    def __init__( self, size ):
         self.data = []
         self.size = size
         for i in range( 0, self.size - 1 ):

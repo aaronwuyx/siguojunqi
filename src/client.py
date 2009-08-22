@@ -18,8 +18,9 @@ from Defines import *
 import board, rule, message
 import os, sys
 
-class Client:
+class Client( Toplevel ):
     def __init__( self ):
+        Toplevel.__init__( bd = 1, bg = 'grey' )
         self.status = 'start'
         self.conf = Configuration()
         self.conf.Load( 'filename' )
@@ -30,8 +31,8 @@ class Client:
         self.make_widgets()
     def make_widgets( self ):
 #new thread and create widget?
-        self.win = Toplevel()
-        self.win.title( 'Si Guo - Player :' + self.pl.name )
+        self.title( 'Si Guo Client' )
+        self.title( 'Si Guo - Player :' + self.pl.name )
         status = Frame()
         status.pack( side = RIGHT )
         self.board = Board( self.win )
@@ -64,4 +65,4 @@ class Configuration:
         return
 
 if __name__ == '__main__':
-    Client()
+    Client().mainloop()
