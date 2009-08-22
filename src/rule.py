@@ -3,7 +3,8 @@ from defines import *
 class Map:
     def __init__( selfs, size ):
         self.data = []
-        for i in range( 0, size - 1 ):
+        self.size = size
+        for i in range( 0, self.size - 1 ):
             self.data.append( {} )
 
 #use place before game start
@@ -101,7 +102,5 @@ class Player():
         return
 #get initialize position
 #self.chess=...
-    def IsLose( self ):
-        return False
-    def Lost40( self, currentMap ):
+    def Lost( self, currentMap ):
         return False

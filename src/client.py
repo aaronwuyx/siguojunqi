@@ -62,3 +62,6 @@ class Configuration:
         return
     def Save( self ):
         return
+
+if __name__ == '__main__':
+    Client()

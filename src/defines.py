@@ -13,6 +13,9 @@ class Position:
         self.y = y
         self.link = link
 
+PosH = range( 0, 30 ) + range( 60, 90 ) + range( 120, MAXPOSITION )
+PosV = range( 30, 60 ) + range( 90, 120 ) + range( 120, MAXPOSITION )
+
 Pos4 = [
 #0 .. 29
         Position( False, True, 6, 0, [1, 5] ), Position( False, False, 7, 0, [0, 2, 6] ), Position( False, True, 8, 0, [1, 3, 7] ),
