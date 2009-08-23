@@ -48,7 +48,7 @@ class Board( Frame ):
     def Draw_Map( self, maps ):
         for pos in range( 0, maps.size ):
             self.Draw_Position( pos )
-#            self.Draw_Chess( pos, maps.GetValue( pos ) )
+            self.Draw_Chess( pos, maps.GetValue( pos ) )
 
     def Draw_Position( self, pos, highlight = False ):
         try:
@@ -87,9 +87,17 @@ class Board( Frame ):
         else:
             return ( x, y, 'H' )
 
-    def Draw_Chess( self, somedata ):
-#        self.back.create_text( 50, 50, text = ' button', fill = self.textfg )
-        return
+    def Draw_Chess( self, pos, value ):
+        if value == None:
+            return
+        try:
+            x, y, vert = self.getXY( pos )
+            if vert:
+                self.back.create_text( x, y, text = rule.Map.getName( value ), fill = self.textfg )
+            else:
+                self.back.create_text( x, y, text = rule.Map.getName( value ), fill = self.textfg )
+        except:
+            pass
 
     def run( self ):
         self.mainloop()

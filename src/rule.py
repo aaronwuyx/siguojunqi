@@ -4,8 +4,8 @@ class Map:
     def __init__( self, size ):
         self.data = []
         self.size = size
-        for i in range( 0, self.size - 1 ):
-            self.data.append( {} )
+        for i in range( 0, self.size ):
+            self.data.append( {'value':None, 'player':None} )
 
 #use place before game start
     def Place( self, pos, value, playno ):
@@ -19,7 +19,9 @@ class Map:
         rule = self.GetRule( value )
         if ( pos >= playno * 30 ) | ( pos < ( playno - 1 ) * 30 ):
             return False
-        if self.data[pos] != {}:
+        if not self.data[pos]['value']:
+            return False
+        if not self.data[pos]['player']:
             return False
         pos = pos % 30
         if Pos4[pos].safe:
@@ -35,12 +37,10 @@ class Map:
         return False
 
     def GetValue( self, pos ):
-        if self.data[pos] != {}:
-            return self.data[pos]['value']
+        return self.data[pos]['value']
 
     def GetPlayer( self, pos ):
-        if self.data[pos] != {}:
-            return self.data[pos]['player']
+        return self.data[pos]['player']
 
     def GetName( self, value ):
         for prop in InitChess:
@@ -58,7 +58,8 @@ class Map:
                 return prop.move
 
     def Remove( self, pos ):
-        data[pos] = {}
+        self.data[pos]['value'] = None
+        self.data[pos]['player'] = None
 
     def Move( self, fpos, tpos ):
         if self.CanMove( fpos, tpos ):
@@ -70,7 +71,7 @@ class Map:
             self.Remove( fpos )
 
     def CanMove( self, fpos, tpos ):
-        if self.data[fpos] == {}:
+        if not self.data[fpos]['value']:
             return False
         if Pos4[fpos].move == False:
             return False
