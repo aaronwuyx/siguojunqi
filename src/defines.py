@@ -1,4 +1,4 @@
-#coding = gbk
+# -*- coding:gb2312 -*-
 """
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,11 +16,15 @@
 
 MAXPLAYER = 4
 MAXPOSITION = 129
-SVN = 14
-VERSION = 0
+SVN = 18
+VERSION = '0.0x'
 
 Term4 = [3, 4, 1, 2]
 Term2 = [None, None]
+
+bgcolor = ['#cc3333', '#33cc33', '#3333cc', '#eeee33']
+acbgcolor = ['red', 'green', 'blue', 'yellow']
+frcolor = ['#cccccc', '#333333', '#eeeeee', '#333333']
 
 class Position:
     def __init__( self, safe, move, x, y, link ):
@@ -131,6 +135,6 @@ class ChessProp:
         self.initrule = 0
         self.move = move
 
-InitChess = [ChessProp( 'SiLi', 40, 1 ), ChessProp( 'JuZh', 39, 1 ), ChessProp( 'ShZh', 38, 2 ), ChessProp( 'LvZh', 37, 2 ),
+InitChess = [ChessProp( 'ЛѕБо', 40, 1 ), ChessProp( 'JuZh', 39, 1 ), ChessProp( 'ShZh', 38, 2 ), ChessProp( 'LvZh', 37, 2 ),
              ChessProp( 'TuZh', 36, 2 ), ChessProp( 'YiZh', 35, 2 ), ChessProp( 'LiZh', 34, 3 ), ChessProp( 'PaZh', 33, 3 ),
              ChessProp( 'GoBi', 32, 3 ), ChessProp( 'DiLe', 41, 3, 1, False ), ChessProp( 'ZhDa', 42, 2, 2 ), ChessProp( 'JuQi', 31, 1, 3, False )]

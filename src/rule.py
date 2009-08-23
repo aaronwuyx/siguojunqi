@@ -19,9 +19,9 @@ class Map:
         rule = self.GetRule( value )
         if ( pos >= playno * 30 ) | ( pos < ( playno - 1 ) * 30 ):
             return False
-        if not self.data[pos]['value']:
+        if self.data[pos]['value']:
             return False
-        if not self.data[pos]['player']:
+        if self.data[pos]['player']:
             return False
         pos = pos % 30
         if Pos4[pos].safe:

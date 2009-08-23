@@ -16,26 +16,42 @@
 
 from Tkinter import *
 from defines import *
-import rule
+# -*- coding:gb2312 -*-
+"""
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import rule, traceback
 
 class Board( Frame ):
-    def __init__( self, parent = None, **config ):
-        Frame.__init__( self, parent, config )
+    def __init__( self, master = None, **config ):
+        Frame.__init__( self, master, config )
         self.pack( expand = YES, fill = BOTH )
         self.backimage = ''
         self.back = Canvas( self )
         self.back.pack()
         self.Draw_Background( '../resource/ugly2.gif' )
-        self.back.delete()
 #    may change later?
         self.buttonwidth = 30
         self.buttonheight = 18
+        self.textwidth = self.buttonwidth / 2
+        self.textheight = self.buttonheight / 2
         self.sepwidth = 10
         self.sepheight = 10
+        self.bgcolor = 'white'
         self.startx = 3 #6 to shadow?
         self.starty = 3 #6 to shadow?
-        self.textbg = 'green'
-        self.textfg = 'black'
         self.textfont = ( 'Courier', 8, 'bold' )
 
     def Draw_Background( self, filename ):
@@ -47,20 +63,37 @@ class Board( Frame ):
 
     def Draw_Map( self, maps ):
         for pos in range( 0, maps.size ):
-            self.Draw_Position( pos )
-            self.Draw_Chess( pos, maps.GetValue( pos ) )
+            self.Draw_Position( maps, pos )
 
-    def Draw_Position( self, pos, highlight = False ):
+    def Draw_Position( self, maps, pos, highlight = False ):
         try:
             x, y, vert = self.getXY( pos )
+            acbg = bg = self.bgcolor
+            player = maps.GetPlayer( pos )
+            if player != None:
+                bg = bgcolor[player - 1]
+                fr = frcolor[player - 1]
+                acbg = acbgcolor[player - 1]
+                value = maps.GetValue( pos )
             if vert == 'V':
-                self.back.create_rectangle( x, y, x + self.buttonheight, y + self.buttonwidth, width = 0, fill = self.textbg )
+                self.back.create_rectangle( x, y, x + self.buttonheight, y + self.buttonwidth, width = 2, fill = bg, activefill = acbg )
             elif vert == 'H':
-                self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonheight, width = 0, fill = self.textbg )
+                self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonheight, width = 2, fill = bg, activefill = acbg )
             else:
-                self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonwidth, width = 0, fill = self.textbg )
+                self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonwidth, width = 2, fill = bg, activefill = acbg )
+            if player != None:
+                if vert == 'V':
+#how to show vertically?
+                    self.back.create_text( x + self.textheight, y + self.textwidth, text = maps.GetName( value ), font = self.textfont, fill = fr )
+                elif vert == 'H':
+                    self.back.create_text( x + self.textwidth, y + self.textheight, text = maps.GetName( value ), font = self.textfont, fill = fr )
+                else:
+                    self.back.create_text( x + self.textwidth, y + self.textheight, text = maps.GetName( value ), font = self.textfont, fill = fr )
         except:
-            pass
+            exc_info = sys.exc_info()
+            print exc_info[0]
+            print exc_info[1]
+            traceback.print_tb( exc_info[2] )
 
     def getXY( self, pos ):
         if ( pos >= MAXPOSITION ) | ( pos < 0 ):
@@ -86,23 +119,3 @@ class Board( Frame ):
                 return ( x, y, 'V' )
         else:
             return ( x, y, 'H' )
-
-    def Draw_Chess( self, pos, value ):
-        if value == None:
-            return
-        try:
-            x, y, vert = self.getXY( pos )
-            if vert:
-                self.back.create_text( x, y, text = rule.Map.getName( value ), fill = self.textfg )
-            else:
-                self.back.create_text( x, y, text = rule.Map.getName( value ), fill = self.textfg )
-        except:
-            pass
-
-    def run( self ):
-        self.mainloop()
-
-if __name__ == '__main__':
-    b = Board()
-    b.Draw_Map( rule.Map( MAXPOSITION ) )
-    b.run()

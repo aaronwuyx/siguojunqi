@@ -1,3 +1,4 @@
+# -*- coding:gb2312 -*-
 """
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -68,6 +69,7 @@ class Client():
         Label( status, text = 'status :' ).pack()
         self.guiopt.acquire()
         self.board = board.Board( self.top )
+        self.board.Draw_Map( self.map )
         self.guiopt.release()
     def connecttoServer( self ):
 #create a thread
@@ -88,17 +90,64 @@ class Client():
         return
 
 class Configuration:
-    def __init__( self, clientname = '?', clientaddress = '', clientport = 80, servername = 'localhost', serverport = '?' ):
-        self.name = clientname
-        self.address = clientaddress
-        self.port = clientport
-        self.servername = servername
-        self.serverport = serverport
-    def Load( self, filename ):
-        return
-    def Save( self, filename ):
+    def __init__( self, name = 'Unknown', bgcolor = 'red' ):
+        self.name = name
+        self.bgcolor = bgcolor
+#        self.ip = self.getIPAddress()
+#        self.port = xxx?
+#        self.server = ( 'localhost', 2000 )
+#        self.address = clientaddress
+#        self.port = clientport
+#    def getIPAddress( self ):
+#        return 'localhost'
+
+    def config( self ):
         return
 
+    def Load( self, filename ):
+        if not os.path.isfile( filename ):
+            return
+        try:
+            f = open( filename, 'r' )
+        except:
+            return
+        for line in f.readlines():
+            try:
+                key, value = line.split( filename , 1 )
+                key = key.strip()
+                value = value.strip()
+                if key == 'name':self.name = value
+                if key == 'bg':self.bgcolor = value
+            except:
+                pass
+        try:
+            f.close()
+        except:
+            pass
+
+    def Save( self, filename ):
+        try:
+            f = open( filename, 'w' )
+            f.writeline( 'siguo game client configuration:' )
+            f.writeline( 'name=' + self.name )
+            f.writeline( 'bg=' + self.bgcolor )
+            f.close()
+        except:
+            pass
+
 if __name__ == '__main__':
-    Client().run()
+    c = Client()
+    c.map.Place( 0, 40, 1 )
+    c.map.Place( 10, 39, 1 )
+    c.map.Place( 20, 38, 1 )
+    c.map.Place( 30, 37, 2 )
+    c.map.Place( 40, 36, 2 )
+    c.map.Place( 50, 35, 2 )
+    c.map.Place( 60, 34, 3 )
+    c.map.Place( 70, 33, 3 )
+    c.map.Place( 80, 32, 3 )
+    c.map.Place( 90, 42, 4 )
+#    c.map.Place( 100, 36, 2 )
+#    c.map.Place( 110, 35, 2 )
+    c.run()
 
