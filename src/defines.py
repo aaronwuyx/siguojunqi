@@ -1,4 +1,4 @@
-# -*- coding:gb2312 -*-
+# -*- coding:utf-8 -*-
 """
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ Term2 = [None, None]
 
 bgcolor = ['#cc3333', '#33cc33', '#3333cc', '#eeee33']
 acbgcolor = ['red', 'green', 'blue', 'yellow']
-frcolor = ['#cccccc', '#333333', '#eeeeee', '#333333']
+frcolor = ['#cccccc', '#333333', '#cccccc', '#333333']
 
 class Position:
     def __init__( self, safe, move, x, y, link ):
@@ -135,6 +135,6 @@ class ChessProp:
         self.initrule = 0
         self.move = move
 
-InitChess = [ChessProp( '˾��', 40, 1 ), ChessProp( 'JuZh', 39, 1 ), ChessProp( 'ShZh', 38, 2 ), ChessProp( 'LvZh', 37, 2 ),
-             ChessProp( 'TuZh', 36, 2 ), ChessProp( 'YiZh', 35, 2 ), ChessProp( 'LiZh', 34, 3 ), ChessProp( 'PaZh', 33, 3 ),
-             ChessProp( 'GoBi', 32, 3 ), ChessProp( 'DiLe', 41, 3, 1, False ), ChessProp( 'ZhDa', 42, 2, 2 ), ChessProp( 'JuQi', 31, 1, 3, False )]
+InitChess = [ChessProp( '司令', 40, 1 ), ChessProp( '军长', 39, 1 ), ChessProp( '师长', 38, 2 ), ChessProp( '旅长', 37, 2 ),
+             ChessProp( '团长', 36, 2 ), ChessProp( '营长', 35, 2 ), ChessProp( '连长', 34, 3 ), ChessProp( '排长', 33, 3 ),
+             ChessProp( '工兵', 32, 3 ), ChessProp( '地雷', 41, 3, 1, False ), ChessProp( '炸弹', 42, 2, 2 ), ChessProp( '军旗', 31, 1, 3, False )]
