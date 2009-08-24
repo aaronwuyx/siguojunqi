@@ -14,17 +14,35 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-MAXPLAYER = 4
+DEFAULTPLAYER = 4
 MAXPOSITION = 129
-SVN = '18'
+CHESSNUM = 25
+SVN = '20'
 VERSION = '0.01'
 
-Term4 = [[1, 3], [2, 4], [1, 3], [2, 4]]
-Term2 = [1, 2]
+#Defines in map.data[p]['status']
+MAP_NONE = 'None' #Nobody
+MAP_HIDE = 'Hide' #Self
+MAP_TEAM = 'Team' #Term
+MAP_OTHER = 'Other' #Viewer
+MAP_SHOW = 'Show' #All
 
-bgcolor = ['#cc3333', '#33cc33', '#3333cc', '#eeee33']
-acbgcolor = ['red', 'green', 'blue', 'yellow']
-frcolor = ['#cccccc', '#333333', '#cccccc', '#333333']
+#default player defines
+class PlayerDef:
+    def __init__( self, idnum, bg, fg, acbg, team ):
+        self.id = idnum
+        self.background = bg
+        self.activebackground = acbg
+        self.foreground = fg
+        self.team = team
+
+Team4 = [PlayerDef( 1, '#dd2222', '#dddddd', 'red', [1, 3] ),
+         PlayerDef( 2, '#dddd22', '#222222', 'yellow', [2, 4] ),
+         PlayerDef( 3, '#22dd22', '#222222', 'green', [1, 3] ),
+         PlayerDef( 4, '#2222dd', '#dddddd', 'blue', [2, 4] )]
+
+Team2 = [PlayerDef( 1, '#dd2222', '#dddddd', 'red', [1] ),
+         PlayerDef( 2, '#dddd22', '#222222', 'yellow', [2] )]
 
 class Position:
     def __init__( self, safe, move, x, y, link ):
@@ -128,13 +146,33 @@ Railways = [[5, 6, 7, 8, 9], [9, 8, 7, 6, 5], [35, 36, 37, 38, 39], [39, 38, 37,
           [27, 120, 128, 124, 87], [87, 124, 128, 120, 27]]
 
 class ChessProp:
-    def __init__( self, name, value, initnum, initrule = 0, move = True ):
+    def __init__( self, name, value, initnum, rule = 0, move = 1 ):
         self.name = name
         self.value = value
         self.initnum = initnum
-        self.initrule = 0
+        self.rule = rule
         self.move = move
 
 InitChess = [ChessProp( '司令', 40, 1 ), ChessProp( '军长', 39, 1 ), ChessProp( '师长', 38, 2 ), ChessProp( '旅长', 37, 2 ),
              ChessProp( '团长', 36, 2 ), ChessProp( '营长', 35, 2 ), ChessProp( '连长', 34, 3 ), ChessProp( '排长', 33, 3 ),
-             ChessProp( '工兵', 32, 3 ), ChessProp( '地雷', 41, 3, 1, False ), ChessProp( '炸弹', 42, 2, 2 ), ChessProp( '军旗', 31, 1, 3, False )]
+             ChessProp( '工兵', 32, 3, 0, 2 ), ChessProp( '地雷', 41, 3, 1, 0 ), ChessProp( '炸弹', 42, 2, 2 ), ChessProp( '军旗', 31, 1, 3, 0 )]
+
+def GetChessName( value ):
+    for prop in InitChess:
+        if prop.value == value:
+            return prop.name
+
+def GetChessRule( value ):
+    for prop in InitChess:
+        if prop.value == value:
+            return prop.rule
+
+def GetChessMove( value ):
+    for prop in InitChess:
+        if prop.value == value:
+            return prop.move
+
+def GetChessInit( value ):
+    for prop in InitChess:
+        if prop.value == value:
+            return prop.initnum

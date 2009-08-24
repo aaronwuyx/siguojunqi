@@ -1,27 +1,41 @@
+# -*- coding:utf-8 -*-
+"""
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 from defines import *
 
 class Map:
+    Initdata = {'value':None, 'player':None, 'status':MAP_NONE}
     def __init__( self, size ):
         self.data = []
         self.size = size
         for i in range( 0, self.size ):
-            self.data.append( {'value':None, 'player':None} )
+            self.data.append( Map.Initdata )
 
 #use place before game start
-    def Place( self, pos, value, playno ):
-        if self.CanPlace( pos, value, playno ) == True:
-            self.data[pos]['value'] = value
-            self.data[pos]['player'] = playno
+    def Place( self, pos, value, player, status = MAP_HIDE ):
+        if self.CanPlace( pos, value, player ) == True:
+            self.data[pos] = {'value':value,'player':player,'status':status}
             return True
         return False
 
-    def CanPlace( self, pos, value, playno ):
-        rule = self.GetRule( value )
-        if ( pos >= playno * 30 ) | ( pos < ( playno - 1 ) * 30 ):
+    def CanPlace( self, pos, value, player ):
+        rule = GetChessRule( value )
+        if ( pos >= player * 30 ) | ( pos < ( player - 1 ) * 30 ):
             return False
-        if self.data[pos]['value']:
-            return False
-        if self.data[pos]['player']:
+        if self.data[pos] != Map.Initdata:
             return False
         pos = pos % 30
         if Pos4[pos].safe:
@@ -42,24 +56,11 @@ class Map:
     def GetPlayer( self, pos ):
         return self.data[pos]['player']
 
-    def GetName( self, value ):
-        for prop in InitChess:
-            if prop.value == value:
-                return prop.name
-
-    def GetRule( self, value ):
-        for prop in InitChess:
-            if prop.value == value:
-                return prop.initrule
-
-    def GetMovable( self, value ):
-        for prop in InitChess:
-            if prop.value == value:
-                return prop.move
+    def GetStatus( self, pos ):
+        return self.data[pos]['status']
 
     def Remove( self, pos ):
-        self.data[pos]['value'] = None
-        self.data[pos]['player'] = None
+        self.data[pos] = Map.Initdata
 
     def Move( self, fpos, tpos ):
         if self.CanMove( fpos, tpos ):
@@ -71,33 +72,31 @@ class Map:
             self.Remove( fpos )
 
     def CanMove( self, fpos, tpos ):
-        #stay same location
-        if fpos == tpos:
-            return False
         #no chess to move
-        if not self.data[fpos]['value']:
+        if self.data[fpos] == Map.Initdata:
             return False
         #chess cannot move
         if Pos4[fpos].move == False:
             return False
         #position cannot move
-        if self.GetMovable( fpos ) == False:
+        if GetChessMove == 0:
             return False
         #chess in tpos
-        if self.data[tpos]['value'] != None:
-            if self.data[tpos]['playno'] in Team4[self.data[fpos]['playno']]:
+        if self.data[tpos]['value'] != Map.Initdata:
+            if self.data[tpos]['player'] in Team4[self.data[fpos]['player']]:
                 return False
         #direct move, 1 step
         if ( OnRailway( fpos ) == ( -1, -1 ) ) | ( OnRailway( tpos ) == ( -1, -1 ) ):
             return ( tpos in Pos4[fpos].link )
         #GoBi's fly
-        if Pos4[fpos]['value'] == 32:
-            return tpos in self.GetFlyArea( fpos )
+        if GetChessMove == 2:
+            return ( tpos in self.GetFlyArea( fpos ) )
         #Railway
         rail, fon, ton = self.OnSameRailway( self, fpos, tpos );
         if ( fon >= 0 ) & ( ton >= 0 ):
             for i in range( fon + 1, ton ):
-                if self.data[Railways[rail][i]]['value'] != None: return False
+                if self.data[Railways[rail][i]]['value'] != Map.Initdata:
+                    return False
         return True
 
     def GetFlyArea( self, pos ):
@@ -140,8 +139,9 @@ class Map:
 class Player():
     def __init__( self ):
         self.name = ''
-        return
-#get initialize position
-#self.chess=...
-    def Lost( self, currentMap ):
+        self.chess = []
+    def Lost( self ):
         return False
+
+if __name__=='__main__':
+    print Map.Initdata

@@ -74,8 +74,6 @@ class Client():
         self.guiopt.release()
     def connecttoServer( self ):
 #create a thread
-        self.wait4Server( self )
-    def wait4Server( self ):
         return
     def run( self ):
         self.PlaceAll()
@@ -150,8 +148,4 @@ if __name__ == '__main__':
     c.map.Place( 70, 33, 3 )
     c.map.Place( 80, 32, 3 )
     c.map.Place( 90, 42, 4 )
-#    c.map.Place( 100, 36, 2 )
-#    c.map.Place( 110, 35, 2 )
     c.run()
-
-#        tkMessageBox.Message( message = 'aa' ).show();
