@@ -16,11 +16,11 @@
 
 MAXPLAYER = 4
 MAXPOSITION = 129
-SVN = 18
-VERSION = '0.0x'
+SVN = '18'
+VERSION = '0.01'
 
-Term4 = [3, 4, 1, 2]
-Term2 = [None, None]
+Term4 = [[1, 3], [2, 4], [1, 3], [2, 4]]
+Term2 = [1, 2]
 
 bgcolor = ['#cc3333', '#33cc33', '#3333cc', '#eeee33']
 acbgcolor = ['red', 'green', 'blue', 'yellow']

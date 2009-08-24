@@ -71,19 +71,59 @@ class Map:
             self.Remove( fpos )
 
     def CanMove( self, fpos, tpos ):
+        #stay same location
+        if fpos == tpos:
+            return False
+        #no chess to move
         if not self.data[fpos]['value']:
             return False
+        #chess cannot move
         if Pos4[fpos].move == False:
             return False
+        #position cannot move
         if self.GetMovable( fpos ) == False:
             return False
-        return False
-    """
-other rules
-1. hinder
-2. railway
-3. GoBi's fly
-    """
+        #chess in tpos
+        if self.data[tpos]['value'] != None:
+            if self.data[tpos]['playno'] in Team4[self.data[fpos]['playno']]:
+                return False
+        #direct move, 1 step
+        if ( OnRailway( fpos ) == ( -1, -1 ) ) | ( OnRailway( tpos ) == ( -1, -1 ) ):
+            return ( tpos in Pos4[fpos].link )
+        #GoBi's fly
+        if Pos4[fpos]['value'] == 32:
+            return tpos in self.GetFlyArea( fpos )
+        #Railway
+        rail, fon, ton = self.OnSameRailway( self, fpos, tpos );
+        if ( fon >= 0 ) & ( ton >= 0 ):
+            for i in range( fon + 1, ton ):
+                if self.data[Railways[rail][i]]['value'] != None: return False
+        return True
+
+    def GetFlyArea( self, pos ):
+        ret = []
+#TODO 3 : get the area...        tmp = []
+        return ret
+
+    def OnSameRailway( self, pos1, pos2 ):
+        for railway in Railways:
+            try:
+                off1 = railway.index( pos1 );
+                off2 = railway.index( pos2 );
+                if off1 < off2:
+                    return ( railway.index, off1, off2 )
+            except:
+                pass
+        return ( -1, -1, -1 )
+
+    def OnRailway( self, pos ):
+        for railway in Railways:
+            if pos in railway:
+                return railway.index( railway.index, pos1 );
+        return ( -1, -1 )
+
+    def CanSelect( self, pos, playno ):
+        return
 
     def Lost( self ):
         return False

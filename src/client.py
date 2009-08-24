@@ -15,6 +15,7 @@
 """
 
 from Tkinter import *
+import tkMessageBox
 from defines import *
 import board, rule, message
 import os, sys, thread, time
@@ -61,7 +62,7 @@ class Client():
         self.menu.add_cascade( label = 'Option', menu = option, underline = 0 )
         help = Menu( self.menu )
         help.add_command( label = 'Help', command = ( lambda:0 ), underline = 0 )
-        help.add_command( label = 'About', command = ( lambda:0 ), underline = 0 )
+        help.add_command( label = 'About', command = self.GUI_about, underline = 0 )
         self.menu.add_cascade( label = 'Help', menu = help, underline = 0 )
     def add_widgets( self ):
         status = Frame( self.top )
@@ -88,6 +89,8 @@ class Client():
 #        self.getPlace() get data from player / file?
 #        self.map.place(...)
         return
+    def GUI_about( self ):
+        tkMessageBox.showinfo( 'About', 'SiGuo game\nSVN ' + SVN + '\n' );
 
 class Configuration:
     def __init__( self, name = 'Unknown', bgcolor = 'red' ):
@@ -151,3 +154,4 @@ if __name__ == '__main__':
 #    c.map.Place( 110, 35, 2 )
     c.run()
 
+#        tkMessageBox.Message( message = 'aa' ).show();
