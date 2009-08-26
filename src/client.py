@@ -15,7 +15,7 @@
 """
 
 from Tkinter import *
-import tkMessageBox
+from tkMessageBox import *
 from defines import *
 import board, rule, message
 import os, sys, thread, time
@@ -24,71 +24,78 @@ class Client():
     def __init__( self ):
         self.conf = Configuration()
         self.conf.Load( 'default.cfg' )
-        self.map = rule.Map( len( Pos4 ) )
-        #self.status = 'start'
-        #then connect to server, get seat, create a new thread to receive message?
-        #self.seq = ???
         self.guiopt = thread.allocate_lock()
         self.guiexit = thread.allocate_lock()
-    def make_gui( self ):
-        self.guiexit.acquire()
-        self.top = Tk()
-        self.top.title( 'Si Guo Client - player : ' + self.conf.name )
-        self.add_menus()
-        self.add_widgets()
-        self.top.mainloop()
-        self.guiexit.release()
-    def add_menus( self ):
-        self.menu = Menu( self.top )
-        self.top.config( menu = self.menu )
-        file = Menu( self.menu )
-        file.add_command( label = 'New', command = ( lambda: 0 ), underline = 0 )
-        file.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
-        file.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
-        file.add_command( label = 'Connect', command = ( lambda: 0 ), underline = 0 )
-        file.add_command( label = 'Exit', command = self.top.quit, underline = 1 )
-        self.menu.add_cascade( label = 'File', menu = file, underline = 0 )
-        game = Menu( self.menu )
-        game.add_command( label = 'Save', command = ( lambda:0 ), underline = 0 )
-        game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
-        game.add_command( label = 'Review', command = ( lambda:0 ), underline = 0 )
-        game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
-        game.add_command( label = 'Quit', command = ( lambda:0 ), underline = 0 )
-        self.menu.add_cascade( label = 'Game', menu = game, underline = 0 )
-        option = Menu( self.menu )
-        option.add_command( label = 'Name', command = ( lambda:0 ), underline = 0 )
-        option.add_command( label = 'Color', command = ( lambda:0 ), underline = 0 )
-        option.add_command( label = 'Rule', command = ( lambda:0 ), underline = 0 )
-        self.menu.add_cascade( label = 'Option', menu = option, underline = 0 )
-        help = Menu( self.menu )
-        help.add_command( label = 'Help', command = ( lambda:0 ), underline = 0 )
-        help.add_command( label = 'About', command = self.GUI_about, underline = 0 )
-        self.menu.add_cascade( label = 'Help', menu = help, underline = 0 )
-    def add_widgets( self ):
-        status = Frame( self.top )
-        status.pack( side = RIGHT )
-        Label( status, text = 'status :' ).pack()
-        self.guiopt.acquire()
-        self.board = board.Board( self.top )
-        self.board.Draw_Map( self.map )
-        self.guiopt.release()
-    def connecttoServer( self ):
-#create a thread
-        return
-    def run( self ):
-        self.PlaceAll()
-#        self.connecttoServer( self )
+        self.map = rule.Map( len( Pos4 ) )
+
+    def run( self):
         thread.start_new( self.make_gui, () )
+        thread.start_new( self.connect_server, ())
+        #then connect to server, get seat, create a new thread to receive message?
+        #self.seq = ???
         time.sleep( 1 )
         while self.guiexit.locked():
             pass
         self.conf.Save( 'default.cfg' )
+
+    def make_gui( self ):
+        self.guiexit.acquire()
+        self.top = Tk()
+        self.top.title( 'SiGuo client program - player : ' + self.conf.name)
+        self.add_menus()
+        self.add_widgets()
+        self.top.mainloop()
+        self.guiexit.release()
+
+    def add_menus( self ):
+        self.menu = Menu( self.top )
+        self.top.config( menu = self.menu )
+        File = Menu( self.menu )
+        File.add_command( label = 'New', command = ( lambda: 0 ), underline = 0 )
+        File.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
+        File.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
+        File.add_command( label = 'Connect', command = ( lambda: 0 ), underline = 0 )
+        File.add_command( label = 'Exit', command = self.top.quit, underline = 1 )
+        self.menu.add_cascade( label = 'File', menu = File, underline = 0 )
+        Game = Menu( self.menu )
+        Game.add_command( label = 'Save', command = ( lambda:0 ), underline = 0 )
+        Game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
+        Game.add_command( label = 'Review', command = ( lambda:0 ), underline = 0 )
+        Game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
+        Game.add_command( label = 'Quit', command = ( lambda:0 ), underline = 0 )
+        self.menu.add_cascade( label = 'Game', menu = Game, underline = 0 )
+        Option = Menu( self.menu )
+        Option.add_command( label = 'Name', command = ( lambda:0 ), underline = 0 )
+        Option.add_command( label = 'Background Color', command = ( lambda:0 ), underline = 0 )
+        Option.add_command( label = 'Rule', command = ( lambda:0 ), underline = 0 )
+        self.menu.add_cascade( label = 'Option', menu = Option, underline = 0 )
+        Help = Menu( self.menu )
+        Help.add_command( label = 'Help', command = ( lambda:0 ), underline = 0 )
+        Help.add_command( label = 'About', command = self.GUI_about, underline = 0 )
+        self.menu.add_cascade( label = 'Help', menu = Help, underline = 0 )
+
+    def GUI_about( self ):
+        showinfo( 'About', 'SiGuo game\nSVN ' + SVN + '\n' );
+
+    def add_widgets( self ):
+        self.guiopt.acquire()
+        self.statusframe = Frame( self.top )
+        self.statusframe.pack(side = RIGHT, expand = YES, fill = Y)
+        Label( self.statusframe, text = 'status :' ).pack(side = TOP, expand =YES, fill = X)
+        self.board = board.Board( self.top )
+        self.board.Draw_Map( self.map )
+        self.guiopt.release()
+
+    def connect_server( self ):
+        return
+
+"""
+
     def PlaceAll( self ):
 #        self.getPlace() get data from player / file?
 #        self.map.place(...)
         return
-    def GUI_about( self ):
-        tkMessageBox.showinfo( 'About', 'SiGuo game\nSVN ' + SVN + '\n' );
+"""
 
 class Configuration:
     def __init__( self, name = 'Unknown', bgcolor = 'red' ):
@@ -135,6 +142,7 @@ class Configuration:
             f.close()
         except:
             pass
+
 
 if __name__ == '__main__':
     c = Client()

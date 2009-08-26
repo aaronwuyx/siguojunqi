@@ -28,6 +28,7 @@ class Board( Frame ):
         self.back = Canvas( self )
         self.back.pack()
         self.Draw_Background( '../resource/ugly2.gif' )
+
         self.buttonwidth = 30
         self.buttonheight = 18
         self.textwidth = self.buttonwidth / 2
@@ -57,23 +58,24 @@ class Board( Frame ):
             y = y + self.sepimagey / 2
             acbg = bg = self.bgcolor
             player = m.GetPlayer( pos )
+            status = m.GetStatus( pos )
             if player != None:
                 bg = Team4[player - 1].background
                 fg = Team4[player - 1].foreground
                 acbg = Team4[player - 1].activebackground
-                value = m.GetValue( pos )
-                status = m.GetStatus( pos )
-#                print player,' , ',value,' , ',status
             if vert == 'V':
                 self.back.create_rectangle( x, y, x + self.buttonheight, y + self.buttonwidth, width = 2, fill = bg, activefill = acbg )
             elif vert == 'H':
                 self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonheight, width = 2, fill = bg, activefill = acbg )
             else:
                 self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonwidth, width = 2, fill = bg, activefill = acbg )
-            if player != None:
+            if (player != None) & (status != MAP_HIDE) & (status != MAP_NONE):
+#yes, then value has true meaning...
+                value = m.GetValue( pos )
                 if vert == 'V':
-#how to show vertically?
-                    self.back.create_text( x + self.textheight, y + self.textwidth, text = GetChessName( value ), font = self.textfont, fill = fg )
+                #use wrap instead of rotate...
+                #or use python GD module
+                    self.back.create_text( x + self.textheight, y + self.textwidth, text = GetChessName( value ), font = self.textfont, fill = fg, width = 1 )
                 elif vert == 'H':
                     self.back.create_text( x + self.textwidth, y + self.textheight, text = GetChessName( value ), font = self.textfont, fill = fg )
                 else:

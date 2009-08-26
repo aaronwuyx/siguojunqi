@@ -25,7 +25,7 @@ class Map:
             self.data.append( Map.Initdata )
 
 #use place before game start
-    def Place( self, pos, value, player, status = MAP_HIDE ):
+    def Place( self, pos, value, player, status = MAP_SHOW ):
         if self.CanPlace( pos, value, player ) == True:
             self.data[pos] = {'value':value,'player':player,'status':status}
             return True
