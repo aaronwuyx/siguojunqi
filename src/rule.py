@@ -27,7 +27,7 @@ class Map:
 #use place before game start
     def Place( self, pos, value, player, status = MAP_SHOW ):
         if self.CanPlace( pos, value, player ) == True:
-            self.data[pos] = {'value':value,'player':player,'status':status}
+            self.data[pos] = {'value':value, 'player':player, 'status':status}
             return True
         return False
 
@@ -121,11 +121,16 @@ class Map:
                 return railway.index( railway.index, pos1 );
         return ( -1, -1 )
 
-    def CanSelect( self, pos, playno ):
-        return
-
-    def Lost( self ):
-        return False
+    def CanSelect( self, pos, player ):
+        if self.data[pos]['player'] != player:
+            return False
+        if Pos4[pos].move == 0:
+            return False
+        if self.data[pos]['status'] == MAP_NONE:
+            return False
+        if GetChessMove( self.data[pos]['value'] ) == 0:
+            return False
+        return True
 
     def Result( self, fpos, tpos ):
         fval = self.data[fpos]['value']
@@ -143,5 +148,5 @@ class Player():
     def Lost( self ):
         return False
 
-if __name__=='__main__':
+if __name__ == '__main__':
     print Map.Initdata

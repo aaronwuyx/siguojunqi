@@ -69,12 +69,12 @@ class Board( Frame ):
                 self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonheight, width = 2, fill = bg, activefill = acbg )
             else:
                 self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonwidth, width = 2, fill = bg, activefill = acbg )
-            if (player != None) & (status != MAP_HIDE) & (status != MAP_NONE):
+            if ( player != None ) & ( status != MAP_HIDE ) & ( status != MAP_NONE ):
 #yes, then value has true meaning...
                 value = m.GetValue( pos )
                 if vert == 'V':
                 #use wrap instead of rotate...
-                #or use python GD module
+                #or use gdmodule?
                     self.back.create_text( x + self.textheight, y + self.textwidth, text = GetChessName( value ), font = self.textfont, fill = fg, width = 1 )
                 elif vert == 'H':
                     self.back.create_text( x + self.textwidth, y + self.textheight, text = GetChessName( value ), font = self.textfont, fill = fg )
@@ -111,5 +111,5 @@ class Board( Frame ):
         else:
             return ( x, y, 'H' )
 
-if __name__=='__main__':
+if __name__ == '__main__':
     Board().mainloop()
