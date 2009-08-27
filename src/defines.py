@@ -36,6 +36,30 @@ class PlayerDef:
         self.foreground = fg
         self.team = team
 
+class MapItem:
+    def __init__( self, value = None, player = None, status = MAP_NONE ):
+        self.value = value
+        self.player = player
+        self.status = status
+    def getValue( self ):
+        return self.value
+    def getPlayer( self ):
+        return self.player
+    def getStatus( self ):
+        return self.status
+    def getName( self ):
+        if self.value == None:
+            return
+        return GetChessName( self.value )
+    def getRule( self ):
+        if self.value == None:
+            return
+        return GetChessRule( self.value )
+    def getMove( self ):
+        if self.value == None:
+            return
+        return GetChessMove( self.value )
+
 Team4 = [PlayerDef( 1, '#dd2222', '#dddddd', 'red', [1, 3] ),
          PlayerDef( 2, '#dddd22', '#222222', 'yellow', [2, 4] ),
          PlayerDef( 3, '#22dd22', '#222222', 'green', [1, 3] ),
@@ -145,6 +169,8 @@ Railways = [[5, 6, 7, 8, 9], [9, 8, 7, 6, 5], [35, 36, 37, 38, 39], [39, 38, 37,
           [117, 126, 128, 122, 57], [57, 122, 128, 126, 117],
           [27, 120, 128, 124, 87], [87, 124, 128, 120, 27]]
 
+SafeList = [11, 13, 17, 21, 23]
+
 class ChessProp:
     def __init__( self, name, value, initnum, rule = 0, move = 1 ):
         self.name = name
@@ -176,3 +202,27 @@ def GetChessInit( value ):
     for prop in InitChess:
         if prop.value == value:
             return prop.initnum
+
+def getDefaultPlace( player, status = MAP_HIDE ):
+    return [MapItem( 41, player, status ), MapItem( 31, player, status ), MapItem( 41, player, status ), MapItem( 33, player, status ),
+           MapItem( 36, player, status ), MapItem( 33, player, status ), MapItem( 41, player, status ), MapItem( 36, player, status ),
+           MapItem( 32, player, status ), MapItem( 33, player, status ), MapItem( 37, player, status ), MapItem(),
+           MapItem( 34, player, status ), MapItem(), MapItem( 37, player, status ), MapItem( 40, player, status ),
+           MapItem( 35, player, status ), MapItem(), MapItem( 35, player, status ), MapItem( 39, player, status ),
+           MapItem( 42, player, status ), MapItem(), MapItem( 34, player, status ), MapItem(),
+           MapItem( 42, player, status ), MapItem( 38, player, status ), MapItem( 32, player, status ),
+           MapItem( 34, player, status ), MapItem( 32, player, status ), MapItem( 38, player, status )]
+
+def CheckPlace1( placement ):
+    for pos in SafeList:
+        if ( placement[pos].player ) | ( placement[pos].value ):
+            return False
+    tmp = {}
+    for item in Initchess:
+        tmp[item.value] = tmp[item.initnum]
+    for item in placement:
+        tmp[item.getValue()] -= 1
+    for ( key, value ) in tmp.items():
+        if value != 0:
+            return False
+    return True

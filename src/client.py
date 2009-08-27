@@ -136,6 +136,7 @@ class Configuration:
     def __init__( self, name = 'Unknown', bgcolor = 'red' ):
         self.name = name
         self.bgcolor = bgcolor
+        self.place = getDefaultPlace()
 #        self.ip = self.getIPAddress()
 #        self.port = xxx?
 #        self.server = ( 'localhost', 2000 )
@@ -161,6 +162,8 @@ class Configuration:
                     self.name = value
                 if key == 'bg':
                     self.bgcolor = value
+                if key == 'place':
+                    self.place = None
             except:
                 pass
         try:

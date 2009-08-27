@@ -17,29 +17,29 @@
 from defines import *
 
 class Map:
-    Initdata = {'value':None, 'player':None, 'status':MAP_NONE}
     def __init__( self, size ):
-        self.data = []
+        self.item = []
         self.size = size
         for i in range( 0, self.size ):
-            self.data.append( Map.Initdata )
+            self.item.append( MapItem() )
 
 #use place before game start
     def Place( self, pos, value, player, status = MAP_SHOW ):
         if self.CanPlace( pos, value, player ) == True:
-            self.data[pos] = {'value':value, 'player':player, 'status':status}
+            self.item[pos] = MapItem( value, player, status )
             return True
-        return False
+        else:
+            return False
 
     def CanPlace( self, pos, value, player ):
-        rule = GetChessRule( value )
         if ( pos >= player * 30 ) | ( pos < ( player - 1 ) * 30 ):
             return False
-        if self.data[pos] != Map.Initdata:
+        if ( self.item[pos].getPlayer() ) | ( self.item[pos].getValue() ):
             return False
-        pos = pos % 30
         if Pos4[pos].safe:
             return False
+        rule = self.item[pos].getRule()
+        pos = pos % 30
         if rule == 0:
             return True
         elif rule == 1:
@@ -50,17 +50,8 @@ class Map:
             return ( ( pos == 1 ) | ( pos == 3 ) )
         return False
 
-    def GetValue( self, pos ):
-        return self.data[pos]['value']
-
-    def GetPlayer( self, pos ):
-        return self.data[pos]['player']
-
-    def GetStatus( self, pos ):
-        return self.data[pos]['status']
-
     def Remove( self, pos ):
-        self.data[pos] = Map.Initdata
+        self.item[pos] = MapItem()
 
     def Move( self, fpos, tpos ):
         if self.CanMove( fpos, tpos ):
@@ -68,34 +59,34 @@ class Map:
             if result == 0:
                 self.Remove( tpos )
             elif result > 0:
-                self.data[tpos] = self.data[fpos]
+                self.item[tpos] = self.item[fpos]
             self.Remove( fpos )
 
     def CanMove( self, fpos, tpos ):
         #no chess to move
-        if self.data[fpos] == Map.Initdata:
+        if ( self.item[fpos].getPlayer() != None ) | ( self.item[fpos].getValue() != None ):
             return False
         #chess cannot move
         if Pos4[fpos].move == False:
             return False
         #position cannot move
-        if GetChessMove == 0:
+        if self.item[fpos].getMove() == 0:
             return False
         #chess in tpos
-        if self.data[tpos]['value'] != Map.Initdata:
-            if self.data[tpos]['player'] in Team4[self.data[fpos]['player']]:
+        if self.item[tpos].getPlayer():
+            if self.item[tpos].getPlayer() in Team4[self.item[fpos].getPlayer()]:
                 return False
         #direct move, 1 step
         if ( OnRailway( fpos ) == ( -1, -1 ) ) | ( OnRailway( tpos ) == ( -1, -1 ) ):
             return ( tpos in Pos4[fpos].link )
         #GoBi's fly
-        if GetChessMove == 2:
+        if self.item[fpos].getMove() == 2:
             return ( tpos in self.GetFlyArea( fpos ) )
         #Railway
         rail, fon, ton = self.OnSameRailway( self, fpos, tpos );
         if ( fon >= 0 ) & ( ton >= 0 ):
             for i in range( fon + 1, ton ):
-                if self.data[Railways[rail][i]]['value'] != Map.Initdata:
+                if self.item[Railways[rail][i]].getPlayer():
                     return False
         return True
 
@@ -122,19 +113,17 @@ class Map:
         return ( -1, -1 )
 
     def CanSelect( self, pos, player ):
-        if self.data[pos]['player'] != player:
+        if self.item.getPlayer() != player:
             return False
         if Pos4[pos].move == 0:
             return False
-        if self.data[pos]['status'] == MAP_NONE:
+        if self.item[pos].getValue() == None:
             return False
-        if GetChessMove( self.data[pos]['value'] ) == 0:
-            return False
-        return True
+        return ( self.item[pos].getMove() != 0 )
 
     def Result( self, fpos, tpos ):
-        fval = self.data[fpos]['value']
-        tval = self.data[tpos]['value']
+        fval = self.item[fpos].getValue()
+        tval = self.item[tpos].getValue()
         if ( fval == 42 ) | ( tval == 42 ):
             return 0
         if ( fval == 32 ) & ( tval == 41 ):
@@ -147,6 +136,8 @@ class Player():
         self.chess = []
     def Lost( self ):
         return False
+    def Lost2( self ):
+        return False
 
 if __name__ == '__main__':
-    print Map.Initdata
+    print Map( len( Pos4 ) ).item
