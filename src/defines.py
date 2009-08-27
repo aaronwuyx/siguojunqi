@@ -214,8 +214,10 @@ def getDefaultPlace( player, status = MAP_HIDE ):
            MapItem( 34, player, status ), MapItem( 32, player, status ), MapItem( 38, player, status )]
 
 def CheckPlace1( placement ):
+    if len( placement ) != 30:
+        return False
     for pos in SafeList:
-        if ( placement[pos].player ) | ( placement[pos].value ):
+        if ( placement[pos].player == None ) | ( placement[pos].value == None ):
             return False
     tmp = {}
     for item in Initchess:
@@ -226,3 +228,11 @@ def CheckPlace1( placement ):
         if value != 0:
             return False
     return True
+
+def CheckPlace2( placement ):
+#TODO:try place it in a new map...
+    return True
+
+def PlaceAll( placement, m ):
+#place it into a map
+    return

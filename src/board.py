@@ -38,7 +38,7 @@ class Board( Frame ):
         self.bgcolor = 'white'
         self.startx = 3 #6 to shadow?
         self.starty = 3 #6 to shadow?
-        self.textfont = ( 'Courier', 8, 'bold' )
+        self.textfont = ( 'Courier', 10, 'bold' )
 
     def Draw_Background( self, filename ):
         self.backimage = PhotoImage( file = filename )
@@ -57,8 +57,8 @@ class Board( Frame ):
             x = x + self.sepimagex / 2
             y = y + self.sepimagey / 2
             acbg = bg = self.bgcolor
-            player = m.GetPlayer( pos )
-            status = m.GetStatus( pos )
+            player = m.item[pos].getPlayer()
+            status = m.item[pos].getStatus()
             if player != None:
                 bg = Team4[player - 1].background
                 fg = Team4[player - 1].foreground
@@ -71,15 +71,16 @@ class Board( Frame ):
                 self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonwidth, width = 2, fill = bg, activefill = acbg )
             if ( player != None ) & ( status != MAP_HIDE ) & ( status != MAP_NONE ):
 #yes, then value has true meaning...
-                value = m.GetValue( pos )
+                value = m.item[pos].getValue()
+                name = m.item[pos].getName()
                 if vert == 'V':
                 #use wrap instead of rotate...
                 #or use gdmodule?
-                    self.back.create_text( x + self.textheight, y + self.textwidth, text = GetChessName( value ), font = self.textfont, fill = fg, width = 1 )
+                    self.back.create_text( x + self.textheight, y + self.textwidth, text = name, font = self.textfont, fill = fg, width = 1 )
                 elif vert == 'H':
-                    self.back.create_text( x + self.textwidth, y + self.textheight, text = GetChessName( value ), font = self.textfont, fill = fg )
+                    self.back.create_text( x + self.textwidth, y + self.textheight, text = name, font = self.textfont, fill = fg )
                 else:
-                    self.back.create_text( x + self.textwidth, y + self.textheight, text = GetChessName( value ), font = self.textfont, fill = fg )
+                    self.back.create_text( x + self.textwidth, y + self.textheight, text = name, font = self.textfont, fill = fg )
         except:
             exc_info = sys.exc_info()
             print exc_info[0]

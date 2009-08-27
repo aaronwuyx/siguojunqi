@@ -18,7 +18,7 @@ from Tkinter import *
 from tkMessageBox import *
 from defines import *
 import board, rule, message
-import os, sys, thread, time
+import os, sys, thread, time, string
 
 class Client():
     def __init__( self ):
@@ -124,19 +124,13 @@ class Client():
     def connect_server( self ):
         return
 
-"""
-
-    def PlaceAll( self ):
-#        self.getPlace() get data from player / file?
-#        self.map.place(...)
-        return
-"""
-
 class Configuration:
     def __init__( self, name = 'Unknown', bgcolor = 'red' ):
         self.name = name
         self.bgcolor = bgcolor
-        self.place = getDefaultPlace()
+        self.player = 1
+        self.placefile = 'place.cfg'
+        self.place = getDefaultPlace( self.player )
 #        self.ip = self.getIPAddress()
 #        self.port = xxx?
 #        self.server = ( 'localhost', 2000 )
@@ -163,13 +157,22 @@ class Configuration:
                 if key == 'bg':
                     self.bgcolor = value
                 if key == 'place':
-                    self.place = None
+                    self.placefile = value
             except:
                 pass
         try:
             f.close()
         except:
             pass
+        backfile = self.placefile
+        backplace = self.place
+        if self.loadPlace( self.placefile ):
+            if not ( CheckPlace1( self.place ) & CheckPlace2( self.place ) ):
+                self.placefile = backfile
+                self.place = backplace
+        else:
+            self.placefile = backfile
+            self.place = backplace
 
     def Save( self, filename ):
         try:
@@ -179,10 +182,39 @@ class Configuration:
         f.write( 'siguo game client configuration:\n' )
         f.write( 'name=' + self.name + '\n' )
         f.write( 'bg=' + self.bgcolor + '\n' )
+        f.write( 'place=' + self.placefile + '\n' )
         try:
             f.close()
         except:
             pass
+        self.savePlace( self.placefile )
+
+    def loadPlace( self, filename ):
+        try:
+            f = open ( filename, 'r' )
+        except:
+            return
+        place = []
+        for line in f.readlines():
+            for item in line.split():
+                try:
+                    if item == 'None':
+                        place.append( MapItem() )
+                    else:
+                        place.append( MapItem( string.atoi( item ), self.player , MAP_SHOW ) )
+                except:
+                    return
+        return place
+
+    def savePlace( self, filename ):
+        try:
+            f = open( filename, 'w' )
+        except:
+            return False
+        for place in self.place:
+            f.write( str( place.getValue() ) + ' ' )
+        f.write( '\n' )
+        return True
 
 
 if __name__ == '__main__':

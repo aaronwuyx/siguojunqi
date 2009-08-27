@@ -34,11 +34,13 @@ class Map:
     def CanPlace( self, pos, value, player ):
         if ( pos >= player * 30 ) | ( pos < ( player - 1 ) * 30 ):
             return False
-        if ( self.item[pos].getPlayer() ) | ( self.item[pos].getValue() ):
+        if self.item[pos].getPlayer():
+            return False
+        elif self.item[pos].getValue():
             return False
         if Pos4[pos].safe:
             return False
-        rule = self.item[pos].getRule()
+        rule = GetChessRule( value )
         pos = pos % 30
         if rule == 0:
             return True
