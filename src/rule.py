@@ -132,6 +132,41 @@ class Map:
             return 1
         return ( fval - tval )
 
+def CheckPlace1( placement ):
+    if len( placement ) != 30:
+        return False
+    for pos in SafeList:
+        if ( placement[pos].player == None ) | ( placement[pos].value == None ):
+            return False
+    tmp = {}
+    for item in Initchess:
+        tmp[item.value] = tmp[item.initnum]
+    for item in placement:
+        tmp[item.getValue()] -= 1
+    for ( key, value ) in tmp.items():
+        if value != 0:
+            return False
+    return True
+
+def CheckPlace2( placement ):
+    tmp = Map( len( Pos4 ) )
+    pos = 0
+    for item in placement:
+        if item.getValue() != None:
+            if tmp.Place( pos, item.getValue(), 1 ) == False:
+                return False
+        pos += 1
+    return True
+
+def PlaceOne( placement, m, player ):
+    pos = ( player - 1 ) * 30
+    for item in placement:
+        m.Remove( pos )
+        if item.getValue != None:
+            m.Place( pos, item.getValue(), player, item.getStatus() )
+        pos += 1
+    return
+
 class Player():
     def __init__( self ):
         self.name = ''

@@ -17,8 +17,8 @@
 DEFAULTPLAYER = 4
 MAXPOSITION = 129
 CHESSNUM = 25
-SVN = '20'
-VERSION = '0.01'
+SVN = '23'
+VERSION = '0.02'
 
 #Defines in map.data[p]['status']
 MAP_NONE = 'None' #Nobody
@@ -212,27 +212,3 @@ def getDefaultPlace( player, status = MAP_HIDE ):
            MapItem( 42, player, status ), MapItem(), MapItem( 34, player, status ), MapItem(),
            MapItem( 42, player, status ), MapItem( 38, player, status ), MapItem( 32, player, status ),
            MapItem( 34, player, status ), MapItem( 32, player, status ), MapItem( 38, player, status )]
-
-def CheckPlace1( placement ):
-    if len( placement ) != 30:
-        return False
-    for pos in SafeList:
-        if ( placement[pos].player == None ) | ( placement[pos].value == None ):
-            return False
-    tmp = {}
-    for item in Initchess:
-        tmp[item.value] = tmp[item.initnum]
-    for item in placement:
-        tmp[item.getValue()] -= 1
-    for ( key, value ) in tmp.items():
-        if value != 0:
-            return False
-    return True
-
-def CheckPlace2( placement ):
-#TODO:try place it in a new map...
-    return True
-
-def PlaceAll( placement, m ):
-#place it into a map
-    return

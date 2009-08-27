@@ -29,6 +29,10 @@ class Client():
         self.map = rule.Map( len( Pos4 ) )
 
     def run( self ):
+        self.init()
+
+    def init( self ):
+        rule.PlaceOne( self.conf.place, self.map, self.conf.player )
         thread.start_new( self.make_gui, () )
         thread.start_new( self.connect_server, () )
         #then connect to server, get seat, create a new thread to receive message?
@@ -76,18 +80,27 @@ class Client():
         Help.add_command( label = 'About', command = self.GUI_about, underline = 0 )
         self.menu.add_cascade( label = 'Help', menu = Help, underline = 0 )
 
+    def updateMenuStatus( self ):
+        return
+
     def GUI_about( self ):
         t = Toplevel()
         t.title( 'About SiGuo' )
-        Label( t, text = 'SiGuo svn ' + SVN + VERSION ).pack( side = TOP )
-        Button( t, text = 'OK', command = t.quit ).pack( side = RIGHT )
-        t.mainloop()
+        Label( t, text = 'SiGuo svn ' + SVN + '\n' + VERSION ).pack( side = TOP )
+        Label( t, text = ' You can find source code in http://code.google.com/p/siguojunqi/' ).pack( side = TOP )
+        Button( t, text = 'OK', command = t.destroy ).pack( side = RIGHT )
+        t.grab_set()
+        t.focus_set()
+        t.wait_window()
 
     def GUI_license( self ):
         t = Toplevel()
         t.title( 'License' )
-        Button( t, text = 'OK', command = t.quit ).pack( side = BOTTOM )
-        t.mainloop()
+        Button( t, text = 'OK', command = t.destroy ).pack( side = BOTTOM )
+        #Textbox
+        t.grab_set()
+        t.focus_set()
+        t.wait_window()
 
     def GUI_name( self ):
         def fetch( ignore = None ):
@@ -118,7 +131,7 @@ class Client():
         self.statusframe.pack( side = RIGHT, expand = YES, fill = Y )
         Label( self.statusframe, text = 'status :' ).pack( side = TOP, expand = YES, fill = X )
         self.board = board.Board( self.top )
-        self.board.Draw_Map( self.map )
+        self.board.Draw_Map( self.map , self.conf.player )
         self.guiopt.release()
 
     def connect_server( self ):
@@ -167,7 +180,7 @@ class Configuration:
         backfile = self.placefile
         backplace = self.place
         if self.loadPlace( self.placefile ):
-            if not ( CheckPlace1( self.place ) & CheckPlace2( self.place ) ):
+            if not ( rule.CheckPlace1( self.place ) & rule.CheckPlace2( self.place ) ):
                 self.placefile = backfile
                 self.place = backplace
         else:
@@ -201,7 +214,7 @@ class Configuration:
                     if item == 'None':
                         place.append( MapItem() )
                     else:
-                        place.append( MapItem( string.atoi( item ), self.player , MAP_SHOW ) )
+                        place.append( MapItem( string.atoi( item ), self.player , MAP_HIDE ) )
                 except:
                     return
         return place
@@ -219,14 +232,7 @@ class Configuration:
 
 if __name__ == '__main__':
     c = Client()
-    c.map.Place( 0, 40, 1 )
-    c.map.Place( 10, 39, 1 )
-    c.map.Place( 20, 38, 1 )
-    c.map.Place( 30, 37, 2 )
-    c.map.Place( 40, 36, 2 )
-    c.map.Place( 50, 35, 2 )
-    c.map.Place( 60, 34, 3 )
-    c.map.Place( 70, 33, 3 )
-    c.map.Place( 80, 32, 3 )
-    c.map.Place( 90, 42, 4 )
+    rule.PlaceOne( c.conf.place, c.map, 2 )
+    rule.PlaceOne( c.conf.place, c.map, 3 )
+    rule.PlaceOne( c.conf.place, c.map, 4 )
     c.run()

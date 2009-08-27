@@ -23,22 +23,22 @@ class Board( Frame ):
         Frame.__init__( self, master, config )
         self.pack( expand = YES, fill = BOTH )
         self.backimage = ''
-        self.sepimagex = 100
-        self.sepimagey = 100
+        self.sepimagex = 200
+        self.sepimagey = 200
         self.back = Canvas( self )
         self.back.pack()
         self.Draw_Background( '../resource/ugly2.gif' )
 
-        self.buttonwidth = 30
-        self.buttonheight = 18
-        self.textwidth = self.buttonwidth / 2
-        self.textheight = self.buttonheight / 2
+        self.chessw = 30
+        self.chessh = 18
         self.sepwidth = 10
         self.sepheight = 10
         self.bgcolor = 'white'
         self.startx = 3 #6 to shadow?
         self.starty = 3 #6 to shadow?
-        self.textfont = ( 'Courier', 10, 'bold' )
+        self.textfont = ( 'Courier', 9, 'bold' )
+        self.pos_rectangle = {}
+        self.pos_text = {}
 
     def Draw_Background( self, filename ):
         self.backimage = PhotoImage( file = filename )
@@ -46,41 +46,56 @@ class Board( Frame ):
         self.backheight = self.backimage.height()
         self.back.create_image( self.backwidth / 2 + self.sepimagex / 2, self.backheight / 2 + self.sepimagey / 2, im = self.backimage )
         self.back.config( height = self.backheight + self.sepimagex, width = self.backwidth + self.sepimagey )
+#TODO: exactly draw map...
 
-    def Draw_Map( self, m ):
+    def Draw_Map( self, m, player ):
         for pos in range( 0, m.size ):
-            self.Draw_Position( m, pos )
+            self.Draw_Position( m, pos, player )
 
-    def Draw_Position( self, m, pos, highlight = False ):
+    def getPolicy( self, viewer, player, status ):
+        if status == MAP_NONE:
+            return False
+        if status == MAP_SHOW:
+            return True
+        if status == MAP_HIDE:
+            return ( viewer == player )
+        if status == MAP_TEAM:
+            try:
+                p = Team4[player - 1].team.index( viewer )
+                return True
+            except:
+                return False
+        #for other status, now we return False
+        return False
+
+    def Draw_Position( self, m, pos, viewer, highlight = True ):
         try:
             x, y, vert = self.getXY( pos )
-            x = x + self.sepimagex / 2
-            y = y + self.sepimagey / 2
             acbg = bg = self.bgcolor
             player = m.item[pos].getPlayer()
             status = m.item[pos].getStatus()
+            show = self.getPolicy( viewer, player, status )
             if player != None:
                 bg = Team4[player - 1].background
                 fg = Team4[player - 1].foreground
                 acbg = Team4[player - 1].activebackground
             if vert == 'V':
-                self.back.create_rectangle( x, y, x + self.buttonheight, y + self.buttonwidth, width = 2, fill = bg, activefill = acbg )
+                self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessh / 2, y - self.chessw / 2, x + self.chessh / 2, y + self.chessw / 2, width = 2, fill = bg, activefill = acbg )
             elif vert == 'H':
-                self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonheight, width = 2, fill = bg, activefill = acbg )
-            else:
-                self.back.create_rectangle( x, y, x + self.buttonwidth, y + self.buttonwidth, width = 2, fill = bg, activefill = acbg )
-            if ( player != None ) & ( status != MAP_HIDE ) & ( status != MAP_NONE ):
-#yes, then value has true meaning...
+                self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessw / 2, y - self.chessh / 2, x + self.chessw / 2, y + self.chessh / 2, width = 2, fill = bg, activefill = acbg )
+            elif vert == 'VH':
+                self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessw / 2, y - self.chessw / 2, x + self.chessw / 2, y + self.chessw / 2, width = 2, fill = bg, activefill = acbg )
+            if ( player != None ) & show:
+                #value is meaningful...
                 value = m.item[pos].getValue()
                 name = m.item[pos].getName()
                 if vert == 'V':
-                #use wrap instead of rotate...
-                #or use gdmodule?
-                    self.back.create_text( x + self.textheight, y + self.textwidth, text = name, font = self.textfont, fill = fg, width = 1 )
+                #currently i can only wrap text... to rotate it with tkinter is impossible, use gdmodule?
+                    self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg, width = 1 )
                 elif vert == 'H':
-                    self.back.create_text( x + self.textwidth, y + self.textheight, text = name, font = self.textfont, fill = fg )
-                else:
-                    self.back.create_text( x + self.textwidth, y + self.textheight, text = name, font = self.textfont, fill = fg )
+                    self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg )
+                elif vert == 'VH':
+                    self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg )
         except:
             exc_info = sys.exc_info()
             print exc_info[0]
@@ -90,27 +105,36 @@ class Board( Frame ):
     def getXY( self, pos ):
         if ( pos >= MAXPOSITION ) | ( pos < 0 ):
             return
-        hinc = self.buttonheight + self.sepheight
-        winc = self.buttonwidth + self.sepwidth
-        if Pos4[pos].x < 6:
-            x = self.startx + Pos4[pos].x * hinc
-        elif Pos4[pos].x < 11:
-            x = self.startx + 6 * hinc + ( Pos4[pos].x - 6 ) * winc
-        else:
-            x = self.startx + 6 * hinc + 5 * winc + ( Pos4[pos].x - 11 ) * hinc
-        if Pos4[pos].y < 6:
-            y = self.starty + Pos4[pos].y * hinc
-        elif Pos4[pos].y < 11:
-            y = self.starty + 6 * hinc + ( Pos4[pos].y - 6 ) * winc
-        else:
-            y = self.starty + 6 * hinc + 5 * winc + ( Pos4[pos].y - 11 ) * hinc
+        xoff = self.startx + self.sepimagex / 2
+        yoff = self.starty + self.sepimagey / 2
+        hinc = self.chessh + self.sepheight
+        winc = self.chessw + self.sepwidth
         if pos in PosV:
             if pos in PosH:
-                return ( x, y, 'VH' )
+                vert = 'VH'
+                xadd = self.chessw / 2
+                yadd = self.chessw / 2
             else:
-                return ( x, y, 'V' )
+                vert = 'V'
+                xadd = self.chessh / 2
+                yadd = self.chessw / 2
         else:
-            return ( x, y, 'H' )
+            vert = 'H'
+            xadd = self.chessw / 2
+            yadd = self.chessh / 2
+        if Pos4[pos].x < 6:
+            x = xoff + xadd + Pos4[pos].x * hinc
+        elif Pos4[pos].x < 11:
+            x = xoff + xadd + 6 * hinc + ( Pos4[pos].x - 6 ) * winc
+        else:
+            x = xoff + xadd + 6 * hinc + 5 * winc + ( Pos4[pos].x - 11 ) * hinc
+        if Pos4[pos].y < 6:
+            y = yoff + yadd + Pos4[pos].y * hinc
+        elif Pos4[pos].y < 11:
+            y = yoff + yadd + 6 * hinc + ( Pos4[pos].y - 6 ) * winc
+        else:
+            y = yoff + yadd + 6 * hinc + 5 * winc + ( Pos4[pos].y - 11 ) * hinc
+        return ( x, y, vert )
 
 if __name__ == '__main__':
     Board().mainloop()
