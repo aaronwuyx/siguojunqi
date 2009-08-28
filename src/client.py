@@ -16,6 +16,7 @@
 
 from Tkinter import *
 from tkMessageBox import *
+from socket import *
 from defines import *
 import board, rule, message
 import os, sys, thread, time, string
@@ -27,12 +28,17 @@ class Client():
         self.guiopt = thread.allocate_lock()
         self.map = rule.Map( len( Pos4 ) )
         rule.PlaceOne( self.conf.place, self.map, self.conf.player )
-        thread.start_new( self.connect_server, () )
+        self.socket = socket( AF_INET, SOCK_STREAM )
+        self.socket.connect( ( self.conf.host, self.conf.port ) )
+        self.toserver = self.socket.makefile( 'w', 0 )
         #then connect to server, get seat, create a new thread to receive message?
         #self.seq = ???
 
     def run( self ):
         self.make_gui()
+        thread.start_new( self.connect_server, () )
+        self.top.mainloop()
+        self.socket.close()
         self.conf.Save( 'default.cfg' )
 
     def make_gui( self ):
@@ -41,7 +47,6 @@ class Client():
         self.add_menus()
         self.add_toolbar()
         self.add_widgets()
-        self.top.mainloop()
 
     def add_menus( self ):
         self.menu = Menu( self.top )
@@ -147,13 +152,8 @@ class Configuration:
         self.player = 1
         self.placefile = 'place.cfg'
         self.place = getDefaultPlace( self.player )
-#        self.ip = self.getIPAddress()
-#        self.port = xxx?
-#        self.server = ( 'localhost', 2000 )
-#        self.address = clientaddress
-#        self.port = clientport
-#    def getIPAddress( self ):
-#        return 'localhost'
+        self.host = 'localhost'
+        self.port = 30000
 
     def config( self ):
         return
@@ -171,9 +171,19 @@ class Configuration:
                 if key == 'name':
                     self.name = value
                 if key == 'bg':
-                    self.bgcolor = value
+                    try:
+                        self.bgcolor = string.atoi( value )
+                    except:
+                        pass
                 if key == 'place':
                     self.placefile = value
+                if key == 'host':
+                    self.host = value
+                if key == 'port':
+                    try:
+                        self.port = string.atoi( value )
+                    except:
+                        pass
             except:
                 pass
         try:

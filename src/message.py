@@ -1,10 +1,11 @@
+import sys, os
+
 class Message:
-    def __init__(self,message = '',fromURL=None,fromPort=None):
-        self.message = message
-        self.cmd,arg = message.split(' ',1)
-        self.arg = arg.split()
-        self.creator = (fromURL,fromPort)
-    def send(self,toURL,toPort):
+    def __init__( self, URL, Port ):
         return
-    def receive(self):
-        return self
+    def sendmessage( self, message, toURL, toPort ):
+        cmd , args = message.split( ' ', 1 )
+        arg = args.split()
+    def receivemessage( self ):
+        message = ''
+        return message

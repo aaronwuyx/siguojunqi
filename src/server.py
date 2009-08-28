@@ -12,30 +12,27 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-from Defines import *
+from socket import *
+from defines import *
 import rule, message
 import os, sys
 
 class Server:
-    def __init__( self ):
+    def __init__( self , URL = 'localhost', Port = 30000 ):
+        self.socket = socket( AF_INET, SOCK_STREAM )
+        self.socket.bind( ( URL, Port ) )
+        self.socket.listen( 5 )
         self.client = []
-    def wait4Connection( self ):
-        while True:
-            s = Message().receive()
-            if s.cmd == 'connect':
-                self.client.append()
-                #create for new thread...
-                if len( self.client ) == MAXPLAYER:
-                    break
-            elif s.cmd == 'disconnect':
-                #kill the thread...
-                self.client.remove()
-            else:
-                continue
+
+    def add_client( self ):
+        conn, addr = self.socket.accept()
+        self.client.append( {'conn':conn, 'addr':addr} )
+        print 'connection = ', conn
+        print 'address = ', addr
+        self.socket.setblocking( 0 )
+
     def run( self ):
-        self.wait4Connection()
-        return
+        self.add_client()
 
 if __name__ == '__main__':
     s = Server()
