@@ -68,39 +68,48 @@ class Board( Frame ):
         #for other status, now we return False
         return False
 
+    def Clear_All( self ):
+        self.back.delete( 'all' )
+        self.pos_rectangle = {}
+        self.pos_text = {}
+
+    def Clear_Position( self, pos ):
+        if self.pos_rectangle.get( pos ):
+            if self.pos_rectangle[pos]:
+                self.back.delete( self.pos_rectangle[pos] )
+            self.pos_rectangle[pos] = None
+        if self.pos_text.get( pos ):
+            if self.pos_text[pos]:
+                self.back.delete( self.pos_text[pos] )
+            self.pos_text[pos] = None
+
     def Draw_Position( self, m, pos, viewer, highlight = True ):
-        try:
-            x, y, vert = self.getXY( pos )
-            acbg = bg = self.bgcolor
-            player = m.item[pos].getPlayer()
-            status = m.item[pos].getStatus()
-            show = self.getPolicy( viewer, player, status )
-            if player != None:
-                bg = Team4[player - 1].background
-                fg = Team4[player - 1].foreground
-                acbg = Team4[player - 1].activebackground
+        self.Clear_Position( pos )
+        x, y, vert = self.getXY( pos )
+        acbg = bg = self.bgcolor
+        player = m.item[pos].getPlayer()
+        status = m.item[pos].getStatus()
+        show = self.getPolicy( viewer, player, status )
+        if player != None:
+            bg = Team4[player - 1].background
+            fg = Team4[player - 1].foreground
+            acbg = Team4[player - 1].activebackground
+        if vert == 'V':
+            self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessh / 2, y - self.chessw / 2, x + self.chessh / 2, y + self.chessw / 2, width = 2, fill = bg, activefill = acbg )
+        elif vert == 'H':
+            self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessw / 2, y - self.chessh / 2, x + self.chessw / 2, y + self.chessh / 2, width = 2, fill = bg, activefill = acbg )
+        elif vert == 'VH':
+            self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessw / 2, y - self.chessw / 2, x + self.chessw / 2, y + self.chessw / 2, width = 2, fill = bg, activefill = acbg )
+        if ( player != None ) & show:
+            value = m.item[pos].getValue()
+            name = m.item[pos].getName()
             if vert == 'V':
-                self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessh / 2, y - self.chessw / 2, x + self.chessh / 2, y + self.chessw / 2, width = 2, fill = bg, activefill = acbg )
+            #currently i can only wrap text... to rotate it with tkinter is impossible, use gdmodule?
+                self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg, width = 1 )
             elif vert == 'H':
-                self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessw / 2, y - self.chessh / 2, x + self.chessw / 2, y + self.chessh / 2, width = 2, fill = bg, activefill = acbg )
+                self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg )
             elif vert == 'VH':
-                self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessw / 2, y - self.chessw / 2, x + self.chessw / 2, y + self.chessw / 2, width = 2, fill = bg, activefill = acbg )
-            if ( player != None ) & show:
-                #value is meaningful...
-                value = m.item[pos].getValue()
-                name = m.item[pos].getName()
-                if vert == 'V':
-                #currently i can only wrap text... to rotate it with tkinter is impossible, use gdmodule?
-                    self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg, width = 1 )
-                elif vert == 'H':
-                    self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg )
-                elif vert == 'VH':
-                    self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg )
-        except:
-            exc_info = sys.exc_info()
-            print exc_info[0]
-            print exc_info[1]
-            traceback.print_tb( exc_info[2] )
+                self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg )
 
     def getXY( self, pos ):
         if ( pos >= MAXPOSITION ) | ( pos < 0 ):

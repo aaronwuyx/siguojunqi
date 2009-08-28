@@ -25,31 +25,23 @@ class Client():
         self.conf = Configuration()
         self.conf.Load( 'default.cfg' )
         self.guiopt = thread.allocate_lock()
-        self.guiexit = thread.allocate_lock()
         self.map = rule.Map( len( Pos4 ) )
-
-    def run( self ):
-        self.init()
-
-    def init( self ):
         rule.PlaceOne( self.conf.place, self.map, self.conf.player )
-        thread.start_new( self.make_gui, () )
         thread.start_new( self.connect_server, () )
         #then connect to server, get seat, create a new thread to receive message?
         #self.seq = ???
-        time.sleep( 1 )
-        while self.guiexit.locked():
-            pass
+
+    def run( self ):
+        self.make_gui()
         self.conf.Save( 'default.cfg' )
 
     def make_gui( self ):
-        self.guiexit.acquire()
         self.top = Tk()
         self.top.title( 'SiGuo client program - player : ' + self.conf.name )
         self.add_menus()
+        self.add_toolbar()
         self.add_widgets()
         self.top.mainloop()
-        self.guiexit.release()
 
     def add_menus( self ):
         self.menu = Menu( self.top )
@@ -70,7 +62,12 @@ class Client():
         self.menu.add_cascade( label = 'Game', menu = Game, underline = 0 )
         Option = Menu( self.menu )
         Option.add_command( label = 'Name', command = self.GUI_name, underline = 0 )
-        Option.add_command( label = 'Background Color', command = ( lambda:0 ), underline = 0 )
+        Bgcolor = Menu( Option, tearoff = 0 )
+        Bgcolor.add_radiobutton( label = 'Red', command = ( lambda:0 ), underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Yellow', command = ( lambda:0 ), underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Green', command = ( lambda:0 ), underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Blue', command = ( lambda:0 ), underline = 0 )
+        Option.add_cascade( label = 'Background Color', menu = Bgcolor, underline = 0 )
         Option.add_command( label = 'Rule', command = ( lambda:0 ), underline = 0 )
         self.menu.add_cascade( label = 'Option', menu = Option, underline = 0 )
         Help = Menu( self.menu )
@@ -80,7 +77,12 @@ class Client():
         Help.add_command( label = 'About', command = self.GUI_about, underline = 0 )
         self.menu.add_cascade( label = 'Help', menu = Help, underline = 0 )
 
-    def updateMenuStatus( self ):
+    def add_toolbar( self ):
+        self.toolbar = Frame()
+        Button( self.toolbar, text = 'exit', command = self.top.quit ).pack( side = RIGHT )
+        self.toolbar.pack( side = TOP )
+
+    def updateMenuToolbar( self ):
         return
 
     def GUI_about( self ):
@@ -97,7 +99,8 @@ class Client():
         t = Toplevel()
         t.title( 'License' )
         Button( t, text = 'OK', command = t.destroy ).pack( side = BOTTOM )
-        #Textbox
+        l = Text( t )
+        l.pack()
         t.grab_set()
         t.focus_set()
         t.wait_window()
@@ -232,7 +235,7 @@ class Configuration:
 
 if __name__ == '__main__':
     c = Client()
-    rule.PlaceOne( c.conf.place, c.map, 2 )
-    rule.PlaceOne( c.conf.place, c.map, 3 )
-    rule.PlaceOne( c.conf.place, c.map, 4 )
+#    rule.PlaceOne( c.conf.place, c.map, 2 )
+#    rule.PlaceOne( c.conf.place, c.map, 3 )
+#    rule.PlaceOne( c.conf.place, c.map, 4 )
     c.run()
