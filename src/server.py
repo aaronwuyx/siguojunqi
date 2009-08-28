@@ -12,6 +12,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from socket import *
 from defines import *
 import rule, message
@@ -22,17 +23,29 @@ class Server:
         self.socket = socket( AF_INET, SOCK_STREAM )
         self.socket.bind( ( URL, Port ) )
         self.socket.listen( 5 )
-        self.client = []
+        self.client = {}
 
     def add_client( self ):
         conn, addr = self.socket.accept()
-        self.client.append( {'conn':conn, 'addr':addr} )
-        print 'connection = ', conn
-        print 'address = ', addr
+        self.client[addr] = conn
+        print 'connection from address', addr
         self.socket.setblocking( 0 )
+
+    def checkdata( self, clientaddr ):
+        try:
+            return self.client[clientaddr].recv( 1024 )
+        except error:
+            pass
 
     def run( self ):
         self.add_client()
+        while True:
+            for addr in self.client.keys():
+                data = self.checkdata( addr )
+            print data
+            if data == '':
+                break
+        self.socket.close()
 
 if __name__ == '__main__':
     s = Server()

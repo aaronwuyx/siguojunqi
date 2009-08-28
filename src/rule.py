@@ -133,7 +133,7 @@ class Map:
         return ( fval - tval )
 
 def CheckPlace1( placement ):
-    if len( placement ) != 30:
+    if len( placement ) != CHESSNUM:
         return False
     for pos in SafeList:
         if ( placement[pos].player == None ) | ( placement[pos].value == None ):

@@ -27,19 +27,59 @@ class Client():
         self.conf.Load( 'default.cfg' )
         self.guiopt = thread.allocate_lock()
         self.map = rule.Map( len( Pos4 ) )
+        self.socket = None
         rule.PlaceOne( self.conf.place, self.map, self.conf.player )
-        self.socket = socket( AF_INET, SOCK_STREAM )
-        self.socket.connect( ( self.conf.host, self.conf.port ) )
-        self.toserver = self.socket.makefile( 'w', 0 )
-        #then connect to server, get seat, create a new thread to receive message?
-        #self.seq = ???
 
     def run( self ):
         self.make_gui()
-        thread.start_new( self.connect_server, () )
         self.top.mainloop()
-        self.socket.close()
+        if self.socket:
+            self.socket.close()
         self.conf.Save( 'default.cfg' )
+
+    def GUI_connect( self ):
+        def jump( ignore = None ):
+            ent2.focus()
+            ent2.select_range( 0, END )
+
+        def fetch( ignore = None ):
+            self.conf.host = s.get()
+            self.conf.port = i.get()
+            try:
+                self.socket = socket( AF_INET, SOCK_STREAM )
+                self.socket.connect( ( self.conf.host, self.conf.port ) )
+                #self.toserver = self.socket.makefile( 'w', 0 )
+                t.destroy()
+            except:
+                showerror( 'Error', 'Cannot connect to server.\n' )
+
+        t = Toplevel()
+        t.title( 'Connect server' )
+        b = Frame( t )
+        b.pack( side = BOTTOM, expand = YES, fill = X )
+        Button( b, text = 'Connect', command = fetch ).pack( side = LEFT )
+        Button( b, text = 'Cancel', command = t.destroy ).pack( side = RIGHT )
+        lab = Frame( t )
+        lab.pack( side = LEFT, expand = YES, fill = Y )
+        Label( lab, text = 'Host address' ).pack( side = TOP )
+        Label( lab, text = 'Port' ).pack( side = TOP )
+        ent = Frame( t )
+        ent.pack( side = RIGHT, expand = YES, fill = BOTH )
+        s = StringVar()
+        i = IntVar()
+        s.set( self.conf.host )
+        i.set ( self.conf.port )
+        ent1 = Entry( ent, textvariable = s )
+        ent2 = Entry( ent, textvariable = i )
+        ent1.bind( '<Return>', jump )
+        ent2.bind( '<Return>', fetch )
+        ent1.pack( side = TOP, expand = YES, fill = X )
+        ent1.select_range( 0, END )
+        ent2.pack( side = TOP, expand = YES, fill = X )
+        ent1.focus()
+        t.grab_set()
+        t.focus_set()
+        t.wait_window()
 
     def make_gui( self ):
         self.top = Tk()
@@ -55,7 +95,7 @@ class Client():
         File.add_command( label = 'New', command = ( lambda: 0 ), underline = 0 )
         File.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
         File.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
-        File.add_command( label = 'Connect', command = ( lambda: 0 ), underline = 0 )
+        File.add_command( label = 'Connect', command = self.GUI_connect, underline = 0 )
         File.add_command( label = 'Exit', command = self.top.quit, underline = 1 )
         self.menu.add_cascade( label = 'File', menu = File, underline = 0 )
         Game = Menu( self.menu )
@@ -141,9 +181,6 @@ class Client():
         self.board = board.Board( self.top )
         self.board.Draw_Map( self.map , self.conf.player )
         self.guiopt.release()
-
-    def connect_server( self ):
-        return
 
 class Configuration:
     def __init__( self, name = 'Unknown', bgcolor = 'red' ):

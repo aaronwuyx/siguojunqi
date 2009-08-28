@@ -16,11 +16,11 @@
 
 DEFAULTPLAYER = 4
 MAXPOSITION = 129
-CHESSNUM = 25
-SVN = '23'
-VERSION = '0.02'
+CHESSNUM = 30
+SVN = '30'
+VERSION = '0.03'
 
-#Defines in map.data[p]['status']
+#defined in MapItem.status
 MAP_NONE = 'None' #Nobody
 MAP_HIDE = 'Hide' #Self
 MAP_TEAM = 'Team' #Term
