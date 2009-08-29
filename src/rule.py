@@ -14,6 +14,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+"""
+    this file mainly describes game's rule by defining class "Map"
+"""
+
 from defines import *
 
 class Map:
@@ -23,7 +27,21 @@ class Map:
         for i in range( 0, self.size ):
             self.item.append( MapItem() )
 
-#use place before game start
+    #True if chess in pos
+    def isPos( self, pos ):
+        if self.item[pos].getValue():
+            return True
+        if self.item[pos].getPlayer():
+            return True
+        return False
+
+    """
+        Place is used before game start, in the place stage
+        pos : position id
+        value : chess value
+        player : chess owner
+        status : chess status
+    """
     def Place( self, pos, value, player, status = MAP_SHOW ):
         if self.CanPlace( pos, value, player ) == True:
             self.item[pos] = MapItem( value, player, status )
@@ -31,17 +49,22 @@ class Map:
         else:
             return False
 
+    """
+        return True if a chess can be put in the position
+    """
     def CanPlace( self, pos, value, player ):
+        #Not owner's field
         if ( pos >= player * 30 ) | ( pos < ( player - 1 ) * 30 ):
             return False
-        if self.item[pos].getPlayer():
+        #chess already
+        if self.isPos( pos ):
             return False
-        elif self.item[pos].getValue():
-            return False
+        #cannot place in safe area
         if Pos4[pos].safe:
             return False
         rule = GetChessRule( value )
         pos = pos % 30
+        #Check according to place rule
         if rule == 0:
             return True
         elif rule == 1:
@@ -53,7 +76,12 @@ class Map:
         return False
 
     def Remove( self, pos ):
+        if self.isPos( pos ):
+            tmp = self.item[pos]
+        else:
+            tmp = MapItem()
         self.item[pos] = MapItem()
+        return tmp
 
     def Move( self, fpos, tpos ):
         if self.CanMove( fpos, tpos ):
@@ -64,9 +92,10 @@ class Map:
                 self.item[tpos] = self.item[fpos]
             self.Remove( fpos )
 
+    #True if move from "fpos" to "tpos" is available
     def CanMove( self, fpos, tpos ):
         #no chess to move
-        if ( self.item[fpos].getPlayer() != None ) | ( self.item[fpos].getValue() != None ):
+        if not self.isPos( fpos ):
             return False
         #chess cannot move
         if Pos4[fpos].move == False:
@@ -74,8 +103,10 @@ class Map:
         #position cannot move
         if self.item[fpos].getMove() == 0:
             return False
-        #chess in tpos
-        if self.item[tpos].getPlayer():
+        #already chess in tpos
+        if self.isPos( tpos ):
+            if Pos4[tpos].safe:
+                return False
             if self.item[tpos].getPlayer() in Team4[self.item[fpos].getPlayer()]:
                 return False
         #direct move, 1 step
@@ -84,18 +115,41 @@ class Map:
         #GoBi's fly
         if self.item[fpos].getMove() == 2:
             return ( tpos in self.GetFlyArea( fpos ) )
-        #Railway
+        #along railway
         rail, fon, ton = self.OnSameRailway( self, fpos, tpos );
+        #Yeah, they are on the same railway
         if ( fon >= 0 ) & ( ton >= 0 ):
             for i in range( fon + 1, ton ):
-                if self.item[Railways[rail][i]].getPlayer():
+                if self.isPos( Railways[rail][i] ):
                     return False
-        return True
+            return True
+        return False
 
-    def GetFlyArea( self, pos ):
-        ret = []
-#TODO 3 : get the area...        tmp = []
-        return ret
+    def GetFlyArea( self, pos, size ):
+        ret = {}
+        ret[pos] = 1
+        flag = True
+        while flag:
+            flag = False
+            for k in range( size ):
+                if ret.has_key( k ):
+                    if ret[k] == 1:
+                        break
+            for railway in Railways:
+                try:
+                    f = list.index( k )
+                    rail = Railways.index( railway )
+                    for i in range( f + 1, len( railway ) ):
+                        l = Railways[rail][i]
+                        if self.isPos( l ):
+                            break
+                    if not ret.has_key( l ):
+                        ret[l] = 1
+                        flag = True
+                except:
+                    pass
+            ret[k] = 0
+        return ret.keys()
 
     def OnSameRailway( self, pos1, pos2 ):
         for railway in Railways:

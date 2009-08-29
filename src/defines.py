@@ -14,28 +14,40 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-DEFAULTPLAYER = 4
-MAXPOSITION = 129
-CHESSNUM = 30
-SVN = '30'
-VERSION = '0.03'
+DEFAULTPLAYER = 4 #Number of players
+MAXPOSITION = 129 #Number of positions where you can put pieces
+CHESSNUM = 30 #Number of pieces each player has
+SVN = '30' #svn version of the following version
+VERSION = '0.03' #current version
 
 #defined in MapItem.status
-MAP_NONE = 'None' #Nobody
-MAP_HIDE = 'Hide' #Self
-MAP_TEAM = 'Team' #Term
-MAP_OTHER = 'Other' #Viewer
-MAP_SHOW = 'Show' #All
+MAP_NONE = 'None' #Nobody | Nothing
+MAP_HIDE = 'Hide' #Player himself can see the chess
+MAP_TEAM = 'Team' #Player & his teammate can see the chess
+MAP_OTHER = 'Other' #Not defined... reserved for stander-by...
+MAP_SHOW = 'Show' #Everyone can see it, to ease debug...
 
-#default player defines
+#default player definition, may later merge into Configuration...
 class PlayerDef:
     def __init__( self, idnum, bg, fg, acbg, team ):
-        self.id = idnum
-        self.background = bg
-        self.activebackground = acbg
-        self.foreground = fg
-        self.team = team
+        self.id = idnum #player id
+        self.background = bg #chess background color
+        self.activebackground = acbg #chess background color when mouse is on it
+        self.foreground = fg #text color
+        self.team = team #teammate
 
+#4-player definition
+Team4 = [PlayerDef( 1, '#dd2222', '#dddddd', 'red', [1, 3] ),
+         PlayerDef( 2, '#dddd22', '#222222', 'yellow', [2, 4] ),
+         PlayerDef( 3, '#22dd22', '#222222', 'green', [1, 3] ),
+         PlayerDef( 4, '#2222dd', '#dddddd', 'blue', [2, 4] )]
+
+#2-player definition
+Team2 = [PlayerDef( 1, '#dd2222', '#dddddd', 'red', [1] ),
+         PlayerDef( 2, '#dddd22', '#222222', 'yellow', [2] )]
+
+#MapItem is items used in class Map | something called a "Placement"
+#it represents an empty position or pieces in the position
 class MapItem:
     def __init__( self, value = None, player = None, status = MAP_NONE ):
         self.value = value
@@ -60,14 +72,11 @@ class MapItem:
             return
         return GetChessMove( self.value )
 
-Team4 = [PlayerDef( 1, '#dd2222', '#dddddd', 'red', [1, 3] ),
-         PlayerDef( 2, '#dddd22', '#222222', 'yellow', [2, 4] ),
-         PlayerDef( 3, '#22dd22', '#222222', 'green', [1, 3] ),
-         PlayerDef( 4, '#2222dd', '#dddddd', 'blue', [2, 4] )]
-
-Team2 = [PlayerDef( 1, '#dd2222', '#dddddd', 'red', [1] ),
-         PlayerDef( 2, '#dddd22', '#222222', 'yellow', [2] )]
-
+#definition of positions on a chessboard
+#safe : True if chess in the position cannot be eaten...
+#move : False if chess in the position cannot move
+#x, y : cursor in a map
+#link : a list of nearby pos
 class Position:
     def __init__( self, safe, move, x, y, link ):
         self.safe = safe
@@ -76,9 +85,17 @@ class Position:
         self.y = y
         self.link = link
 
+#PosH : List of positions, H stands for horizontal
+#PosV : List of positions, V stands for vertical
+#also some positions both in PosH, PosV
 PosH = range( 0, 30 ) + range( 60, 90 ) + range( 120, MAXPOSITION )
 PosV = range( 30, 60 ) + range( 90, 120 ) + range( 120, MAXPOSITION )
 
+#Safe Positions in a map
+SafeList = [11, 13, 17, 21, 23]
+
+
+#Positions of a four-player map
 Pos4 = [
 #0 .. 29
         Position( False, True, 6, 0, [1, 5] ), Position( False, False, 7, 0, [0, 2, 6] ), Position( False, True, 8, 0, [1, 3, 7] ),
@@ -132,7 +149,6 @@ Pos4 = [
         Position( False, True, 8, 6, [27, 121, 127, 128] ), Position( False, True, 10, 6, [29, 55, 120, 122] ), Position( False, True, 10, 8, [57, 121, 123, 128] ),
         Position( False, True, 10, 10, [59, 85, 122, 124] ), Position( False, True, 8, 10, [87, 123, 125, 128] ), Position( False, True, 6, 10, [89, 115, 124, 126] ),
         Position( False, True, 6, 8, [117, 125, 127, 128] ), Position( False, True, 6, 6, [25, 119, 120, 126] ), Position( False, True, 8, 8, [120, 122, 124, 126] )]
-#who can finish 60..119?
 """
 position <-> value:
     0  1   2   3   4   5  6   7   8   9  10 11 12 13 14 15 16
@@ -156,6 +172,7 @@ position <-> value:
 16                       64  63  62  61  60
 """
 
+#Railways : List of railways, positions in a railway is ordered 
 Railways = [[5, 6, 7, 8, 9], [9, 8, 7, 6, 5], [35, 36, 37, 38, 39], [39, 38, 37, 36, 35], [65, 66, 67, 68, 69], [69, 68, 67, 66, 65], [95, 96, 97, 98, 99], [99, 98, 97, 96, 95],
           [25, 26, 27, 28, 29], [29, 28, 27, 26, 25], [55, 56, 57, 58, 59], [59, 58, 57, 56, 55], [85, 86, 87, 88, 89], [89, 88, 87, 86, 85], [115, 116, 117, 118, 119], [119, 118, 117, 116, 115],
           [5, 10, 15, 20, 25, 127, 126, 125, 89, 84, 79, 74, 69], [69, 74, 79, 84, 89, 125, 126, 127, 25, 20, 15, 10, 5],
@@ -169,20 +186,21 @@ Railways = [[5, 6, 7, 8, 9], [9, 8, 7, 6, 5], [35, 36, 37, 38, 39], [39, 38, 37,
           [117, 126, 128, 122, 57], [57, 122, 128, 126, 117],
           [27, 120, 128, 124, 87], [87, 124, 128, 120, 27]]
 
-SafeList = [11, 13, 17, 21, 23]
-
+#a class on properties of chess 
 class ChessProp:
     def __init__( self, name, value, initnum, rule = 0, move = 1 ):
-        self.name = name
+        self.name = name #In Chinese
         self.value = value
-        self.initnum = initnum
-        self.rule = rule
-        self.move = move
+        self.initnum = initnum #Number of this kind of chess when initialized
+        self.rule = rule #Rule of placement
+        self.move = move #Rule of movement
 
+#And here is the data
 InitChess = [ChessProp( '司令', 40, 1 ), ChessProp( '军长', 39, 1 ), ChessProp( '师长', 38, 2 ), ChessProp( '旅长', 37, 2 ),
              ChessProp( '团长', 36, 2 ), ChessProp( '营长', 35, 2 ), ChessProp( '连长', 34, 3 ), ChessProp( '排长', 33, 3 ),
              ChessProp( '工兵', 32, 3, 0, 2 ), ChessProp( '地雷', 41, 3, 1, 0 ), ChessProp( '炸弹', 42, 2, 2 ), ChessProp( '军旗', 31, 1, 3, 0 )]
 
+#GetChessxxx : find "value" through InitChess and get the corresponding attribute, None if not found...
 def GetChessName( value ):
     for prop in InitChess:
         if prop.value == value:
@@ -203,6 +221,7 @@ def GetChessInit( value ):
         if prop.value == value:
             return prop.initnum
 
+#Generate default placement
 def getDefaultPlace( player, status = MAP_HIDE ):
     return [MapItem( 41, player, status ), MapItem( 31, player, status ), MapItem( 41, player, status ), MapItem( 33, player, status ),
            MapItem( 36, player, status ), MapItem( 33, player, status ), MapItem( 41, player, status ), MapItem( 36, player, status ),

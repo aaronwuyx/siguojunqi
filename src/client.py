@@ -48,6 +48,7 @@ class Client():
             try:
                 self.socket = socket( AF_INET, SOCK_STREAM )
                 self.socket.connect( ( self.conf.host, self.conf.port ) )
+                self.socket.send( str( self.conf.player ) + '\n' )
                 #self.toserver = self.socket.makefile( 'w', 0 )
                 t.destroy()
             except:

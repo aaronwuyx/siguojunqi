@@ -65,7 +65,7 @@ class Board( Frame ):
                 return True
             except:
                 return False
-        #for other status, now we return False
+        #for other status, currently return False
         return False
 
     def Clear_All( self ):
