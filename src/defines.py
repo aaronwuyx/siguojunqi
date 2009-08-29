@@ -17,8 +17,9 @@
 DEFAULTPLAYER = 4 #Number of players
 MAXPOSITION = 129 #Number of positions where you can put pieces
 CHESSNUM = 30 #Number of pieces each player has
-SVN = '30' #svn version of the following version
-VERSION = '0.03' #current version
+SVN = '31' #svn version of the following version
+VERSION = '0.04' #current version
+DEBUG = True #print all communication
 
 #defined in MapItem.status
 MAP_NONE = 'None' #Nobody | Nothing

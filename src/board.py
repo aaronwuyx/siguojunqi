@@ -22,6 +22,7 @@ class Board( Frame ):
     def __init__( self, master = None, **config ):
         Frame.__init__( self, master, config )
         self.pack( expand = YES, fill = BOTH )
+        self.config( bd = 1 )
         self.backimage = ''
         self.sepimagex = 200
         self.sepimagey = 200

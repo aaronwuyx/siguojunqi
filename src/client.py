@@ -28,6 +28,7 @@ class Client():
         self.guiopt = thread.allocate_lock()
         self.map = rule.Map( len( Pos4 ) )
         self.socket = None
+        self.remain = ''
         rule.PlaceOne( self.conf.place, self.map, self.conf.player )
 
     def run( self ):
@@ -36,6 +37,12 @@ class Client():
         if self.socket:
             self.socket.close()
         self.conf.Save( 'default.cfg' )
+
+    def createConnection( self ):
+        self.socket = socket( AF_INET, SOCK_STREAM )
+        self.socket.connect( ( self.conf.host, self.conf.port ) )
+        message.writeline( self.socket, str( self.conf.player ) )
+        data, self.remain = message.readline( self.socket, self.remain )
 
     def GUI_connect( self ):
         def jump( ignore = None ):
@@ -46,10 +53,7 @@ class Client():
             self.conf.host = s.get()
             self.conf.port = i.get()
             try:
-                self.socket = socket( AF_INET, SOCK_STREAM )
-                self.socket.connect( ( self.conf.host, self.conf.port ) )
-                self.socket.send( str( self.conf.player ) + '\n' )
-                #self.toserver = self.socket.makefile( 'w', 0 )
+                self.createConnection()
                 t.destroy()
             except:
                 showerror( 'Error', 'Cannot connect to server.\n' )
@@ -60,11 +64,11 @@ class Client():
         b.pack( side = BOTTOM, expand = YES, fill = X )
         Button( b, text = 'Connect', command = fetch ).pack( side = LEFT )
         Button( b, text = 'Cancel', command = t.destroy ).pack( side = RIGHT )
-        lab = Frame( t )
+        lab = Frame( t, bd = 2 )
         lab.pack( side = LEFT, expand = YES, fill = Y )
         Label( lab, text = 'Host address' ).pack( side = TOP )
         Label( lab, text = 'Port' ).pack( side = TOP )
-        ent = Frame( t )
+        ent = Frame( t, bd = 2 )
         ent.pack( side = RIGHT, expand = YES, fill = BOTH )
         s = StringVar()
         i = IntVar()
@@ -97,8 +101,8 @@ class Client():
         File.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
         File.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
         File.add_command( label = 'Connect', command = self.GUI_connect, underline = 0 )
-        File.add_command( label = 'Exit', command = self.top.quit, underline = 1 )
-        self.menu.add_cascade( label = 'File', menu = File, underline = 0 )
+        File.add_command( label = '退出', command = self.top.quit, underline = 1 )
+        self.menu.add_cascade( label = '文件', menu = File, underline = 0 )
         Game = Menu( self.menu )
         Game.add_command( label = 'Save', command = ( lambda:0 ), underline = 0 )
         Game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
@@ -107,26 +111,33 @@ class Client():
         Game.add_command( label = 'Quit', command = ( lambda:0 ), underline = 0 )
         self.menu.add_cascade( label = 'Game', menu = Game, underline = 0 )
         Option = Menu( self.menu )
-        Option.add_command( label = 'Name', command = self.GUI_name, underline = 0 )
+        Option.add_command( label = '名称', command = self.GUI_name, underline = 0 )
+        color = IntVar()
+        color.set( self.conf.player )
+        def setPlayer( x ):
+            self.conf.player = x
         Bgcolor = Menu( Option, tearoff = 0 )
-        Bgcolor.add_radiobutton( label = 'Red', command = ( lambda:0 ), underline = 0 )
-        Bgcolor.add_radiobutton( label = 'Yellow', command = ( lambda:0 ), underline = 0 )
-        Bgcolor.add_radiobutton( label = 'Green', command = ( lambda:0 ), underline = 0 )
-        Bgcolor.add_radiobutton( label = 'Blue', command = ( lambda:0 ), underline = 0 )
-        Option.add_cascade( label = 'Background Color', menu = Bgcolor, underline = 0 )
+        Bgcolor.add_radiobutton( label = '红方', variable = color, value = 1, command = ( lambda : setPlayer( 1 ) ), underline = 0 )
+        Bgcolor.add_radiobutton( label = '黄方', variable = color, value = 2, command = ( lambda: setPlayer( 2 ) ), underline = 0 )
+        Bgcolor.add_radiobutton( label = '绿方', variable = color, value = 3, command = ( lambda: setPlayer( 3 ) ), underline = 0 )
+        Bgcolor.add_radiobutton( label = '蓝方', variable = color, value = 4, command = ( lambda: setPlayer( 4 ) ), underline = 0 )
+        Option.add_cascade( label = '背景', menu = Bgcolor, underline = 0 )
         Option.add_command( label = 'Rule', command = ( lambda:0 ), underline = 0 )
-        self.menu.add_cascade( label = 'Option', menu = Option, underline = 0 )
+        self.menu.add_cascade( label = '选项', menu = Option, underline = 0 )
         Help = Menu( self.menu )
-        Help.add_command( label = 'Help', command = ( lambda:0 ), underline = 0 )
+        Help.add_command( label = '帮助', command = ( lambda:0 ), underline = 0 )
         Help.add_separator()
         Help.add_command( label = 'License', command = self.GUI_license, underline = 0 )
-        Help.add_command( label = 'About', command = self.GUI_about, underline = 0 )
+        Help.add_command( label = '关于', command = self.GUI_about, underline = 0 )
         self.menu.add_cascade( label = 'Help', menu = Help, underline = 0 )
 
     def add_toolbar( self ):
         self.toolbar = Frame()
-        Button( self.toolbar, text = 'exit', command = self.top.quit ).pack( side = RIGHT )
+        Button( self.toolbar, text = '退出', width = 10, command = self.top.quit ).pack( side = RIGHT )
+        Button( self.toolbar, text = '连接', width = 10, command = self.GUI_connect ).pack( side = RIGHT )
+        Button( self.toolbar, text = 'Test', width = 10, command = self.GUI_test ).pack( side = RIGHT )
         self.toolbar.pack( side = TOP )
+        self.toolbar.config( relief = GROOVE, bd = 2, background = 'white' )
 
     def updateMenuToolbar( self ):
         return
@@ -153,12 +164,12 @@ class Client():
 
     def GUI_name( self ):
         def fetch( ignore = None ):
-            self.conf.name = ent.get()
+            self.conf.name = s.get()
             t.destroy()
 
         t = Toplevel()
         t.title( 'Option' )
-        b = Frame( t )
+        b = Frame( t, bd = 2 )
         b.pack( side = BOTTOM, expand = YES, fill = X )
         Button( b, text = 'ok', command = fetch ).pack( side = LEFT )
         Button( b, text = 'cancel', command = t.destroy ).pack( side = RIGHT )
@@ -182,6 +193,9 @@ class Client():
         self.board = board.Board( self.top )
         self.board.Draw_Map( self.map , self.conf.player )
         self.guiopt.release()
+
+    def GUI_test( self ):
+        message.writeline( self.socket, 'Hello, this is a test!' )
 
 class Configuration:
     def __init__( self, name = 'Unknown', bgcolor = 'red' ):
@@ -211,6 +225,11 @@ class Configuration:
                 if key == 'bg':
                     try:
                         self.bgcolor = string.atoi( value )
+                    except:
+                        pass
+                if key == 'player':
+                    try:
+                        self.player = string.atoi( value )
                     except:
                         pass
                 if key == 'place':
@@ -245,8 +264,11 @@ class Configuration:
             return
         f.write( 'siguo game client configuration:\n' )
         f.write( 'name=' + self.name + '\n' )
+        f.write( 'player=' + str( self.player ) + '\n' )
         f.write( 'bg=' + self.bgcolor + '\n' )
         f.write( 'place=' + self.placefile + '\n' )
+        f.write( 'host=' + self.host + '\n' )
+        f.write( 'port=' + str( self.port ) + '\n' )
         try:
             f.close()
         except:

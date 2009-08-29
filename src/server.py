@@ -15,76 +15,58 @@
 
 from socket import *
 from defines import *
-import rule
-import os, sys, thread, string,random
+import rule, message
+import string, random, thread
 
-debug = True
-
-#Server Client
 class Server:
     def __init__( self , URL = 'localhost', Port = 30000 ):
         #create socket
         self.socket = socket( AF_INET, SOCK_STREAM )
         self.socket.bind( ( URL, Port ) )
         self.socket.listen( 5 )
-        self.socket.setblocking( 0 )
-
+        #client info
         self.clientcount = 0
         self.client = []
         self.remain = []
-        for i in range(DEFAULTPLAYER):
-            self.client.append(None)
-            self.remain.append(None)
-        self.start = random.choice([1,2,3,4])
+        for i in range( DEFAULTPLAYER ):
+            self.client.append( None )
+            self.remain.append( None )
+        #locks
+        self.clientlock = thread.allocate_lock()
+        self.mainlock = thread.allocate_lock()
 
     def add_client( self ):
         conn, addr = self.socket.accept()
-        player, remain = self.readline(conn,'')
-        k = string.atoi(player.strip())
-        if (k <= 0) | (k > DEFAULTPLAYER):
+        if DEBUG:
+            print 'connection from address ', addr
+        player, remain = message.readline( conn, '' )
+        k = string.atoi( player.strip() )
+        if ( k <= 0 ) | ( k > DEFAULTPLAYER ):
             conn.close()
-        if client[k]:
-            self.writeline(conn,'error: duplicate player number')
+        self.clientlock.acquire()
+        if self.client[k]:
+            message.writeline( conn, 'error: duplicate player number' )
             conn.close()
-        self.client[k] = (conn,addr)
+        self.client[k] = ( conn, addr )
         self.remain[k] = remain
         self.clientcount += 1
-        print 'connection from address ', addr,' player no ',k
+        self.clientlock.release()
+        message.writeline( conn, str( k ) )
+        if DEBUG:
+            print ' player no ', k
 
-    def readline( self, connection, remainstr):
-        if remainstr.find( '\n' ) == -1:
-            len = -1
-            try:
-                while len == -1:
-                    tmp = connection.recv( 1024 )
-                    remainstr = remainstr + tmp
-                    len = remainstr.find( '\n' )
-                ret = remainstr[0:len]
-                remainstr = remainstr[( len + 1 ):]
-                return ret, remainstr
-            except error:
-                pass
-        else:
-            len = remainstr.find( '\n' )
-            ret = remainstr[0:len]
-            remainstr = remainstr[( len + 1 ):]
-            return ret, remainstr
-
-    def writeline( self, connection, targetstr):
-        return
-    
     def run( self ):
         self.add_client()
         while True:
-            for addr in self.client.keys():
-                data = self.readline( addr )
-                print data
-            if data == '':
-                break
+            for k in range( 4 ):
+                if self.client[k]:
+                    data, self.remain[k] = message.readline( self.client[k][0], self.remain[k] )
+                    print data
+                    if data == '':
+                        break
+        startup = random.choice( [1, 2, 3, 4] )
         self.socket.close()
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        debug = False
     s = Server()
     s.run()
