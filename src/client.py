@@ -34,9 +34,18 @@ class Client():
     def run( self ):
         self.make_gui()
         self.top.mainloop()
-        if self.socket:
-            self.socket.close()
+        self.closeConnection()
         self.conf.Save( 'default.cfg' )
+
+    def closeConnection( self ):
+        if self.socket:
+            message.writelines( self.socket, 'Disconnect:' + str( self.conf.player ) )
+            self.socket.close()
+
+    def GUI_disconnect( self ):
+        if self.socket:
+            if askyesno( 'Warning', 'Do you really want to disconnect?' ):
+                self.closeConnection()
 
     def createConnection( self ):
         self.socket = socket( AF_INET, SOCK_STREAM )
@@ -101,8 +110,9 @@ class Client():
         File.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
         File.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
         File.add_command( label = 'Connect', command = self.GUI_connect, underline = 0 )
-        File.add_command( label = '退出', command = self.top.quit, underline = 1 )
-        self.menu.add_cascade( label = '文件', menu = File, underline = 0 )
+        File.add_command( label = 'Disconnect', command = self.GUI_disconnect, underline = 0 )
+        File.add_command( label = 'Exit 退出', command = self.top.quit, underline = 1 )
+        self.menu.add_cascade( label = 'File 文件', menu = File, underline = 0 )
         Game = Menu( self.menu )
         Game.add_command( label = 'Save', command = ( lambda:0 ), underline = 0 )
         Game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
@@ -111,30 +121,33 @@ class Client():
         Game.add_command( label = 'Quit', command = ( lambda:0 ), underline = 0 )
         self.menu.add_cascade( label = 'Game', menu = Game, underline = 0 )
         Option = Menu( self.menu )
-        Option.add_command( label = '名称', command = self.GUI_name, underline = 0 )
+        Option.add_command( label = 'Name 名字', command = self.GUI_name, underline = 0 )
         color = IntVar()
         color.set( self.conf.player )
         def setPlayer( x ):
+            rule.CleanOne( self.map, self.conf.player )
             self.conf.player = x
+            rule.PlaceOne( self.conf.place, self.map, self.conf.player )
+            self.board.Draw_Map( self.map, self.conf.player )
         Bgcolor = Menu( Option, tearoff = 0 )
-        Bgcolor.add_radiobutton( label = '红方', variable = color, value = 1, command = ( lambda : setPlayer( 1 ) ), underline = 0 )
-        Bgcolor.add_radiobutton( label = '黄方', variable = color, value = 2, command = ( lambda: setPlayer( 2 ) ), underline = 0 )
-        Bgcolor.add_radiobutton( label = '绿方', variable = color, value = 3, command = ( lambda: setPlayer( 3 ) ), underline = 0 )
-        Bgcolor.add_radiobutton( label = '蓝方', variable = color, value = 4, command = ( lambda: setPlayer( 4 ) ), underline = 0 )
-        Option.add_cascade( label = '背景', menu = Bgcolor, underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Red 红方', variable = color, value = 1, command = ( lambda : setPlayer( 1 ) ), underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Yellow 黄方', variable = color, value = 2, command = ( lambda: setPlayer( 2 ) ), underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Green 绿方', variable = color, value = 3, command = ( lambda: setPlayer( 3 ) ), underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Blue 蓝方', variable = color, value = 4, command = ( lambda: setPlayer( 4 ) ), underline = 0 )
+        Option.add_cascade( label = 'Background 背景', menu = Bgcolor, underline = 0 )
         Option.add_command( label = 'Rule', command = ( lambda:0 ), underline = 0 )
-        self.menu.add_cascade( label = '选项', menu = Option, underline = 0 )
+        self.menu.add_cascade( label = 'Option 选项', menu = Option, underline = 0 )
         Help = Menu( self.menu )
-        Help.add_command( label = '帮助', command = ( lambda:0 ), underline = 0 )
+        Help.add_command( label = 'Help', command = ( lambda:0 ), underline = 0 )
         Help.add_separator()
         Help.add_command( label = 'License', command = self.GUI_license, underline = 0 )
-        Help.add_command( label = '关于', command = self.GUI_about, underline = 0 )
-        self.menu.add_cascade( label = 'Help', menu = Help, underline = 0 )
+        Help.add_command( label = 'About 关于', command = self.GUI_about, underline = 0 )
+        self.menu.add_cascade( label = 'Help 帮助', menu = Help, underline = 0 )
 
     def add_toolbar( self ):
         self.toolbar = Frame()
-        Button( self.toolbar, text = '退出', width = 10, command = self.top.quit ).pack( side = RIGHT )
-        Button( self.toolbar, text = '连接', width = 10, command = self.GUI_connect ).pack( side = RIGHT )
+        Button( self.toolbar, text = 'Exit 退出', width = 10, command = self.top.quit ).pack( side = RIGHT )
+        Button( self.toolbar, text = 'Connect 连接', width = 10, command = self.GUI_connect ).pack( side = RIGHT )
         Button( self.toolbar, text = 'Test', width = 10, command = self.GUI_test ).pack( side = RIGHT )
         self.toolbar.pack( side = TOP )
         self.toolbar.config( relief = GROOVE, bd = 2, background = 'white' )
@@ -198,9 +211,9 @@ class Client():
         message.writeline( self.socket, 'Hello, this is a test!' )
 
 class Configuration:
-    def __init__( self, name = 'Unknown', bgcolor = 'red' ):
-        self.name = name
-        self.bgcolor = bgcolor
+    def __init__( self ):
+        self.name = 'Unknown'
+        self.bgfile = '../resource/ugly2.gif'
         self.player = 1
         self.placefile = 'place.cfg'
         self.place = getDefaultPlace( self.player )
@@ -222,9 +235,9 @@ class Configuration:
                 value = value.strip()
                 if key == 'name':
                     self.name = value
-                if key == 'bg':
+                if key == 'bgfile':
                     try:
-                        self.bgcolor = string.atoi( value )
+                        self.bgfile = value
                     except:
                         pass
                 if key == 'player':
@@ -265,7 +278,7 @@ class Configuration:
         f.write( 'siguo game client configuration:\n' )
         f.write( 'name=' + self.name + '\n' )
         f.write( 'player=' + str( self.player ) + '\n' )
-        f.write( 'bg=' + self.bgcolor + '\n' )
+        f.write( 'bgfile=' + self.bgfile + '\n' )
         f.write( 'place=' + self.placefile + '\n' )
         f.write( 'host=' + self.host + '\n' )
         f.write( 'port=' + str( self.port ) + '\n' )

@@ -28,7 +28,7 @@ class Board( Frame ):
         self.sepimagey = 200
         self.back = Canvas( self )
         self.back.pack()
-        self.Draw_Background( '../resource/ugly2.gif' )
+        self.Draw_Background( '../resource/ugly3.gif' )
 
         self.chessw = 30
         self.chessh = 18
@@ -52,6 +52,10 @@ class Board( Frame ):
     def Draw_Map( self, m, player ):
         for pos in range( 0, m.size ):
             self.Draw_Position( m, pos, player )
+
+    def Clear_Map( self, m):
+        for pos in range( 0, m.size ):
+            self.Clear_Position(pos)
 
     def getPolicy( self, viewer, player, status ):
         if status == MAP_NONE:

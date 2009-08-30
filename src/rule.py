@@ -221,6 +221,13 @@ def PlaceOne( placement, m, player ):
         pos += 1
     return
 
+def CleanOne( m, player ):
+    pos = ( player - 1 ) * 30
+    for i in range( 30 ):
+        m.Remove( pos )
+        pos += 1
+    return
+
 class Player():
     def __init__( self ):
         self.name = ''
