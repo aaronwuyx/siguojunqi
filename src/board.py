@@ -17,18 +17,24 @@
 from Tkinter import *
 from defines import *
 import rule, traceback
+isPIL = True
+
+try:
+    import Image, ImageTk
+except:
+    isPIL = False
 
 class Board( Frame ):
-    def __init__( self, master = None, **config ):
-        Frame.__init__( self, master, config )
+    def __init__( self, master = None, config = Configuration() ):
+        Frame.__init__( self, master )
+        self.conf = config
         self.pack( expand = YES, fill = BOTH )
-        self.config( bd = 1 )
-        self.backimage = ''
-        self.sepimagex = 200
-        self.sepimagey = 200
+        self.config( relief = GROOVE, bd = 1 )
         self.back = Canvas( self )
         self.back.pack()
-        self.Draw_Background( '../resource/ugly3.gif' )
+
+        if self.conf.bgfile:
+            self.Draw_Background( self.conf.bgfile )
 
         self.chessw = 30
         self.chessh = 18
@@ -42,20 +48,23 @@ class Board( Frame ):
         self.pos_text = {}
 
     def Draw_Background( self, filename ):
-        self.backimage = PhotoImage( file = filename )
+        if isPIL:
+            self.backimage = ImageTk.PhotoImage( file = filename )
+        else:
+            self.backimage = PhotoImage( file = filename )
         self.backwidth = self.backimage.width()
         self.backheight = self.backimage.height()
-        self.back.create_image( self.backwidth / 2 + self.sepimagex / 2, self.backheight / 2 + self.sepimagey / 2, im = self.backimage )
-        self.back.config( height = self.backheight + self.sepimagex, width = self.backwidth + self.sepimagey )
+        self.back.create_image( self.backwidth / 2 + self.conf.spacex / 2, self.backheight / 2 + self.conf.spacey / 2, im = self.backimage )
+        self.back.config( height = self.backheight + self.conf.spacex, width = self.backwidth + self.conf.spacey )
 #TODO: exactly draw map...
 
     def Draw_Map( self, m, player ):
         for pos in range( 0, m.size ):
             self.Draw_Position( m, pos, player )
 
-    def Clear_Map( self, m):
+    def Clear_Map( self, m ):
         for pos in range( 0, m.size ):
-            self.Clear_Position(pos)
+            self.Clear_Position( pos )
 
     def getPolicy( self, viewer, player, status ):
         if status == MAP_NONE:
@@ -119,8 +128,8 @@ class Board( Frame ):
     def getXY( self, pos ):
         if ( pos >= MAXPOSITION ) | ( pos < 0 ):
             return
-        xoff = self.startx + self.sepimagex / 2
-        yoff = self.starty + self.sepimagey / 2
+        xoff = self.startx + self.conf.spacex / 2
+        yoff = self.starty + self.conf.spacey / 2
         hinc = self.chessh + self.sepheight
         winc = self.chessw + self.sepwidth
         if pos in PosV:

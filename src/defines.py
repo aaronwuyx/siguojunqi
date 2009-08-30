@@ -232,3 +232,123 @@ def getDefaultPlace( player, status = MAP_HIDE ):
            MapItem( 42, player, status ), MapItem(), MapItem( 34, player, status ), MapItem(),
            MapItem( 42, player, status ), MapItem( 38, player, status ), MapItem( 32, player, status ),
            MapItem( 34, player, status ), MapItem( 32, player, status ), MapItem( 38, player, status )]
+
+class Configuration:
+    def __init__( self ):
+        self.name = 'Unknown'
+        self.player = 1
+        self.placefile = 'place.cfg'
+        self.place = getDefaultPlace( self.player )
+        self.host = 'localhost'
+        self.port = 30000
+
+        self.bgfile = '../resource/ugly2.gif'
+        self.spacex = 200
+        self.spacey = 200
+
+    def config( self ):
+        return
+
+    def Load( self, filename ):
+        try:
+            f = open( filename, 'r' )
+        except:
+            return
+        for line in f.readlines():
+            try:
+                key, value = line.split( '=' , 1 )
+                key = key.strip()
+                value = value.strip()
+                if key == 'name':
+                    self.name = value
+                if key == 'bgfile':
+                    try:
+                        self.bgfile = value
+                    except:
+                        pass
+                if key == 'player':
+                    try:
+                        self.player = string.atoi( value )
+                    except:
+                        pass
+                if key == 'place':
+                    self.placefile = value
+                if key == 'host':
+                    self.host = value
+                if key == 'port':
+                    try:
+                        self.port = string.atoi( value )
+                    except:
+                        pass
+                if key == 'space':
+                    try:
+                        xs, ys = value.split( ',' )
+                        x = string.atoi( xs )
+                        y = string.atoi( ys )
+                        self.spacex = x
+                        self.spacey = y
+                    except:
+                        pass
+            except:
+                pass
+        try:
+            f.close()
+        except:
+            pass
+        backfile = self.placefile
+        backplace = self.place
+        if self.loadPlace( self.placefile ):
+            if not ( rule.CheckPlace1( self.place ) & rule.CheckPlace2( self.place ) ):
+                self.placefile = backfile
+                self.place = backplace
+        else:
+            self.placefile = backfile
+            self.place = backplace
+
+    def Save( self, filename ):
+        try:
+            f = open( filename, 'w' )
+        except:
+            return
+        f.write( 'siguo game client configuration:\n' )
+        f.write( '\nclient\n' )
+        f.write( 'name=%s\n' % ( self.name ) )
+        f.write( 'player=%d\n' % ( self.player ) )
+        f.write( 'place=%s\n' % ( self.placefile ) )
+        f.write( 'host=%s\n' % ( self.host ) )
+        f.write( 'port=%d\n' % ( self.port ) )
+        f.write( '\nboard\n' )
+        f.write( 'bgfile=%s\n' % ( self.bgfile ) )
+        f.write( 'space=%d,%d\n' % ( self.spacex, self.spacey ) )
+        try:
+            f.close()
+        except:
+            pass
+        self.savePlace( self.placefile )
+
+    def loadPlace( self, filename ):
+        try:
+            f = open ( filename, 'r' )
+        except:
+            return
+        place = []
+        for line in f.readlines():
+            for item in line.split():
+                try:
+                    if item == 'None':
+                        place.append( MapItem() )
+                    else:
+                        place.append( MapItem( string.atoi( item ), self.player , MAP_HIDE ) )
+                except:
+                    return
+        return place
+
+    def savePlace( self, filename ):
+        try:
+            f = open( filename, 'w' )
+        except:
+            return False
+        for place in self.place:
+            f.write( str( place.getValue() ) + ' ' )
+        f.write( '\n' )
+        return True

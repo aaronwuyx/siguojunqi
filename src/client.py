@@ -146,9 +146,9 @@ class Client():
 
     def add_toolbar( self ):
         self.toolbar = Frame()
-        Button( self.toolbar, text = 'Exit 退出', width = 10, command = self.top.quit ).pack( side = RIGHT )
-        Button( self.toolbar, text = 'Connect 连接', width = 10, command = self.GUI_connect ).pack( side = RIGHT )
-        Button( self.toolbar, text = 'Test', width = 10, command = self.GUI_test ).pack( side = RIGHT )
+        Button( self.toolbar, text = 'Exit 退出', width = 15, command = self.top.quit ).pack( side = RIGHT )
+        Button( self.toolbar, text = 'Connect 连接', width = 15, command = self.GUI_connect ).pack( side = RIGHT )
+        Button( self.toolbar, text = 'Test', width = 15, command = self.GUI_test ).pack( side = RIGHT )
         self.toolbar.pack( side = TOP )
         self.toolbar.config( relief = GROOVE, bd = 2, background = 'white' )
 
@@ -203,118 +203,12 @@ class Client():
         self.statusframe = Frame( self.top )
         self.statusframe.pack( side = RIGHT, expand = YES, fill = Y )
         Label( self.statusframe, text = 'status :' ).pack( side = TOP, expand = YES, fill = X )
-        self.board = board.Board( self.top )
+        self.board = board.Board( self.top, self.conf )
         self.board.Draw_Map( self.map , self.conf.player )
         self.guiopt.release()
 
     def GUI_test( self ):
         message.writeline( self.socket, 'Hello, this is a test!' )
-
-class Configuration:
-    def __init__( self ):
-        self.name = 'Unknown'
-        self.bgfile = '../resource/ugly2.gif'
-        self.player = 1
-        self.placefile = 'place.cfg'
-        self.place = getDefaultPlace( self.player )
-        self.host = 'localhost'
-        self.port = 30000
-
-    def config( self ):
-        return
-
-    def Load( self, filename ):
-        try:
-            f = open( filename, 'r' )
-        except:
-            return
-        for line in f.readlines():
-            try:
-                key, value = line.split( '=' , 1 )
-                key = key.strip()
-                value = value.strip()
-                if key == 'name':
-                    self.name = value
-                if key == 'bgfile':
-                    try:
-                        self.bgfile = value
-                    except:
-                        pass
-                if key == 'player':
-                    try:
-                        self.player = string.atoi( value )
-                    except:
-                        pass
-                if key == 'place':
-                    self.placefile = value
-                if key == 'host':
-                    self.host = value
-                if key == 'port':
-                    try:
-                        self.port = string.atoi( value )
-                    except:
-                        pass
-            except:
-                pass
-        try:
-            f.close()
-        except:
-            pass
-        backfile = self.placefile
-        backplace = self.place
-        if self.loadPlace( self.placefile ):
-            if not ( rule.CheckPlace1( self.place ) & rule.CheckPlace2( self.place ) ):
-                self.placefile = backfile
-                self.place = backplace
-        else:
-            self.placefile = backfile
-            self.place = backplace
-
-    def Save( self, filename ):
-        try:
-            f = open( filename, 'w' )
-        except:
-            return
-        f.write( 'siguo game client configuration:\n' )
-        f.write( 'name=' + self.name + '\n' )
-        f.write( 'player=' + str( self.player ) + '\n' )
-        f.write( 'bgfile=' + self.bgfile + '\n' )
-        f.write( 'place=' + self.placefile + '\n' )
-        f.write( 'host=' + self.host + '\n' )
-        f.write( 'port=' + str( self.port ) + '\n' )
-        try:
-            f.close()
-        except:
-            pass
-        self.savePlace( self.placefile )
-
-    def loadPlace( self, filename ):
-        try:
-            f = open ( filename, 'r' )
-        except:
-            return
-        place = []
-        for line in f.readlines():
-            for item in line.split():
-                try:
-                    if item == 'None':
-                        place.append( MapItem() )
-                    else:
-                        place.append( MapItem( string.atoi( item ), self.player , MAP_HIDE ) )
-                except:
-                    return
-        return place
-
-    def savePlace( self, filename ):
-        try:
-            f = open( filename, 'w' )
-        except:
-            return False
-        for place in self.place:
-            f.write( str( place.getValue() ) + ' ' )
-        f.write( '\n' )
-        return True
-
 
 if __name__ == '__main__':
     c = Client()
