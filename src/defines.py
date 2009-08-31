@@ -17,8 +17,8 @@
 DEFAULTPLAYER = 4 #Number of players
 MAXPOSITION = 129 #Number of positions where you can put pieces
 CHESSNUM = 30 #Number of pieces each player has
-SVN = '31' #svn version of the following version
-VERSION = '0.04' #current version
+SVN = '37' #svn version of the following version
+VERSION = '0.05' #current version
 DEBUG = True #print all communication
 
 #defined in MapItem.status
@@ -245,6 +245,8 @@ class Configuration:
         self.bgfile = '../resource/ugly2.gif'
         self.spacex = 200
         self.spacey = 200
+        self.offx = 3 #6 to have shadow?
+        self.offy = 3
 
     def config( self ):
         return
@@ -289,6 +291,15 @@ class Configuration:
                         self.spacey = y
                     except:
                         pass
+                if key == 'offset':
+                    try:
+                        xs, ys = value.split( ',' )
+                        x = string.atoi( xs )
+                        y = string.atoi( ys )
+                        self.offx = x
+                        self.offy = y
+                    except:
+                        pass
             except:
                 pass
         try:
@@ -319,6 +330,7 @@ class Configuration:
         f.write( 'port=%d\n' % ( self.port ) )
         f.write( '\nboard\n' )
         f.write( 'bgfile=%s\n' % ( self.bgfile ) )
+        f.write( 'offset=%d,%d\n' % ( self.offx, self.offy ) )
         f.write( 'space=%d,%d\n' % ( self.spacex, self.spacey ) )
         try:
             f.close()

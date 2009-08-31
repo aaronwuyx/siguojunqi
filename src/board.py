@@ -41,11 +41,11 @@ class Board( Frame ):
         self.sepwidth = 10
         self.sepheight = 10
         self.bgcolor = 'white'
-        self.startx = 3 #6 to shadow?
-        self.starty = 3 #6 to shadow?
-        self.textfont = ( 'Courier', 9, 'bold' )
+        self.textfont = ( 'Courier', 9, 'normal' )
+        self.posfont = ( 'times', 8, 'normal' )
         self.pos_rectangle = {}
         self.pos_text = {}
+        self.pos_pos = {}
 
     def Draw_Background( self, filename ):
         if isPIL:
@@ -86,6 +86,7 @@ class Board( Frame ):
         self.back.delete( 'all' )
         self.pos_rectangle = {}
         self.pos_text = {}
+        self.pos_pos = {}
 
     def Clear_Position( self, pos ):
         if self.pos_rectangle.get( pos ):
@@ -96,6 +97,10 @@ class Board( Frame ):
             if self.pos_text[pos]:
                 self.back.delete( self.pos_text[pos] )
             self.pos_text[pos] = None
+        if self.pos_pos.get( pos ):
+            if self.pos_pos[pos]:
+                self.back.delete( self.pos_pos[pos] )
+            self.pos_pos[pos] = None
 
     def Draw_Position( self, m, pos, viewer, highlight = True ):
         self.Clear_Position( pos )
@@ -114,6 +119,7 @@ class Board( Frame ):
             self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessw / 2, y - self.chessh / 2, x + self.chessw / 2, y + self.chessh / 2, width = 2, fill = bg, activefill = acbg )
         elif vert == 'VH':
             self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessw / 2, y - self.chessw / 2, x + self.chessw / 2, y + self.chessw / 2, width = 2, fill = bg, activefill = acbg )
+        self.pos_pos[pos] = self.back.create_text( x + 15, y + 15, text = str( pos ), font = self.posfont, fill = '#33bb33' )
         if ( player != None ) & show:
             value = m.item[pos].getValue()
             name = m.item[pos].getName()
@@ -128,8 +134,8 @@ class Board( Frame ):
     def getXY( self, pos ):
         if ( pos >= MAXPOSITION ) | ( pos < 0 ):
             return
-        xoff = self.startx + self.conf.spacex / 2
-        yoff = self.starty + self.conf.spacey / 2
+        xoff = self.conf.offx + self.conf.spacex / 2
+        yoff = self.conf.offy + self.conf.spacey / 2
         hinc = self.chessh + self.sepheight
         winc = self.chessw + self.sepwidth
         if pos in PosV:

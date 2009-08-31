@@ -85,12 +85,17 @@ class Map:
 
     def Move( self, fpos, tpos ):
         if self.CanMove( fpos, tpos ):
-            result = Result( fpos, tpos )
-            if result == 0:
-                self.Remove( tpos )
-            elif result > 0:
+            if self.isPos( tpos ):
+                result = Result( fpos, tpos )
+                if result == 0:
+                    self.Remove( tpos )
+                elif result > 0:
+                    self.item[tpos] = self.item[fpos]
+            else:
                 self.item[tpos] = self.item[fpos]
             self.Remove( fpos )
+            return True
+        return False
 
     #True if move from "fpos" to "tpos" is available
     def CanMove( self, fpos, tpos ):
@@ -110,13 +115,13 @@ class Map:
             if self.item[tpos].getPlayer() in Team4[self.item[fpos].getPlayer()]:
                 return False
         #direct move, 1 step
-        if ( OnRailway( fpos ) == ( -1, -1 ) ) | ( OnRailway( tpos ) == ( -1, -1 ) ):
+        if ( self.OnRailway( fpos ) == ( -1, -1 ) ) | ( self.OnRailway( tpos ) == ( -1, -1 ) ):
             return ( tpos in Pos4[fpos].link )
         #GoBi's fly
         if self.item[fpos].getMove() == 2:
             return ( tpos in self.GetFlyArea( fpos ) )
         #along railway
-        rail, fon, ton = self.OnSameRailway( self, fpos, tpos );
+        rail, fon, ton = self.OnSameRailway( fpos, tpos );
         #Yeah, they are on the same railway
         if ( fon >= 0 ) & ( ton >= 0 ):
             for i in range( fon + 1, ton ):
@@ -125,30 +130,30 @@ class Map:
             return True
         return False
 
-    def GetFlyArea( self, pos, size ):
-        ret = {}
-        ret[pos] = 1
+    def GetFlyArea( self, pos ):
+        ret = {pos:1}
         flag = True
         while flag:
             flag = False
-            for k in range( size ):
+            for k in range( self.size ):
                 if ret.has_key( k ):
-                    if ret[k] == 1:
-                        break
-            for railway in Railways:
-                try:
-                    f = list.index( k )
-                    rail = Railways.index( railway )
-                    for i in range( f + 1, len( railway ) ):
-                        l = Railways[rail][i]
-                        if self.isPos( l ):
-                            break
-                    if not ret.has_key( l ):
-                        ret[l] = 1
+                    if ret[k] != 0:
                         flag = True
-                except:
-                    pass
-            ret[k] = 0
+                        for railway in Railways:
+                            rail = Railways.index( railway )
+                            try:
+                                f = railway.index( k )
+                                l = Railways[rail][f + 1]
+                                if not ret.has_key( l ):
+                                    if self.isPos( l ):
+                                        ret[l] = 0
+                                    else:
+                                        ret[l] = 1
+                            except:
+                                pass
+                        ret[k] = 0
+            if not flag:
+                break
         return ret.keys()
 
     def OnSameRailway( self, pos1, pos2 ):
@@ -157,7 +162,7 @@ class Map:
                 off1 = railway.index( pos1 );
                 off2 = railway.index( pos2 );
                 if off1 < off2:
-                    return ( railway.index, off1, off2 )
+                    return ( Railways.index( railway ), off1, off2 )
             except:
                 pass
         return ( -1, -1, -1 )
@@ -165,7 +170,7 @@ class Map:
     def OnRailway( self, pos ):
         for railway in Railways:
             if pos in railway:
-                return railway.index( railway.index, pos1 );
+                return ( Railways.index( railway ), railway.index( pos ) );
         return ( -1, -1 )
 
     def CanSelect( self, pos, player ):

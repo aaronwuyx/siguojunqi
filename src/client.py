@@ -150,7 +150,7 @@ class Client():
         Main.add_cascade( label = 'Help', menu = Help, underline = 0 )
         self.menus['help'] = Help
         for name, menu in self.menus.items():
-            menu.config( bg = '#eeeeee', fg = '#111111', activebackground = '#ffffff', activeforeground = '#000000', disabledforeground = '#666666' )
+            menu.config( bg = '#eeeeee', fg = '#111111', activebackground = '#ffffff', activeforeground = '#000000', disabledforeground = '#666666', postcommand = self.updateMenuToolbar )
 
     def add_toolbar( self ):
         self.toolbar = Frame()
@@ -161,7 +161,7 @@ class Client():
             button.pack( side = RIGHT )
             Label( text = ' ' ).pack( side = RIGHT )
             button.config( width = 15, relief = RAISED )
-        self.toolbar.pack( side = TOP )
+        self.toolbar.pack( side = TOP, expand = YES, fill = X )
         self.toolbar.config( relief = GROOVE, bd = 2, background = 'white' )
 
     def updateMenuToolbar( self ):
@@ -212,12 +212,48 @@ class Client():
 
     def add_widgets( self ):
         self.guiopt.acquire()
-        self.statusframe = Frame( self.top )
-        self.statusframe.pack( side = RIGHT, expand = YES, fill = Y )
-        Label( self.statusframe, text = 'status :' ).pack( side = TOP, expand = YES, fill = X )
+        self.add_sidebar()
         self.board = board.Board( self.top, self.conf )
         self.board.Draw_Map( self.map , self.conf.player )
         self.guiopt.release()
+
+    def add_sidebar( self ):
+        self.statusframe = Frame( self.top )
+        self.statusframe.pack( side = RIGHT, expand = YES, fill = Y )
+        self.statusframe.config( relief = GROOVE, bd = 1, bg = 'white' )
+        self.moveframe = Frame( self.statusframe )
+        Label( self.moveframe, text = 'Move :' ).pack( side = TOP, expand = YES, fill = X )
+        but = Frame( self.moveframe, bd = 1 )
+        def execute():
+            try:
+                f = string.atoi( self.movef.get() )
+                t = string.atoi( self.movet.get() )
+                if DEBUG:
+                    print 'from = ', f, 'to = ', t
+                    print 'Available ? ', self.map.Move( f, t )
+                if self.map.Move( f, t ):
+                    self.board.Draw_Map( self.map, self.conf.player )
+            except:
+                pass
+        Button( but, text = 'exec', command = execute ).pack( side = LEFT, anchor = W )
+        def clear():
+            self.movef.set( '' )
+            self.movet.set( '' )
+        Button( but, text = 'clear', command = clear ).pack( side = RIGHT, anchor = E )
+        but.pack( side = BOTTOM, expand = YES, fill = X )
+        lab = Frame( self.moveframe, bd = 1 )
+        ent = Frame( self.moveframe, bd = 1 )
+        Label( lab, text = 'From' ).pack( side = TOP, anchor = NW )
+        Label( lab, text = 'To' ).pack( side = TOP, anchor = NW )
+        self.movef = StringVar()
+        self.movet = StringVar()
+        self.movef.set( '' )
+        self.movet.set( '' )
+        Entry( ent, textvariable = self.movef ).pack( side = TOP, expand = YES, fill = X )
+        Entry( ent, textvariable = self.movet ).pack( side = TOP, expand = YES, fill = X )
+        lab.pack( side = LEFT )
+        ent.pack( side = RIGHT )
+        self.moveframe.pack( side = TOP )
 
     def GUI_test( self ):
         message.writeline( self.socket, 'Hello, this is a test!' )
