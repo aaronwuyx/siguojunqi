@@ -28,6 +28,8 @@ class Client():
         self.guiopt = thread.allocate_lock()
         self.map = rule.Map( len( Pos4 ) )
         self.socket = None
+        self.menus = {}
+        self.toolbutton = []
         self.remain = ''
         rule.PlaceOne( self.conf.place, self.map, self.conf.player )
 
@@ -103,25 +105,14 @@ class Client():
         self.add_widgets()
 
     def add_menus( self ):
-        self.menu = Menu( self.top )
-        self.top.config( menu = self.menu )
-        File = Menu( self.menu )
-        File.add_command( label = 'New', command = ( lambda: 0 ), underline = 0 )
-        File.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
-        File.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
-        File.add_command( label = 'Connect', command = self.GUI_connect, underline = 0 )
-        File.add_command( label = 'Disconnect', command = self.GUI_disconnect, underline = 0 )
-        File.add_command( label = 'Exit 退出', command = self.top.quit, underline = 1 )
-        self.menu.add_cascade( label = 'File 文件', menu = File, underline = 0 )
-        Game = Menu( self.menu )
-        Game.add_command( label = 'Save', command = ( lambda:0 ), underline = 0 )
-        Game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
-        Game.add_command( label = 'Review', command = ( lambda:0 ), underline = 0 )
-        Game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
-        Game.add_command( label = 'Quit', command = ( lambda:0 ), underline = 0 )
-        self.menu.add_cascade( label = 'Game', menu = Game, underline = 0 )
-        Option = Menu( self.menu )
-        Option.add_command( label = 'Name 名字', command = self.GUI_name, underline = 0 )
+        Main = Menu( self.top )
+        self.top.config( menu = Main )
+        self.menus['main'] = Main
+        Option = Menu( Main, tearoff = 0 )
+        Option.add_command( label = 'Discard', command = ( lambda: 0 ), underline = 0 )
+        Option.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
+        Option.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
+        Option.add_command( label = 'Name...', command = self.GUI_name, underline = 0 )
         color = IntVar()
         color.set( self.conf.player )
         def setPlayer( x ):
@@ -130,25 +121,46 @@ class Client():
             rule.PlaceOne( self.conf.place, self.map, self.conf.player )
             self.board.Draw_Map( self.map, self.conf.player )
         Bgcolor = Menu( Option, tearoff = 0 )
-        Bgcolor.add_radiobutton( label = 'Red 红方', variable = color, value = 1, command = ( lambda : setPlayer( 1 ) ), underline = 0 )
-        Bgcolor.add_radiobutton( label = 'Yellow 黄方', variable = color, value = 2, command = ( lambda: setPlayer( 2 ) ), underline = 0 )
-        Bgcolor.add_radiobutton( label = 'Green 绿方', variable = color, value = 3, command = ( lambda: setPlayer( 3 ) ), underline = 0 )
-        Bgcolor.add_radiobutton( label = 'Blue 蓝方', variable = color, value = 4, command = ( lambda: setPlayer( 4 ) ), underline = 0 )
-        Option.add_cascade( label = 'Background 背景', menu = Bgcolor, underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Red', variable = color, value = 1, command = ( lambda : setPlayer( 1 ) ), underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Yellow', variable = color, value = 2, command = ( lambda: setPlayer( 2 ) ), underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Green', variable = color, value = 3, command = ( lambda: setPlayer( 3 ) ), underline = 0 )
+        Bgcolor.add_radiobutton( label = 'Blue', variable = color, value = 4, command = ( lambda: setPlayer( 4 ) ), underline = 0 )
+        Option.add_cascade( label = 'Colour', menu = Bgcolor, underline = 0 )
         Option.add_command( label = 'Rule', command = ( lambda:0 ), underline = 0 )
-        self.menu.add_cascade( label = 'Option 选项', menu = Option, underline = 0 )
-        Help = Menu( self.menu )
+        Main.add_cascade( label = 'Option', menu = Option, underline = 0 )
+        self.menus['option'] = Option
+
+        Game = Menu( Main, tearoff = 0 )
+        Game.add_command( label = 'Save', command = ( lambda:0 ), underline = 0 )
+        Game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
+        Game.add_command( label = 'Connect', command = self.GUI_connect, underline = 0 )
+        Game.add_command( label = 'Disconnect...', command = self.GUI_disconnect, underline = 0 )
+        Game.add_command( label = 'Review', command = ( lambda:0 ), underline = 0 )
+        Game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
+        Game.add_command( label = 'Quit', command = ( lambda:0 ), underline = 0 )
+        Game.add_command( label = 'Exit', command = self.top.quit, underline = 1 )
+        Main.add_cascade( label = 'Game', menu = Game, underline = 0 )
+        self.menus['game'] = Game
+
+        Help = Menu( Main, tearoff = 0 )
         Help.add_command( label = 'Help', command = ( lambda:0 ), underline = 0 )
         Help.add_separator()
-        Help.add_command( label = 'License', command = self.GUI_license, underline = 0 )
-        Help.add_command( label = 'About 关于', command = self.GUI_about, underline = 0 )
-        self.menu.add_cascade( label = 'Help 帮助', menu = Help, underline = 0 )
+        Help.add_command( label = 'License...', command = self.GUI_license, underline = 0 )
+        Help.add_command( label = 'About...', command = self.GUI_about, underline = 0 )
+        Main.add_cascade( label = 'Help', menu = Help, underline = 0 )
+        self.menus['help'] = Help
+        for name, menu in self.menus.items():
+            menu.config( bg = '#eeeeee', fg = '#111111', activebackground = '#ffffff', activeforeground = '#000000', disabledforeground = '#666666' )
 
     def add_toolbar( self ):
         self.toolbar = Frame()
-        Button( self.toolbar, text = 'Exit 退出', width = 15, command = self.top.quit ).pack( side = RIGHT )
-        Button( self.toolbar, text = 'Connect 连接', width = 15, command = self.GUI_connect ).pack( side = RIGHT )
-        Button( self.toolbar, text = 'Test', width = 15, command = self.GUI_test ).pack( side = RIGHT )
+        self.toolbutton.append( Button( self.toolbar, text = 'Exit', command = self.top.quit ) )
+        self.toolbutton.append( Button( self.toolbar, text = 'Connect 连接', command = self.GUI_connect ) )
+        self.toolbutton.append( Button( self.toolbar, text = 'Test', command = self.GUI_test ) )
+        for button in self.toolbutton:
+            button.pack( side = RIGHT )
+            Label( text = ' ' ).pack( side = RIGHT )
+            button.config( width = 15, relief = RAISED )
         self.toolbar.pack( side = TOP )
         self.toolbar.config( relief = GROOVE, bd = 2, background = 'white' )
 
@@ -212,7 +224,4 @@ class Client():
 
 if __name__ == '__main__':
     c = Client()
-#    rule.PlaceOne( c.conf.place, c.map, 2 )
-#    rule.PlaceOne( c.conf.place, c.map, 3 )
-#    rule.PlaceOne( c.conf.place, c.map, 4 )
     c.run()
