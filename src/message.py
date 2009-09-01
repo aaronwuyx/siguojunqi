@@ -51,3 +51,24 @@ def writeline( connection, targetstr ):
     if DEBUG:
         print 'send :', targetstr[:-1]
     return sent
+
+'''
+cmd, arg are strings, type of obj depends on arg's value
+value of arg    type of obj
+'string'            str
+'''
+def splitline( line ):
+    cmd = ''
+    arg = ''
+    obj = None
+    try:
+        cmd, arg, line = line.split( ':', 2 )
+    except:
+        cmd = line
+    if arg == 'string':
+        obj = line
+    return ( cmd, arg, obj )
+
+def combineline( cmd, arg = '', obj = None ):
+    line = cmd + ':' + arg + ':' + str( obj ) + '\n'
+    return line

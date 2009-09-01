@@ -41,7 +41,7 @@ class Client():
 
     def closeConnection( self ):
         if self.socket:
-            message.writelines( self.socket, 'Disconnect:' + str( self.conf.player ) )
+            message.writeline( self.socket, 'Disconnect:' + str( self.conf.player ) )
             self.socket.close()
 
     def GUI_disconnect( self ):
@@ -50,10 +50,17 @@ class Client():
                 self.closeConnection()
 
     def createConnection( self ):
-        self.socket = socket( AF_INET, SOCK_STREAM )
-        self.socket.connect( ( self.conf.host, self.conf.port ) )
-        message.writeline( self.socket, str( self.conf.player ) )
-        data, self.remain = message.readline( self.socket, self.remain )
+        if self.socket == None:
+            self.socket = socket( AF_INET, SOCK_STREAM )
+            self.socket.connect( ( self.conf.host, self.conf.port ) )
+            message.writeline( self.socket, str( self.conf.player ) )
+            data, self.remain = message.readline( self.socket, self.remain )
+            cmd, arg, obj = message.splitline( data )
+            if cmd == 'error':
+                self.socket.close()
+                self.socket = None
+                print obj
+                raise Exception( str( obj ) )
 
     def GUI_connect( self ):
         def jump( ignore = None ):
@@ -66,8 +73,8 @@ class Client():
             try:
                 self.createConnection()
                 t.destroy()
-            except:
-                showerror( 'Error', 'Cannot connect to server.\n' )
+            except Exception as exc:
+                showerror( 'Error', str( exc ) )
 
         t = Toplevel()
         t.title( 'Connect server' )

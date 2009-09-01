@@ -16,10 +16,16 @@
 from socket import *
 from defines import *
 import rule, message
-import string, random, thread
+import string, random, thread, time
+
+CLIENT_WAIT = 'wait' #Wait for client
+CLIENT_MOVE = 'move' #tell a client to move
+CLIENT_EXIT = 'exit' #disconnect client
 
 class Server:
     def __init__( self , URL = 'localhost', Port = 30000 ):
+        self.status = CLIENT_WAIT #status
+        self.extra = None #indicate who move/exit/wait
         #create socket
         self.socket = socket( AF_INET, SOCK_STREAM )
         self.socket.bind( ( URL, Port ) )
@@ -32,6 +38,7 @@ class Server:
             self.client.append( None )
             self.remain.append( None )
         #locks
+        self.tids = []
         self.clientlock = thread.allocate_lock()
         self.mainlock = thread.allocate_lock()
 
@@ -42,30 +49,50 @@ class Server:
         player, remain = message.readline( conn, '' )
         k = string.atoi( player.strip() )
         if ( k <= 0 ) | ( k > DEFAULTPLAYER ):
+            message.writeline( conn, message.combineline( 'error', 'string', 'invalid player number' ) )
             conn.close()
+            return False
         self.clientlock.acquire()
-        if self.client[k]:
-            message.writeline( conn, 'error: duplicate player number' )
+        if self.client[k - 1]:
+            message.writeline( conn, message.combineline( 'error', 'string', 'duplicate player number' ) )
+            self.clientlock.release()
             conn.close()
-        self.client[k] = ( conn, addr )
-        self.remain[k] = remain
+            return False
+        self.client[k - 1] = ( conn, addr )
+        self.remain[k - 1] = remain
         self.clientcount += 1
         self.clientlock.release()
         message.writeline( conn, str( k ) )
         if DEBUG:
             print ' player no ', k
+        return k
+
+    def run_client( self ):
+        while self.status == CLIENT_WAIT:
+            pass
+        while True:
+            data, self.remain[k] = message.readline( self.client[k][0], self.remain[k] )
+            if data == '':
+                break
+            print data
 
     def run( self ):
-        self.add_client()
-        while True:
-            for k in range( 4 ):
-                if self.client[k]:
-                    data, self.remain[k] = message.readline( self.client[k][0], self.remain[k] )
-                    print data
-                    if data == '':
-                        break
-        startup = random.choice( [1, 2, 3, 4] )
+        self.wait4connection()
+        startup = random.choice( range( 0, DEFAULTPLAYER + 1 ) )
+        self.status = CLIENT_EXIT
+        for i in range( DEFAULTPLAYER ):
+            thread.start_new( self.run_client, () )
+#       wait for all thread stop... then
         self.socket.close()
+
+    def wait4connection( self ):
+        while True:
+            self.add_client()
+            self.clientlock.acquire()
+            if self.clientcount == DEFAULTPLAYER:
+                break
+            self.clientlock.release()
+            time.sleep( 1 )
 
 if __name__ == '__main__':
     s = Server()
