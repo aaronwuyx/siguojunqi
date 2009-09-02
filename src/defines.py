@@ -13,6 +13,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
 
 DEFAULTPLAYER = 4 #Number of players
 MAXPOSITION = 129 #Number of positions where you can put pieces
@@ -242,7 +243,7 @@ class Configuration:
         self.host = 'localhost'
         self.port = 30000
 
-        self.bgfile = '../resource/ugly2.gif'
+        self.bgfile = '..'+os.sep+'resource'+os.sep+'ugly2.gif'
         self.spacex = 200
         self.spacey = 200
         self.offx = 3 #6 to have shadow?

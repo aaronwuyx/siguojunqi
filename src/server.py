@@ -67,14 +67,28 @@ class Server:
             print ' player no ', k
         return k
 
-    def run_client( self ):
+    def run_client( self, k ):
         while self.status == CLIENT_WAIT:
             pass
         while True:
             data, self.remain[k] = message.readline( self.client[k][0], self.remain[k] )
             if data == '':
+                self.client[k] = None
+                self.remain[k] = None
+                self.clientcount -= 1
+                raise Exception('Disconnected from client unknown reason...')
+            cmd,arg,obj = message.splitline(data)
+            if DEBUG:
+                print cmd,arg,obj
+            if cmd == 'disconnect':
+                message.writeline(str(obj))
+                self.client[k][0].close()
+                self.client[k]=None
+                self.remain[k]=None
+                self.clientcount -= 1
                 break
-            print data
+            elif cmd == 'move':
+                pass
 
     def run( self ):
         self.wait4connection()
@@ -82,7 +96,7 @@ class Server:
         self.status = CLIENT_EXIT
         for i in range( DEFAULTPLAYER ):
             thread.start_new( self.run_client, () )
-#       wait for all thread stop... then
+#       wait for all thread to stop... then
         self.socket.close()
 
     def wait4connection( self ):
