@@ -27,7 +27,7 @@ class Map:
         for i in range( 0, self.size ):
             self.item.append( MapItem() )
 
-    #True if chess in pos
+    #return True if chess in pos
     def isPos( self, pos ):
         if self.item[pos].getValue():
             return True
@@ -75,6 +75,7 @@ class Map:
             return ( ( pos == 1 ) | ( pos == 3 ) )
         return False
 
+    #remove chess here
     def Remove( self, pos ):
         if self.isPos( pos ):
             tmp = self.item[pos]
@@ -83,6 +84,7 @@ class Map:
         self.item[pos] = MapItem()
         return tmp
 
+    #move chess from fpos to tpos
     def Move( self, fpos, tpos ):
         if self.CanMove( fpos, tpos ):
             if self.isPos( tpos ):
@@ -97,7 +99,7 @@ class Map:
             return True
         return False
 
-    #True if move from "fpos" to "tpos" is available
+    #return True if move from "fpos" to "tpos" is available
     def CanMove( self, fpos, tpos ):
         #no chess to move
         if not self.isPos( fpos ):
@@ -173,6 +175,9 @@ class Map:
                 return ( Railways.index( railway ), railway.index( pos ) );
         return ( -1, -1 )
 
+    """
+        return True if we can select the chess
+    """
     def CanSelect( self, pos, player ):
         if self.item.getPlayer() != player:
             return False
@@ -182,6 +187,11 @@ class Map:
             return False
         return ( self.item[pos].getMove() != 0 )
 
+    """ return value:
+            positive value - fpos win
+            negative value - tpos win
+            0              - neither
+    """
     def Result( self, fpos, tpos ):
         fval = self.item[fpos].getValue()
         tval = self.item[tpos].getValue()
@@ -232,15 +242,6 @@ def CleanOne( m, player ):
         m.Remove( pos )
         pos += 1
     return
-
-class Player():
-    def __init__( self ):
-        self.name = ''
-        self.chess = []
-    def Lost( self ):
-        return False
-    def Lost2( self ):
-        return False
 
 if __name__ == '__main__':
     print Map( len( Pos4 ) ).item

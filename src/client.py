@@ -144,8 +144,7 @@ class Client():
         Game.add_command( label = 'Disconnect...', command = self.GUI_disconnect, underline = 0 )
         Game.add_command( label = 'Review', command = ( lambda:0 ), underline = 0 )
         Game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
-        Game.add_command( label = 'Quit', command = ( lambda:0 ), underline = 0 )
-        Game.add_command( label = 'Exit', command = self.top.quit, underline = 1 )
+        Game.add_command( label = 'Exit', command = self.GUI_exit, underline = 1 )
         Main.add_cascade( label = 'Game', menu = Game, underline = 0 )
         self.menus['game'] = Game
 
@@ -161,7 +160,7 @@ class Client():
 
     def add_toolbar( self ):
         self.toolbar = Frame()
-        self.toolbutton.append( Button( self.toolbar, text = 'Exit', command = self.top.quit ) )
+        self.toolbutton.append( Button( self.toolbar, text = 'Exit', command = self.GUI_exit ) )
         self.toolbutton.append( Button( self.toolbar, text = 'Connect 连接', command = self.GUI_connect ) )
         self.toolbutton.append( Button( self.toolbar, text = 'Test', command = self.GUI_test ) )
         for button in self.toolbutton:
@@ -264,6 +263,14 @@ class Client():
 
     def GUI_test( self ):
         message.writeline( self.socket, 'Hello, this is a test!' )
+
+    def Lose( self ):
+        return False
+
+    def GUI_exit( self ):
+       if askyesno( 'Warning', 'Do you really want to exit?' ):
+            self.closeConnection()
+            self.top.quit()
 
 if __name__ == '__main__':
     c = Client()

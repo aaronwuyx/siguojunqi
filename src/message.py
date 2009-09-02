@@ -55,7 +55,9 @@ def writeline( connection, targetstr ):
 '''
 cmd, arg are strings, type of obj depends on arg's value
 value of arg    type of obj
-'string'            str
+'string'             str
+'int'                int
+'int,int'            int,int
 '''
 def splitline( line ):
     cmd = ''
@@ -67,8 +69,28 @@ def splitline( line ):
         cmd = line
     if arg == 'string':
         obj = line
+    if arg == 'int':
+        try:
+            obj = string.atoi( line.strip() )
+        except:
+            pass
+    if arg == 'int,int':
+        try:
+            l1, l2 = line.split( ',', 1 )
+            v1 = l1.strip()
+            v2 = l2.strip()
+            obj = ( v1, v2 )
+        except:
+            pass
     return ( cmd, arg, obj )
 
 def combineline( cmd, arg = '', obj = None ):
-    line = cmd + ':' + arg + ':' + str( obj ) + '\n'
+    line = cmd + ':' + arg + ':'
+    if arg == 'string':
+        line = line + obj
+    elif arg == 'int':
+        line = line + str( obj )
+    elif arg == 'int,int':
+        line = line + str( obj[0] ) + ',' + str( obj[1] )
+    line = line + '\n'
     return line
