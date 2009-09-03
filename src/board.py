@@ -17,10 +17,10 @@
 from Tkinter import *
 from defines import *
 import rule, traceback
-isPIL = True
 
 try:
     import Image, ImageTk
+    isPIL = True
 except:
     isPIL = False
 

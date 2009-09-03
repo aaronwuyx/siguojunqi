@@ -15,59 +15,82 @@
 """
 
 from Tkinter import *
-from tkMessageBox import *
-from socket import *
+import socket
+import tkMessageBox
+import os
+import sys
+import thread
+import time
+import string
+
+import board
+import rule
 from defines import *
 from message import *
-import board, rule
-import os, sys, thread, time, string
+
+CLIENT_INIT = 'init'
+CLIENT_START = 'start'
 
 class Client():
+
     def __init__( self ):
+        self.status = CLIENT_INIT
+        self.map = rule.Map( len( Pos4 ) )
+
         self.conf = Configuration()
         self.conf.Load( 'default.cfg' )
+        rule.PlaceOne( self.conf.place, self.map, self.conf.player )
+
         self.guiopt = thread.allocate_lock()
-        self.map = rule.Map( len( Pos4 ) )
-        self.socket = None
+        self.top = None
         self.menus = {}
         self.toolbutton = []
+
+        self.socket = None
         self.remain = ''
-        rule.PlaceOne( self.conf.place, self.map, self.conf.player )
 
     def run( self ):
         self.make_gui()
         self.top.mainloop()
+
         self.closeConnection()
         self.conf.Save( 'default.cfg' )
 
     def closeConnection( self ):
-        if self.socket:
-            Sendline( self.socket, Combline( CMD_EXIT, 'int', self.conf.player ) )
+        if self.socket != None:
+            #inform server
+            try:
+                Sendline( self.socket, Combline( CMD_EXIT, 'int', self.conf.player ) )
+            except Exception:
+                pass
+            #try to close connection anyway
             try:
                 self.socket.close()
-            except:
+            except Exception:
                 pass
-            self.socket = None
 
-    def GUI_disconnect( self ):
-        if self.socket:
-            if askyesno( 'Warning', 'Do you really want to disconnect?' ):
-                self.closeConnection()
+            self.socket = None
+            self.status = CLIENT_INIT
+            return True
+        return False
+
+    def GUI_Disconnect( self ):
+        if tkMessageBox.askyesno( 'Warning', 'Do you really want to close connection?' ):
+            if self.closeConnection() == False:
+                tkMessageBox.showerror( 'Error', 'Connection already closed' )
 
     def createConnection( self ):
         if self.socket == None:
-            self.socket = socket( AF_INET, SOCK_STREAM )
+            self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
             self.socket.connect( ( self.conf.host, self.conf.port ) )
             Sendline( self.socket, Combline( CMD_ADD, 'int', self.conf.player ) )
             data, self.remain = Recvline( self.socket, self.remain )
             cmd, arg, obj = Sepline( data )
             if cmd == 'error':
-                self.socket.close()
-                self.socket = None
-                print obj
                 raise Exception( str( obj ) )
+            self.status = CLIENT_START
 
-    def GUI_connect( self ):
+    def GUI_Connect( self ):
         def jump( ignore = None ):
             ent2.focus()
             ent2.select_range( 0, END )
@@ -79,6 +102,7 @@ class Client():
                 self.createConnection()
                 t.destroy()
             except Exception as exc:
+                self.closeConnection()
                 showerror( 'Error', str( exc ) )
 
         t = Toplevel()
@@ -120,12 +144,12 @@ class Client():
         self.menubar = Frame( self.top )
         self.menubar.pack( side = TOP, expand = YES, fill = X )
 
-        gbutton = Menubutton( self.menubar, text = 'Game', underline = 0 )
+        gbutton = Menubutton( self.menubar, text = 'Game', underline = 0, bg = '#eeeeee' )
         gbutton.pack( side = LEFT )
-        Game = Menu( gbutton )
-        Game.add_command( label = 'Connect', command = self.GUI_connect, underline = 0 )
+        Game = Menu( gbutton, tearoff = 0 )
+        Game.add_command( label = 'Connect', command = self.GUI_Connect, underline = 0 )
         Game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
-        Game.add_command( label = 'Disconnect...', command = self.GUI_disconnect, underline = 0 )
+        Game.add_command( label = 'Disconnect...', command = self.GUI_Disconnect, underline = 0 )
         Game.add_separator()
         Game.add_command( label = 'Save', command = ( lambda:0 ), underline = 0 )
         Game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
@@ -134,13 +158,14 @@ class Client():
         gbutton.config( menu = Game )
         self.menus['game'] = Game
 
-        obutton = Menubutton( self.menubar, text = 'Option', underline = 0 )
+        obutton = Menubutton( self.menubar, text = 'Option', underline = 0 , bg = '#eeeeee' )
         obutton.pack( side = LEFT )
-        Option = Menu( obutton )
-        Option.add_command( label = 'Discard', command = ( lambda: 0 ), underline = 0 )
+        Option = Menu( obutton , tearoff = 0 )
+        Option.add_command( label = 'Discard', command = self.GUI_Discard, underline = 0 )
         Option.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
         Option.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
-        Option.add_command( label = 'Name...', command = self.GUI_name, underline = 0 )
+        Option.add_separator()
+        Option.add_command( label = 'Name...', command = self.GUI_Name, underline = 0 )
         color = IntVar()
         color.set( self.conf.player )
         def setPlayer( x ):
@@ -158,13 +183,13 @@ class Client():
         obutton.config( menu = Option )
         self.menus['option'] = Option
 
-        hbutton = Menubutton( self.menubar, text = 'Help', underline = 0 )
+        hbutton = Menubutton( self.menubar, text = 'Help', underline = 0, bg = '#eeeeee' )
         hbutton.pack( side = RIGHT )
-        Help = Menu( hbutton )
+        Help = Menu( hbutton , tearoff = 0 )
         Help.add_command( label = 'Help', command = ( lambda:0 ), underline = 0 )
         Help.add_separator()
-        Help.add_command( label = 'License...', command = self.GUI_license, underline = 0 )
-        Help.add_command( label = 'About...', command = self.GUI_about, underline = 0 )
+        Help.add_command( label = 'License...', command = self.GUI_License, underline = 0 )
+        Help.add_command( label = 'About...', command = self.GUI_About, underline = 0 )
         hbutton.config( menu = Help )
         self.menus['help'] = Help
 
@@ -175,19 +200,27 @@ class Client():
     def add_toolbar( self ):
         self.toolbar = Frame()
         self.toolbutton.append( Button( self.toolbar, text = 'Exit', command = self.GUI_exit ) )
-        self.toolbutton.append( Button( self.toolbar, text = 'Connect 连接', command = self.GUI_connect ) )
+        self.toolbutton.append( Button( self.toolbar, text = 'Connect', command = self.GUI_Connect ) )
+        self.toolbutton.append( Button( self.toolbar, text = 'Disconnect', command = self.GUI_Disconnect ) )
         self.toolbutton.append( Button( self.toolbar, text = 'Test', command = self.GUI_test ) )
         for button in self.toolbutton:
             button.pack( side = RIGHT )
             Label( text = ' ' ).pack( side = RIGHT )
             button.config( width = 15, relief = RAISED )
-        self.toolbar.pack( side = TOP, expand = YES, fill = X )
+        self.toolbar.pack( side = BOTTOM, expand = YES, fill = X )
         self.toolbar.config( relief = GROOVE, bd = 2, background = 'white' )
 
     def updateMenuToolbar( self ):
-        return
+        if self.status == CLIENT_INIT:
+            self.menus['game'].entryconfig( 1, state = DISABLED )
+            self.menus['game'].entryconfig( 2, state = DISABLED )
+            self.menus['game'].entryconfig( 4, state = DISABLED )
+        elif self.status == CLIENT_START:
+            self.menus['option'].entryconfig( 0, state = DISABLED )
+            self.menus['option'].entryconfig( 1, state = DISABLED )
+            self.menus['option'].entryconfig( 4, state = DISABLED )
 
-    def GUI_about( self ):
+    def GUI_About( self ):
         t = Toplevel()
         t.title( 'About SiGuo' )
         Label( t, text = 'SiGuo svn ' + SVN + '\n' + VERSION ).pack( side = TOP )
@@ -197,7 +230,7 @@ class Client():
         t.focus_set()
         t.wait_window()
 
-    def GUI_license( self ):
+    def GUI_License( self ):
         t = Toplevel()
         t.title( 'License' )
         Button( t, text = 'OK', command = t.destroy ).pack( side = BOTTOM )
@@ -207,7 +240,7 @@ class Client():
         t.focus_set()
         t.wait_window()
 
-    def GUI_name( self ):
+    def GUI_Name( self ):
         def fetch( ignore = None ):
             self.conf.name = s.get()
             t.destroy()
@@ -275,16 +308,24 @@ class Client():
         ent.pack( side = RIGHT )
         self.moveframe.pack( side = TOP )
 
+    def GUI_exit( self ):
+       if tkMessageBox.askyesno( 'Warning', 'Do you really want to exit?' ):
+            self.closeConnection()
+            self.top.quit()
+
     def GUI_test( self ):
         Sendline( self.socket, 'Hello, this is a test!' )
 
+    def GUI_Discard( self ):
+        if self.status == CLIENT_INIT:
+            if tkMessageBox.askyesno( 'Warning', 'Discard all changes?' ):
+                rule.CleanOne( self.map, self.conf.player )
+                self.conf.place = GetDefaultPlace( self.conf.player )
+                rule.PlaceOne( self.conf.place, self.map, self.conf.player )
+                self.board.Draw_Map( self.map, self.conf.player )
+
     def Lose( self ):
         return False
-
-    def GUI_exit( self ):
-       if askyesno( 'Warning', 'Do you really want to exit?' ):
-            self.closeConnection()
-            self.top.quit()
 
 if __name__ == '__main__':
     c = Client()

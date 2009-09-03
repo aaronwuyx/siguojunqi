@@ -224,7 +224,7 @@ def GetChessInit( value ):
             return prop.initnum
 
 #Generate default placement
-def getDefaultPlace( player, status = MAP_HIDE ):
+def GetDefaultPlace( player, status = MAP_HIDE ):
     return [MapItem( 41, player, status ), MapItem( 31, player, status ), MapItem( 41, player, status ), MapItem( 33, player, status ),
            MapItem( 36, player, status ), MapItem( 33, player, status ), MapItem( 41, player, status ), MapItem( 36, player, status ),
            MapItem( 32, player, status ), MapItem( 33, player, status ), MapItem( 37, player, status ), MapItem(),
@@ -239,7 +239,7 @@ class Configuration:
         self.name = 'Unknown'
         self.player = 1
         self.placefile = 'place.cfg'
-        self.place = getDefaultPlace( self.player )
+        self.place = GetDefaultPlace( self.player )
         self.host = 'localhost'
         self.port = 30000
 
