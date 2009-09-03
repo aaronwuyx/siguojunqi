@@ -19,15 +19,6 @@ from message import *
 import rule
 import string, random, thread, time
 
-#later mv these lines into defines.py
-CMD_WAIT = 'wait' #Wait for client/server
-CMD_MOVE = 'move' #tell server to move...
-CMD_ONMOVE = 'onmove' #tell a client to move...
-CMD_ADD = 'connect'
-CMD_EXIT = 'disconnect'
-CMD_PLACE = 'place'
-CMD_ERROR = 'error'
-
 class Server:
     def __init__( self , URL = 'localhost', Port = 30000 ):
         self.map = rule.Map( len( Pos4 ) )
@@ -39,7 +30,7 @@ class Server:
         self.socket.listen( 5 )
         #client info & locks
         self.clientcount = 0
-        self.client = [None * 4]
+        self.client = []
         self.remain = []
         self.tlocks = []
         for i in range( DEFAULTPLAYER ):
@@ -55,7 +46,7 @@ class Server:
         if DEBUG:
             print 'connection from address ', addr
         data, remain = Recvline( conn, '' )
-        cmd, arg, player = Sepline( conn, '' )
+        cmd, arg, player = Sepline( data )
         if ( cmd != CMD_ADD ) or ( arg != 'int' ) or ( player <= 0 ) or ( player > DEFAULTPLAYER ):
             Sendline( conn, Combline( CMD_ERROR, 'string', 'invalid player number' ) )
             conn.close()

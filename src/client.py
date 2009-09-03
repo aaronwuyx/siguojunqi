@@ -18,7 +18,8 @@ from Tkinter import *
 from tkMessageBox import *
 from socket import *
 from defines import *
-import board, rule, message
+from message import *
+import board, rule
 import os, sys, thread, time, string
 
 class Client():
@@ -41,8 +42,12 @@ class Client():
 
     def closeConnection( self ):
         if self.socket:
-            message.writeline( self.socket, message.combineline( 'disconnect', 'int', self.conf.player ) )
-            self.socket.close()
+            Sendline( self.socket, Combline( CMD_EXIT, 'int', self.conf.player ) )
+            try:
+                self.socket.close()
+            except:
+                pass
+            self.socket = None
 
     def GUI_disconnect( self ):
         if self.socket:
@@ -53,9 +58,9 @@ class Client():
         if self.socket == None:
             self.socket = socket( AF_INET, SOCK_STREAM )
             self.socket.connect( ( self.conf.host, self.conf.port ) )
-            message.writeline( self.socket, str( self.conf.player ) )
-            data, self.remain = message.readline( self.socket, self.remain )
-            cmd, arg, obj = message.splitline( data )
+            Sendline( self.socket, Combline( CMD_ADD, 'int', self.conf.player ) )
+            data, self.remain = Recvline( self.socket, self.remain )
+            cmd, arg, obj = Sepline( data )
             if cmd == 'error':
                 self.socket.close()
                 self.socket = None
@@ -271,7 +276,7 @@ class Client():
         self.moveframe.pack( side = TOP )
 
     def GUI_test( self ):
-        message.writeline( self.socket, 'Hello, this is a test!' )
+        Sendline( self.socket, 'Hello, this is a test!' )
 
     def Lose( self ):
         return False

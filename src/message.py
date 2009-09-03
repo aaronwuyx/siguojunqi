@@ -16,6 +16,15 @@
 
 from socket import *
 from defines import *
+import string
+
+CMD_WAIT = 'wait' #Wait for client/server
+CMD_MOVE = 'move' #tell server to move...
+CMD_ONMOVE = 'onmove' #tell a client to move...
+CMD_ADD = 'connect'
+CMD_EXIT = 'disconnect'
+CMD_PLACE = 'place'
+CMD_ERROR = 'error'
 
 def Recvline( connection, remainstr ):
     if remainstr.find( '\n' ) == -1:
@@ -73,18 +82,19 @@ def Sepline( line ):
         cmd, arg, line = line.split( ':', 2 )
     except:
         cmd = line
+        return ( cmd, '', None )
     if arg == 'string':
         obj = line
-    if arg == 'int':
+    elif arg == 'int':
         try:
             obj = string.atoi( line.strip() )
         except:
             pass
-    if arg == 'int,int':
+    elif arg == 'int,int':
         try:
             l1, l2 = line.split( ',', 1 )
-            v1 = l1.strip()
-            v2 = l2.strip()
+            v1 = string.atoi( l1.strip() )
+            v2 = string.atoi( l2.strip() )
             obj = ( v1, v2 )
         except:
             pass
