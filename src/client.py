@@ -41,8 +41,7 @@ class Client():
 
     def closeConnection( self ):
         if self.socket:
-            message.writeline( self.socket, message.combineline('disconnect','int',self.conf.player ))
-            message.readline(self.socket, self.remain)
+            message.writeline( self.socket, message.combineline( 'disconnect', 'int', self.conf.player ) )
             self.socket.close()
 
     def GUI_disconnect( self ):
@@ -113,12 +112,12 @@ class Client():
         self.add_widgets()
 
     def add_menus( self ):
-        self.menubar = Frame(self.top)
-        self.menubar.pack(side=TOP,expand = YES,fill=X)
-        
-        gbutton = Menubutton( self.menubar, text = 'Game',underline = 0)
-        gbutton.pack(side = LEFT)
-        Game = Menu(gbutton)
+        self.menubar = Frame( self.top )
+        self.menubar.pack( side = TOP, expand = YES, fill = X )
+
+        gbutton = Menubutton( self.menubar, text = 'Game', underline = 0 )
+        gbutton.pack( side = LEFT )
+        Game = Menu( gbutton )
         Game.add_command( label = 'Connect', command = self.GUI_connect, underline = 0 )
         Game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
         Game.add_command( label = 'Disconnect...', command = self.GUI_disconnect, underline = 0 )
@@ -127,12 +126,12 @@ class Client():
         Game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
         Game.add_separator()
         Game.add_command( label = 'Exit', command = self.GUI_exit, underline = 1 )
-        gbutton.config(menu=Game)
+        gbutton.config( menu = Game )
         self.menus['game'] = Game
 
-        obutton = Menubutton( self.menubar, text = 'Option',underline = 0)
-        obutton.pack(side=LEFT)
-        Option = Menu(obutton)
+        obutton = Menubutton( self.menubar, text = 'Option', underline = 0 )
+        obutton.pack( side = LEFT )
+        Option = Menu( obutton )
         Option.add_command( label = 'Discard', command = ( lambda: 0 ), underline = 0 )
         Option.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
         Option.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
@@ -151,20 +150,20 @@ class Client():
         Bgcolor.add_radiobutton( label = 'Blue', variable = color, value = 4, command = ( lambda: setPlayer( 4 ) ), underline = 0 )
         Option.add_cascade( label = 'Colour', menu = Bgcolor, underline = 0 )
         Option.add_command( label = 'Rule', command = ( lambda:0 ), underline = 0 )
-        obutton.config(menu = Option)
+        obutton.config( menu = Option )
         self.menus['option'] = Option
 
-        hbutton = Menubutton(self.menubar,text='Help',underline = 0)
-        hbutton.pack(side = RIGHT)
-        Help = Menu(hbutton)
+        hbutton = Menubutton( self.menubar, text = 'Help', underline = 0 )
+        hbutton.pack( side = RIGHT )
+        Help = Menu( hbutton )
         Help.add_command( label = 'Help', command = ( lambda:0 ), underline = 0 )
         Help.add_separator()
         Help.add_command( label = 'License...', command = self.GUI_license, underline = 0 )
         Help.add_command( label = 'About...', command = self.GUI_about, underline = 0 )
-        hbutton.config(menu = Help)
+        hbutton.config( menu = Help )
         self.menus['help'] = Help
-        
-        self.menubar.config(bg = '#eeeeee')
+
+        self.menubar.config( bg = '#eeeeee' )
         for name, menu in self.menus.items():
             menu.config( bg = '#eeeeee', fg = '#111111', activebackground = '#ffffff', activeforeground = '#000000', disabledforeground = '#666666', postcommand = self.updateMenuToolbar )
 

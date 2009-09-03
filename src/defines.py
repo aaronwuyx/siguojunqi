@@ -243,7 +243,7 @@ class Configuration:
         self.host = 'localhost'
         self.port = 30000
 
-        self.bgfile = '..'+os.sep+'resource'+os.sep+'ugly2.gif'
+        self.bgfile = '..' + os.sep + 'resource' + os.sep + 'ugly2.gif'
         self.spacex = 200
         self.spacey = 200
         self.offx = 3 #6 to have shadow?

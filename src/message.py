@@ -17,7 +17,7 @@
 from socket import *
 from defines import *
 
-def readline( connection, remainstr ):
+def Recvline( connection, remainstr ):
     if remainstr.find( '\n' ) == -1:
         len = -1
         try:
@@ -40,7 +40,7 @@ def readline( connection, remainstr ):
             print 'recv :', ret
         return ret, remainstr
 
-def writeline( connection, targetstr ):
+def Sendline( connection, targetstr ):
     if ( targetstr == None ) | ( targetstr == '' ):
         return
     if targetstr[-1] != '\n':
@@ -53,13 +53,19 @@ def writeline( connection, targetstr ):
     return sent
 
 '''
-cmd, arg are strings, type of obj depends on arg's value
-value of arg    type of obj
+cmd -     indicate what this line is done for...
+arg -     the type of obj
+obj -     extra arguments
+---------------------------------
+cmd        action
+
+---------------------------------
+arg                type of obj
 'string'             str
 'int'                int
 'int,int'            int,int
 '''
-def splitline( line ):
+def Sepline( line ):
     cmd = ''
     arg = ''
     obj = None
@@ -84,7 +90,7 @@ def splitline( line ):
             pass
     return ( cmd, arg, obj )
 
-def combineline( cmd, arg = '', obj = None ):
+def Combline( cmd, arg = '', obj = None ):
     line = cmd + ':' + arg + ':'
     if arg == 'string':
         line = line + obj
