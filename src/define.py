@@ -162,50 +162,22 @@ class Chess:
 
 class Positions:
     def __init__( self, size ):
-        if size <= 0:
-            size = MAXPOSITION
+        if size < 0:
+            size = 0
         self.size = size
         self.item = []
         for i in range( 0, self.size ):
             self.item.append( Position( i ) )
 
-    #return True if a chess is place in the position
-    def Place( self, pos, chess ):
-        value = chess.GetValue()
-        player = chess.GetPlayer()
-        #Not player's field
-        if ( pos >= ( player + 1 ) * MAXCHESS ) or ( pos < player * MAXCHESS ):
-            return False
-        #Safe position
-        if self.item[pos].IsSafe():
-            return False
-        #Chess already
-        if self.item[pos].IsChess():
-            return False
-        if value == None:
-            self.item[pos].SetChess( chess )
-            return True
-        rule = chess.GetInitrule()
-        p = pos % MAXCHESS
-        #Check according to place rule
-        if rule == 0:
-            self.item[pos].SetChess( chess )
-            return True
-        elif ( rule == 1 ) & ( p < 10 ):
-            self.item[pos].SetChess( chess )
-            return True
-        elif ( rule == 2 ) & ( p < 25 ):
-            self.item[pos].SetChess( chess )
-            return True
-        elif ( rule == 3 ) & ( ( p == 1 ) | ( p == 3 ) ):
-            self.item[pos].SetChess( chess )
-            return True
-        return False
-
     def Remove( self, pos ):
         tmp = self.item[pos].GetChess()
         self.item[pos].SetChess( None )
         return tmp
+
+
+class CheckerBoard( Positions ):
+    def __init__( self, size ):
+        Positions.__init__( self, MAXPOSITION )
 
     def CanSelect( self, pos, player ):
         if self.item[pos].isMovable == False:
@@ -328,6 +300,129 @@ Railways = [[5, 6, 7, 8, 9], [9, 8, 7, 6, 5], [35, 36, 37, 38, 39], [39, 38, 37,
           [117, 126, 128, 122, 57], [57, 122, 128, 126, 117],
           [27, 120, 128, 124, 87], [87, 124, 128, 120, 27]]
 ####### Deprecated #######
+
+class Lineup( Positions ):
+
+    def __init__( self, player ):
+        Positions.__init__( self, MAXCHESS )
+        self.player = player
+
+    def SetToDefault( self ):
+        default = [41, 31, 41, 33, 36, \
+                   33, 41, 36, 32, 33, \
+                   37, 34, 37, \
+                   40, 35, 35, 39, \
+                   42, 34, 42, \
+                   38, 32, 34, 32, 38]
+        pos = 0
+        for value in default:
+            self.item[pos].SetChess( Chess( value, self.player, VIS_SELF ) )
+            pos += 1
+            while self.item[pos].IsSafe():
+                self.item[pos].SetChess( None )
+                pos += 1
+
+    def SetToNone( self ):
+        for pos in range( MAXCHESS ):
+            self.item[pos].SetChess( None )
+
+    def SetToUnknown( self ):
+        for pos in range( MAXCHESS ):
+            if self.item[pos].IsSafe():
+                self.item[pos].SetChess( None )
+                continue
+            self.item[pos].SetChess( Chess( None, self.player, VIS_SELF ) )
+
+    #return True if a chess is place in the position
+    #when nopt is True, just return whether place is valid 
+    def Place( self, pos, chess, nopt = False ):
+        value = chess.GetValue()
+        player = chess.GetPlayer()
+        #Not player's field
+        if ( pos < 0 ) | ( pos >= MAXCHESS ):
+            return False
+        #Safe position
+        if self.item[pos].IsSafe():
+            return False
+        #Chess already
+        if self.item[pos].IsChess():
+            return False
+        if value == None:
+            self.item[pos].SetChess( chess )
+            return True
+        rule = chess.GetInitrule()
+        #Check according to place rule
+        if rule == 0:
+            if nopt == False:
+                self.item[pos].SetChess( chess )
+            return True
+        elif ( rule == 1 ) & ( pos < 10 ):
+            if nopt == False:
+                self.item[pos].SetChess( chess )
+            return True
+        elif ( rule == 2 ) & ( pos < 25 ):
+            if nopt == False:
+                self.item[pos].SetChess( chess )
+            return True
+        elif ( rule == 3 ) & ( ( pos == 1 ) | ( pos == 3 ) ):
+            if SkipOpt == False:
+                self.item[pos].SetChess( chess )
+            return True
+        return False
+
+    def Dump( self, other ):
+        for pos in range( MAXCHESS ):
+            other.item[pos].SetChess( self.item[pos].GetChess() )
+
+    def Load( self, filename ):
+        try:
+            f = open ( filename, 'r' )
+        except:
+            if DEBUG:
+                exc_info = sys.exc_info()
+                print( exc_info[0], '\n', exc_info[1] )
+                traceback.print_tb( exc_info[2] )
+            return
+
+        count = {}
+        for key, value in Chess.Num.items():
+            count[key] = value
+
+        tmp = Lineup( self.player )
+        self.Dump( tmp )
+
+        pos = 0
+
+        try:
+            for line in f.readlines():
+                if line[:7] == 'lineup=':
+                    for item in line.split():
+                        value = int( item.strip() )
+                        if pos > MAXCHESS:
+                            raise Exception( 'Position Exceed ' + str( MAXCHESS ) )
+                        if tmp.Place( pos, Chess( value , self.player, VIS_SELF ) ) == False:
+                            raise Exception( 'Cannot place ' + item + 'at ' + str( pos ) )
+                        count[ value] -= 1
+                        if count[value] < 0:
+                            raise Exception( 'Number of chess ' + item + ' is incorrect' )
+                        pos += 1
+                        while self.item[pos].IsSafe():
+                            self.item[pos].SetChess( None )
+                        pos += 1
+                else:
+                    if DEBUG:
+                        print( line )
+        except:
+            if DEBUG:
+                exc_info = sys.exc_info()
+                print( exc_info[0], '\n', exc_info[1] )
+                traceback.print_tb( exc_info[2] )
+            return
+
+        tmp.Dump( self )
+
+    def Save( self, filename ):
+        return
 
 if __name__ == '__main__':
     Positions( MAXPOSITION )

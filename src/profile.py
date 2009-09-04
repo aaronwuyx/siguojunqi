@@ -47,6 +47,9 @@ class Profile:
         self.bgfile = 'blank.gif'
         self.placefile = ''
 
+        self.win = 0
+        self.total = 0
+
         self.init() #initialize settings
         self.load() #load customed settings
         self.save() #immediately save settings, for future reload
@@ -128,16 +131,6 @@ class Profile:
             pass
 
 """
-def GetDefaultPlace( player, status = MAP_HIDE ):
-    return [MapItem( 41, player, status ), MapItem( 31, player, status ), MapItem( 41, player, status ), MapItem( 33, player, status ),
-           MapItem( 36, player, status ), MapItem( 33, player, status ), MapItem( 41, player, status ), MapItem( 36, player, status ),
-           MapItem( 32, player, status ), MapItem( 33, player, status ), MapItem( 37, player, status ), MapItem(),
-           MapItem( 34, player, status ), MapItem(), MapItem( 37, player, status ), MapItem( 40, player, status ),
-           MapItem( 35, player, status ), MapItem(), MapItem( 35, player, status ), MapItem( 39, player, status ),
-           MapItem( 42, player, status ), MapItem(), MapItem( 34, player, status ), MapItem(),
-           MapItem( 42, player, status ), MapItem( 38, player, status ), MapItem( 32, player, status ),
-           MapItem( 34, player, status ), MapItem( 32, player, status ), MapItem( 38, player, status )]
-
 class Configuration:
     def __init__( self ):
         self.place = GetDefaultPlace( self.player )
@@ -177,22 +170,6 @@ class Configuration:
             self.placefile = backfile
             self.place = backplace
 ------------------------
-    def loadPlace( self, filename ):
-        try:
-            f = open ( filename, 'r' )
-        except:
-            return
-        place = []
-        for line in f.readlines():
-            for item in line.split():
-                try:
-                    if item == 'None':
-                        place.append( MapItem() )
-                    else:
-                        place.append( MapItem( string.atoi( item ), self.player , MAP_HIDE ) )
-                except:
-                    return
-        return place
     def save
         f.write( 'place=%s\n' % ( self.placefile ) )
         f.write( 'offset=%d,%d\n' % ( self.offx, self.offy ) )
