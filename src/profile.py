@@ -43,74 +43,6 @@ class Profile:
         self.save() #immediately save settings, for future reload
 
 """
-#defined in MapItem.status
-MAP_NONE = 'None' #Nobody | Nothing
-MAP_HIDE = 'Hide' #Player himself can see the chess
-MAP_TEAM = 'Team' #Player & his teammate can see the chess
-MAP_OTHER = 'Other' #Not defined... reserved for stander-by...
-MAP_SHOW = 'Show' #Everyone can see it, to ease debug...
-
-#MapItem is items used in class Map | something called a "Placement"
-#it represents an empty position or pieces in the position
-class MapItem:
-    def __init__( self, value = None, player = None, status = MAP_NONE ):
-        self.value = value
-        self.player = player
-        self.status = status
-    def getValue( self ):
-        return self.value
-    def getPlayer( self ):
-        return self.player
-    def getStatus( self ):
-        return self.status
-    def getName( self ):
-        if self.value == None:
-            return
-        return GetChessName( self.value )
-    def getRule( self ):
-        if self.value == None:
-            return
-        return GetChessRule( self.value )
-    def getMove( self ):
-        if self.value == None:
-            return
-        return GetChessMove( self.value )
-
-#a class on properties of chess 
-class ChessProp:
-    def __init__( self, name, value, initnum, rule = 0, move = 1 ):
-        self.name = name #In Chinese
-        self.value = value
-        self.initnum = initnum #Number of this kind of chess when initialized
-        self.rule = rule #Rule of placement
-        self.move = move #Rule of movement
-
-#And here is the data
-InitChess = [ChessProp( '司令', 40, 1 ), ChessProp( '军长', 39, 1 ), ChessProp( '师长', 38, 2 ), ChessProp( '旅长', 37, 2 ),
-             ChessProp( '团长', 36, 2 ), ChessProp( '营长', 35, 2 ), ChessProp( '连长', 34, 3 ), ChessProp( '排长', 33, 3 ),
-             ChessProp( '工兵', 32, 3, 0, 2 ), ChessProp( '地雷', 41, 3, 1, 0 ), ChessProp( '炸弹', 42, 2, 2 ), ChessProp( '军旗', 31, 1, 3, 0 )]
-
-#GetChessxxx : find "value" through InitChess and get the corresponding attribute, None if not found...
-def GetChessName( value ):
-    for prop in InitChess:
-        if prop.value == value:
-            return prop.name
-
-def GetChessRule( value ):
-    for prop in InitChess:
-        if prop.value == value:
-            return prop.rule
-
-def GetChessMove( value ):
-    for prop in InitChess:
-        if prop.value == value:
-            return prop.move
-
-def GetChessInit( value ):
-    for prop in InitChess:
-        if prop.value == value:
-            return prop.initnum
-
 #Generate default placement
 def GetDefaultPlace( player, status = MAP_HIDE ):
     return [MapItem( 41, player, status ), MapItem( 31, player, status ), MapItem( 41, player, status ), MapItem( 33, player, status ),
@@ -253,8 +185,7 @@ class Configuration:
             f.write( str( place.getValue() ) + ' ' )
         f.write( '\n' )
         return True
+"""
 
 if __name__ == '__main__':
-    for i in range( len( Pos4 ) ):
-        print Pos4[i]
-"""
+    return

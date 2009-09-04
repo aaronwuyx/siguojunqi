@@ -66,22 +66,6 @@ class Board( Frame ):
         for pos in range( 0, m.size ):
             self.Clear_Position( pos )
 
-    def getPolicy( self, viewer, player, status ):
-        if status == MAP_NONE:
-            return False
-        if status == MAP_SHOW:
-            return True
-        if status == MAP_HIDE:
-            return ( viewer == player )
-        if status == MAP_TEAM:
-            try:
-                p = Team4[player - 1].team.index( viewer )
-                return True
-            except:
-                return False
-        #for other status, currently return False
-        return False
-
     def Clear_All( self ):
         self.back.delete( 'all' )
         self.pos_rectangle = {}
