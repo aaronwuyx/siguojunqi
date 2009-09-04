@@ -14,9 +14,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-"""
-    this file mainly describes game's rule by defining class "Map"
-"""
 def CheckPlace1( placement ):
     if len( placement ) != CHESSNUM:
         return False

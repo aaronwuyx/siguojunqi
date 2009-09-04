@@ -16,6 +16,7 @@
 
 import os
 import sys
+import traceback
 import define
 
 class Profile:
@@ -30,7 +31,7 @@ class Profile:
         if ( id >= define.MAXPLAYER ) or ( id < 0 ):
             id = 0
         if name == '':
-            name = 'Unknown'
+            name = 'default'
 
         self.id = id #0..3
         self.name = name #identify himself from other players
@@ -38,12 +39,95 @@ class Profile:
         self.fg = Profile.Fgcolor[id]
         self.acbg = Profile.ActiveBgColor[id]
         self.teammate = Team[id % 2]
+
+        self.host = 'localhost'
+        self.port = 30000
+
+        self.conffile = '..' + os.sep + 'resource' + os.sep + self.name + '.cfg'
+        self.bgfile = 'blank.gif'
+        self.placefile = ''
+
         self.init() #initialize settings
         self.load() #load customed settings
         self.save() #immediately save settings, for future reload
 
+    def load( self ):
+        try:
+            f = open( filename, 'r' )
+        except:
+            if DEBUG:
+                exc_info = sys.exc_info()
+                print( exc_info[0], '\n', exc_info[1] )
+                traceback.print_tb( exc_info[2] )
+            return
+        for line in f.readlines():
+            try:
+                key, value = line.split( '=', 1 )
+                key = key.strip()
+                value = value.strip()
+                if key == 'name':
+                    if self.name != value:
+                        break
+                if key == 'id':
+                    self.id = int( value )
+
+                if key == 'bgfile':
+                    self.bgfile = value
+                if key == 'placefile':
+                    self.placefile = value
+
+                if key == 'host':
+                    self.host = value
+                if key == 'port':
+                    self.port = int( value )
+
+                if key == 'bg':
+                    self.bg = value
+                if key == 'fg':
+                    self.fg = value
+                if key == 'acbg':
+                    self.acbg = value
+
+            except:
+                if DEBUG:
+                    exc_info = sys.exc_info()
+                    print( exc_info[0], '\n', exc_info[1] )
+                    traceback.print_tb( exc_info[2] )
+
+        try:
+            f.close()
+        except:
+            pass
+
+    def save( self ):
+        try:
+            f = open( filename, 'w' )
+        except:
+            if DEBUG:
+                exc_info = sys.exc_info()
+                print( exc_info[0], '\n', exc_info[1] )
+                traceback.print_tb( exc_info[2] )
+            return
+        f.write( 'Siguo game profile :\n' )
+        f.write( 'name = ' + self.name + '\n' )
+        f.write( 'id = ' + str( self.id ) + '\n' )
+
+        f.write( 'placefile = ' + self.placefile + '\n' )
+        f.write( 'bgfile = ' + self.bgfile + '\n' )
+
+        f.write( 'host = ' + self.host + '\n' )
+        f.write( 'port = ' + str( self.port ) + '\n' )
+
+        f.write( 'bg = ' + self.bg + '\n' )
+        f.write( 'fg = ' + self.fg + '\n' )
+        f.write( 'acbg = ' + self.acbg + '\n' )
+
+        try:
+            f.close()
+        except:
+            pass
+
 """
-#Generate default placement
 def GetDefaultPlace( player, status = MAP_HIDE ):
     return [MapItem( 41, player, status ), MapItem( 31, player, status ), MapItem( 41, player, status ), MapItem( 33, player, status ),
            MapItem( 36, player, status ), MapItem( 33, player, status ), MapItem( 41, player, status ), MapItem( 36, player, status ),
@@ -56,54 +140,15 @@ def GetDefaultPlace( player, status = MAP_HIDE ):
 
 class Configuration:
     def __init__( self ):
-        self.name = 'Unknown'
-        self.player = 1
-        self.placefile = 'place.cfg'
         self.place = GetDefaultPlace( self.player )
-        self.host = 'localhost'
-        self.port = 30000
 
-        self.bgfile = '..' + os.sep + 'resource' + os.sep + 'ugly2.gif'
         self.spacex = 200
         self.spacey = 200
         self.offx = 3 #6 to have shadow?
         self.offy = 3
 
-    def config( self ):
-        return
-
-    def Load( self, filename ):
-        try:
-            f = open( filename, 'r' )
-        except:
-            return
-        for line in f.readlines():
-            try:
-                key, value = line.split( '=' , 1 )
-                key = key.strip()
-                value = value.strip()
-                if key == 'name':
-                    self.name = value
-                if key == 'bgfile':
-                    try:
-                        self.bgfile = value
-                    except:
-                        pass
-                if key == 'player':
-                    try:
-                        self.player = string.atoi( value )
-                    except:
-                        pass
-                if key == 'place':
-                    self.placefile = value
-                if key == 'host':
-                    self.host = value
-                if key == 'port':
-                    try:
-                        self.port = string.atoi( value )
-                    except:
-                        pass
-                if key == 'space':
+    def load
+                    if key == 'space':
                     try:
                         xs, ys = value.split( ',' )
                         x = string.atoi( xs )
@@ -121,12 +166,7 @@ class Configuration:
                         self.offy = y
                     except:
                         pass
-            except:
-                pass
-        try:
-            f.close()
-        except:
-            pass
+-----------------------
         backfile = self.placefile
         backplace = self.place
         if self.loadPlace( self.placefile ):
@@ -136,29 +176,7 @@ class Configuration:
         else:
             self.placefile = backfile
             self.place = backplace
-
-    def Save( self, filename ):
-        try:
-            f = open( filename, 'w' )
-        except:
-            return
-        f.write( 'siguo game client configuration:\n' )
-        f.write( '\nclient\n' )
-        f.write( 'name=%s\n' % ( self.name ) )
-        f.write( 'player=%d\n' % ( self.player ) )
-        f.write( 'place=%s\n' % ( self.placefile ) )
-        f.write( 'host=%s\n' % ( self.host ) )
-        f.write( 'port=%d\n' % ( self.port ) )
-        f.write( '\nboard\n' )
-        f.write( 'bgfile=%s\n' % ( self.bgfile ) )
-        f.write( 'offset=%d,%d\n' % ( self.offx, self.offy ) )
-        f.write( 'space=%d,%d\n' % ( self.spacex, self.spacey ) )
-        try:
-            f.close()
-        except:
-            pass
-        self.savePlace( self.placefile )
-
+------------------------
     def loadPlace( self, filename ):
         try:
             f = open ( filename, 'r' )
@@ -175,6 +193,12 @@ class Configuration:
                 except:
                     return
         return place
+    def save
+        f.write( 'place=%s\n' % ( self.placefile ) )
+        f.write( 'offset=%d,%d\n' % ( self.offx, self.offy ) )
+        f.write( 'space=%d,%d\n' % ( self.spacex, self.spacey ) )
+        self.savePlace( self.placefile )
+
 
     def savePlace( self, filename ):
         try:
@@ -188,4 +212,4 @@ class Configuration:
 """
 
 if __name__ == '__main__':
-    return
+    pass

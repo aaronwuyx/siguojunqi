@@ -14,7 +14,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import locale
+import profile
 
 DEBUG = True
 STABLEVERSION = '0.05'
@@ -51,29 +51,29 @@ class Position:
         line = POSDATA[pos]
         #cert:x:y:pic:movable:safe:direct:rail:link:rlink:comment
         a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11 = line.split( ':', 10 )
-        cert = locale.atoi( a1 )
+        cert = int( a1 )
         if cert != pos:
             raise Exception( 'Invalid position data' )
 
-        self.x = locale.atoi( a2 )
-        self.y = locale.atoi( a3 )
-        self.pic = locale.atoi( a4 )
-        self.movable = ( locale.atoi( a5 ) != 0 )
-        self.safe = ( locale.atoi( a6 ) != 0 )
-        self.direct = locale.atoi( a7 )
+        self.x = int( a2 )
+        self.y = int( a3 )
+        self.pic = int( a4 )
+        self.movable = ( int( a5 ) != 0 )
+        self.safe = ( int( a6 ) != 0 )
+        self.direct = int( a7 )
 
         self.rail = []
         if a8 != '':
             for item in a8.split( ',' ):
-                self.rail.append( locale.atoi( item ) )
+                self.rail.append( int( item ) )
         self.link = []
         if a9 != '':
             for item in a9.split( ',' ):
-                self.link.append( locale.atoi( item ) )
+                self.link.append( int( item ) )
         self.rlink = []
         if a10 != '':
             for item in a10.split( ',' ):
-                self.rlink.append( locale.atoi( item ) )
+                self.rlink.append( int( item ) )
 
         if DEBUG:
             print( cert, ':', self.x, self.y, self.pic, self.movable, self.safe, \
@@ -256,10 +256,8 @@ class Positions:
         if c != None:
             if self.item[tpos].IsSafe():
                 return False
-############ the only problem remains ############# team4
-            if c.GetPlayer() in Team4[self.item[fpos].GetPlayer()]:
+            if c.GetPlayer() in profile.Profile.Team[self.item[fpos].GetPlayer()]:
                 return False
-############ the only problem remains #############
         #1 step
         if ( not self.item[fpos].IsRailway() ) | ( not self.item[tpos].IsRailway() ):
             return ( tpos in Pos4[fpos].link ) | ( tpos in Pos4[fpos].rlink )
@@ -315,6 +313,21 @@ class Positions:
             if not flag:
                 break
         return ret.keys()
+
+####### Deprecated #######
+Railways = [[5, 6, 7, 8, 9], [9, 8, 7, 6, 5], [35, 36, 37, 38, 39], [39, 38, 37, 36, 35], [65, 66, 67, 68, 69], [69, 68, 67, 66, 65], [95, 96, 97, 98, 99], [99, 98, 97, 96, 95],
+          [25, 26, 27, 28, 29], [29, 28, 27, 26, 25], [55, 56, 57, 58, 59], [59, 58, 57, 56, 55], [85, 86, 87, 88, 89], [89, 88, 87, 86, 85], [115, 116, 117, 118, 119], [119, 118, 117, 116, 115],
+          [5, 10, 15, 20, 25, 127, 126, 125, 89, 84, 79, 74, 69], [69, 74, 79, 84, 89, 125, 126, 127, 25, 20, 15, 10, 5],
+          [9, 14, 19, 24, 29, 121, 122, 123, 85, 80, 75, 70, 65], [65, 70, 75, 80, 85, 123, 122, 121, 29, 24, 19, 14, 9],
+          [99, 104, 109, 114, 119, 127, 120, 121, 55, 50, 45, 40, 35], [35, 40, 45, 50, 55, 121, 120, 127, 119, 114, 109, 104, 99],
+          [95, 100, 105, 110, 115, 125, 124, 123, 59, 54, 49, 44, 39], [39, 44, 49, 54, 59, 123, 124, 125, 115, 110, 105, 100, 95],
+          [5, 10, 15, 20, 25, 119, 114, 109, 104, 99], [99, 104, 109, 114, 119, 25, 20, 15, 10, 5],
+          [9, 14, 19, 24, 29, 55, 50, 45, 40, 35], [35, 40, 45, 50, 55, 29, 24, 19, 14, 9],
+          [39, 44, 49, 54, 59, 85, 80, 75, 70, 65], [65, 70, 75, 80, 85, 59, 54, 49, 44, 39],
+          [69, 74, 79, 84, 89, 115, 110, 105, 100, 95], [95, 100, 105, 110, 115, 89, 84, 79, 74, 69],
+          [117, 126, 128, 122, 57], [57, 122, 128, 126, 117],
+          [27, 120, 128, 124, 87], [87, 124, 128, 120, 27]]
+####### Deprecated #######
 
 if __name__ == '__main__':
     Positions( MAXPOSITION )
