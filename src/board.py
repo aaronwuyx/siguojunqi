@@ -14,7 +14,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from Tkinter import *
+from tkinter import *
 from defines import *
 import rule, traceback
 
