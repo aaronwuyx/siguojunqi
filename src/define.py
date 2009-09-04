@@ -41,6 +41,7 @@ class Position:
         self.pos = pos
         self.load( pos )
         self.chess = None
+        self.selected = False
 
     #read position settings from file
     def load( self, pos ):
@@ -102,10 +103,13 @@ class Position:
     def setChess( self, chess = None ):
         self.chess = chess
 
+    def IsChess( self ):
+        return ( self.chess != None )
+
 #Replace MAP_*
 VIS_NONE = 'none'
 VIS_SELF = 'self'
-VIS_TEAM = 'team'
+#VIS_TEAM = 'team'
 VIS_ALL = 'all'
 
 class Chess:
@@ -156,6 +160,161 @@ class Chess:
         # elif self.visible == VIS_TEAM:
         #    return ( viewer in self.player.)
 
+class Positions:
+    def __init__( self, size ):
+        if size <= 0:
+            size = MAXPOSITION
+        self.size = size
+        self.item = []
+        for i in range( 0, self.size ):
+            self.item.append( Position( i ) )
+
+    #return True if a chess is place in the position
+    def Place( self, pos, chess ):
+        value = chess.GetValue()
+        player = chess.GetPlayer()
+        #Not player's field
+        if ( pos >= ( player + 1 ) * MAXCHESS ) or ( pos < player * MAXCHESS ):
+            return False
+        #Safe position
+        if self.item[pos].IsSafe():
+            return False
+        #Chess already
+        if self.item[pos].IsChess():
+            return False
+        if value == None:
+            self.item[pos].SetChess( chess )
+            return True
+        rule = chess.GetInitrule()
+        p = pos % MAXCHESS
+        #Check according to place rule
+        if rule == 0:
+            self.item[pos].SetChess( chess )
+            return True
+        elif ( rule == 1 ) & ( p < 10 ):
+            self.item[pos].SetChess( chess )
+            return True
+        elif ( rule == 2 ) & ( p < 25 ):
+            self.item[pos].SetChess( chess )
+            return True
+        elif ( rule == 3 ) & ( ( p == 1 ) | ( p == 3 ) ):
+            self.item[pos].SetChess( chess )
+            return True
+        return False
+
+    def Remove( self, pos ):
+        tmp = self.item[pos].GetChess()
+        self.item[pos].SetChess( None )
+        return tmp
+
+    def CanSelect( self, pos, player ):
+        if self.item[pos].isMovable == False:
+            return False
+        if self.item[pos].GetChess() == None:
+            return False
+        if self.item[pos].GetChess().GetPlayer() != player:
+            return False
+        if self.item[pos].selected:
+            return False
+        return self.item[pos].GetChess().GetInitmove()
+
+    def PutCovered( self, otherplayer, visible ):
+        covered = Chess( None, otherplayer, visible )
+        for i in range( MAXCHESS ):
+            pos = otherplayer * MAXCHESS + i
+            if not self.item[pos].IsSafe():
+                self.item[pos].SetChess( covered )
+
+    def Move( self, fpos, tpos, result = None ):
+        if self.CanMove( fpos, tpos ):
+            if self.item[tpos].IsChess():
+                if result == None:
+                    result = self.Result( fpos, tpos )
+                if result == 0:
+                    self.Remove( tpos )
+                elif result > 0:
+                    self.item[tpos].SetChess( self.item[fpos].GetChess() )
+            else:
+                self.item[tpos].SetChess( self.item[fpos].GetChess() )
+            self.Remove( fpos )
+            return True
+        return False
+
+    #return True if move from "fpos" to "tpos" is available
+    def CanMove( self, fpos, tpos ):
+        #no chess to move
+        if self.item[fpos].IsChess() == False:
+            return False
+        #chess cannot move, normally it cannot be selected...
+        if self.item[fpos].GetChess().GetMoverule() == False:
+            return False
+        #position cannot move
+        if self.item[fpos].IsMovable() == False:
+            return False
+        #chess in tpos
+        c = self.item[tpos].GetChess()
+        if c != None:
+            if self.item[tpos].IsSafe():
+                return False
+############ the only problem remains ############# team4
+            if c.GetPlayer() in Team4[self.item[fpos].GetPlayer()]:
+                return False
+############ the only problem remains #############
+        #1 step
+        if ( not self.item[fpos].IsRailway() ) | ( not self.item[tpos].IsRailway() ):
+            return ( tpos in Pos4[fpos].link ) | ( tpos in Pos4[fpos].rlink )
+        #'fly'
+        if self.item[fpos].GetChess().GetMoverule() == 2:
+            return ( tpos in self.GetFlyArea( fpos ) )
+        #along railway
+############ the only problem remains ############# railways
+        for i in self.item[fpos].rail:
+            if i in self.item[tpos].rail:
+                rail = Railways[i]
+                fon = rail.index( fpos )
+                ton = rail.index( tpos )
+                if ton < fon:
+                    continue
+                for j in range( fon + 1, ton ):
+                    if self.item[rail[j]].IsChess():
+                        return False
+                return True
+############ the only problem remains #############
+        return False
+
+    '''
+    return a positive value - fpos bigger
+           a negative value - tpos bigger
+           0 - neither
+    '''
+    def Result( self, fpos, tpos ):
+        fval = self.item[fpos].GetChess().GetValue()
+        tval = self.item[tpos].GetChess().GetValue()
+        if ( fval == 42 ) | ( tval == 42 ):
+            return 0
+        if ( fval == 32 ) & ( tval == 41 ):
+            return 1
+        return ( fval - tval )
+
+    def GetFlyArea( self, pos ):
+        ret = {pos:1}
+        flag = True
+        while flag:
+            flag = False
+            for k in range( self.size ):
+                if ret.has_key( k ):
+                    if ret[k] != 0:
+                        flag = True
+                        for l in self.item[k].rlink:
+                            if not ret.has_key( l ):
+                                if self.item[l].IsChess():
+                                    ret[l] = 0
+                                else:
+                                    ret[l] = 1
+                        ret[k] = 0
+            if not flag:
+                break
+        return ret.keys()
+
 if __name__ == '__main__':
-    for i in range( MAXPOSITION ):
-        Position( i )
+    Positions( MAXPOSITION )

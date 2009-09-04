@@ -16,7 +16,7 @@
 
 from socket import *
 from defines import *
-import string
+import locale
 
 CMD_WAIT = 'wait' #Wait for client/server
 CMD_MOVE = 'move' #tell server to move...
@@ -37,7 +37,7 @@ def Recvline( connection, remainstr ):
             ret = remainstr[0:len]
             remainstr = remainstr[( len + 1 ):]
             if DEBUG:
-                print 'recv :', ret
+                print( 'recv :', ret )
             return ret, remainstr
         except error:
             pass
@@ -46,7 +46,7 @@ def Recvline( connection, remainstr ):
         ret = remainstr[0:len]
         remainstr = remainstr[( len + 1 ):]
         if DEBUG:
-            print 'recv :', ret
+            print( 'recv :', ret )
         return ret, remainstr
 
 def Sendline( connection, targetstr ):
@@ -58,7 +58,7 @@ def Sendline( connection, targetstr ):
     while sent != len( targetstr ):
         sent += connection.send( targetstr )
     if DEBUG:
-        print 'send :', targetstr[:-1]
+        print( 'send :', targetstr[:-1] )
     return sent
 
 '''
@@ -87,14 +87,14 @@ def Sepline( line ):
         obj = line
     elif arg == 'int':
         try:
-            obj = string.atoi( line.strip() )
+            obj = locale.atoi( line.strip() )
         except:
             pass
     elif arg == 'int,int':
         try:
             l1, l2 = line.split( ',', 1 )
-            v1 = string.atoi( l1.strip() )
-            v2 = string.atoi( l2.strip() )
+            v1 = locale.atoi( l1.strip() )
+            v2 = locale.atoi( l2.strip() )
             obj = ( v1, v2 )
         except:
             pass
