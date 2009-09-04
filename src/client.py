@@ -14,7 +14,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from Tkinter import *
+from tkinter import *
 import socket
 import tkMessageBox
 import os
@@ -314,7 +314,59 @@ class Client():
             self.top.quit()
 
     def GUI_test( self ):
-        Sendline( self.socket, 'Hello, this is a test!' )
+        f = open( 'pos.txt', 'w' )
+        for i in range( MAXPOSITION ):
+            f.write( str( i ) + ':' + str( Pos4[i].x ) + ':' + str( Pos4[i].y ) + ':' )
+            if Pos4[i].safe:
+                f.write( '1:' )
+            elif Pos4[i].move == False:
+                f.write( '3:' )
+            elif i >= 120:
+                f.write( '2:' )
+            else:
+                f.write( '0:' )
+            if Pos4[i].move:
+                f.write( '1:' )
+            else:
+                f.write( '0:' )
+            if Pos4[i].safe:
+                f.write( '1:' )
+            else:
+                f.write( '0:' )
+            if i >= 120:
+                f.write( '2:' )
+            elif i in PosH:
+                f.write( '1:' )
+            else:
+                f.write( '0:' )
+            last = None
+            for rail in Railways:
+                if i in rail:
+                    if last == None:
+                        f.write( str( Railways.index( rail ) ) )
+                        last = 0
+                    else:
+                        f.write( ',' + str( Railways.index( rail ) ) )
+            f.write( ':' )
+            last = None
+            for item in Pos4[i].link:
+                if self.map.OnRailway( item ) == ( -1, -1 ):
+                    if last == None:
+                        f.write( str( item ) )
+                        last = 0
+                    else:
+                        f.write( ',' + str( item ) )
+            f.write( ':' )
+            last = None
+            for item in Pos4[i].link:
+                if self.map.OnRailway( item ) != ( -1, -1 ):
+                    if last == None:
+                        f.write( str( item ) )
+                        last = 0
+                    else:
+                        f.write( ',' + str( item ) )
+            f.write( ':comment\n' )
+        f.close()
 
     def GUI_Discard( self ):
         if self.status == CLIENT_INIT:

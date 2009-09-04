@@ -315,4 +315,5 @@ if __name__ == '__main__':
 """
 
 if __name__ == '__main__':
-    Position( 0 )
+    for i in range( MAXPOSITION ):
+        Position( i )
