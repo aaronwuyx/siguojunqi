@@ -16,30 +16,72 @@
 
 from tkinter import *
 from tkinter.messagebox import *
+from tkinter.filedialog import *
+import os
 
 import define
+from profile import Profile
 
 def Startup():
     tk_Startup()
 
 def tk_Startup():
+    root = Tk()
+    root.withdraw()
+    ret = None
+
+    def Create():
+        if define.DEBUG:
+            print( s1.get(), ' ', s2.get() )
+        if ( s1.get() != '' ) & ( int( s2.get() ) in range( define.MAXPLAYER ) ):
+            name = s1.get()
+            id = s2.get()
+            p = Profile( name )
+            p.id = id
+            ret = str( p.filename )
+            if os.path.exists( ret ):
+                showerror( 'Error', 'profile already exist' )
+                return
+            p.save()
+            t.quit()
+        else:
+            showerror( 'Error', 'invalid argument' )
+
+    def Open():
+        filelist = askopenfiles()
+        if askopenfiles() != []:
+            t.quit()
+            ret = filelist[0]
+
+    def Exit():
+        t.quit()
+        sys.exit()
+
     t = Toplevel()
-    btn = Frame( t )
-    btn.pack( side = RIGHT, expand = YES, fill = Y )
-    Button( btn, text = 'Create' ).pack( side = TOP )
-    Button( btn, text = 'Open' ).pack( side = TOP )
-    lab = Frame( t )
-    lab.pack( side = LEFT, expand = YES, fill = BOTH )
-    Label( lab, text = 'Name:' ).grid( col = 0, row = 0 )
-    Label( lab, text = 'Side:' ).grid( col = 0, row = 1 )
-    Label( lab, text = 'GUI:' ).grid( col = 0, row = 2 )
+    t.title( 'Startup' )
+    btn = Frame( t, relief = RAISED )
+    btn.pack( side = RIGHT, expand = YES, fill = Y, ipadx = 1, ipady = 1 )
+    Button( btn, text = 'Create', width = 10, command = Create ).pack( side = TOP )
+    Button( btn, text = 'Open', width = 10, command = Open ).pack( side = TOP )
+    Button( btn, text = 'Exit', width = 10, command = Exit ).pack( side = TOP )
+    lab = Frame( t, relief = RAISED )
+    lab.pack( side = LEFT, expand = YES, fill = BOTH, ipadx = 1, ipady = 1 )
+    Label( lab, text = 'Name:' ).grid( column = 0, row = 0 )
+    Label( lab, text = 'Side:' ).grid( column = 0, row = 1 )
+    Label( lab, text = 'GUI:' ).grid( column = 0, row = 3 )
     s1 = StringVar()
-    s2 = StringVar()
-    Entry( lab, textvariable = s1 ).grid( col = 1, row = 0 )
-    Entry( lab, textvariable = s2 ).grid( col = 1, row = 1 )
-    t.focus_set()
-    t.grab_set()
-    t.wait_window()
+    s2 = IntVar()
+    Entry( lab, textvariable = s1, bd = 1 ).grid( column = 1, row = 0, sticky = E )
+    side = Frame( lab )
+    side.grid( column = 1, row = 1 , rowspan = 2 )
+    Radiobutton( side, text = 'Red', variable = s2, value = 0 ).grid( column = 0, row = 0, sticky = W )
+    Radiobutton( side, text = 'Yellow', variable = s2, value = 1 ).grid( column = 1, row = 0, sticky = W )
+    Radiobutton( side, text = 'Green', variable = s2, value = 2 ).grid( column = 0, row = 1, sticky = W )
+    Radiobutton( side, text = 'Blue', variable = s2, value = 3 ).grid( column = 1, row = 1, sticky = W )
+    s1.set( '' )
+    s2.set( 0 )
+    t.mainloop()
+    return ret
 
 class clientGUI( Toplevel ):
 

@@ -26,29 +26,26 @@ class Profile:
     ActiveBgColor = ['red', 'yellow', 'green', 'blue']
     Team = [[0, 2], [1, 3]]
 
-    def __init__( self, id, name ):
-
-        if ( id >= define.MAXPLAYER ) or ( id < 0 ):
-            id = 0
+    def __init__( self, name ):
         if name == '':
             name = 'default'
-        self.id = id #0..3
         self.name = name #identify himself from other players
 
         self.init() #initialize settings
-        self.load() #load customed settings
-        self.save() #immediately save settings, for future reload
+#        self.load() #load customed settings
+#        self.save() #immediately save settings, for future reload
 
     def init( self ):
-        self.bg = Profile.Bgcolor[id]
-        self.fg = Profile.Fgcolor[id]
-        self.acbg = Profile.ActiveBgColor[id]
-        self.teammate = Team[id % 2]
+        self.id = 0
+        self.bg = Profile.Bgcolor[self.id]
+        self.fg = Profile.Fgcolor[self.id]
+        self.acbg = Profile.ActiveBgColor[self.id]
+        self.teammate = Profile.Team[self.id % 2]
 
         self.host = 'localhost'
         self.port = 30000
 
-        self.conffile = '..' + os.sep + 'resource' + os.sep + self.name + '.cfg'
+        self.filename = self.name + '.cfg'
         self.bgfile = 'blank.gif'
         self.placefile = ''
 
@@ -58,9 +55,9 @@ class Profile:
 
     def load( self ):
         try:
-            f = open( filename, 'r' )
+            f = open( self.filename, 'r' )
         except:
-            if DEBUG:
+            if define.DEBUG:
                 exc_info = sys.exc_info()
                 print( exc_info[0], '\n', exc_info[1] )
                 traceback.print_tb( exc_info[2] )
@@ -77,9 +74,19 @@ class Profile:
                     self.id = int( value )
 
                 if key == 'bgfile':
-                    self.bgfile = value
+                    if os.path.sep == '/':
+                        value = value.replace( '\\', '/' )
+                    elif os.path.sep == '\\':
+                        value = value.replace( '/', '\\' )
+                    if os.path.exists( value ):
+                        self.bgfile = value
                 if key == 'placefile':
-                    self.placefile = value
+                    if os.path.sep == '/':
+                        value = value.replace( '\\', '/' )
+                    elif os.path.sep == '\\':
+                        value = value.replace( '/', '\\' )
+                    if os.path.exists( value ):
+                        self.placefile = value
 
                 if key == 'host':
                     self.host = value
@@ -94,7 +101,7 @@ class Profile:
                     self.acbg = value
 
             except:
-                if DEBUG:
+                if define.DEBUG:
                     exc_info = sys.exc_info()
                     print( exc_info[0], '\n', exc_info[1] )
                     traceback.print_tb( exc_info[2] )
@@ -106,9 +113,9 @@ class Profile:
 
     def save( self ):
         try:
-            f = open( filename, 'w' )
+            f = open( self.filename, 'w' )
         except:
-            if DEBUG:
+            if define.DEBUG:
                 exc_info = sys.exc_info()
                 print( exc_info[0], '\n', exc_info[1] )
                 traceback.print_tb( exc_info[2] )
