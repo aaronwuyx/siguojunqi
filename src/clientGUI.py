@@ -23,7 +23,7 @@ import define
 from profile import Profile
 
 def Startup():
-    tk_Startup()
+    return tk_Startup()
 
 def tk_Startup():
     root = Tk()
@@ -31,6 +31,7 @@ def tk_Startup():
     ret = None
 
     def Create():
+        nonlocal ret
         if define.DEBUG:
             print( s1.get(), ' ', s2.get() )
         if ( s1.get() != '' ) & ( int( s2.get() ) in range( define.MAXPLAYER ) ):
@@ -38,20 +39,21 @@ def tk_Startup():
             id = s2.get()
             p = Profile( name )
             p.id = id
-            ret = str( p.filename )
-            if os.path.exists( ret ):
+            if os.path.exists( p.filename ):
                 showerror( 'Error', 'profile already exist' )
                 return
             p.save()
             t.quit()
+            ret = p.filename
         else:
             showerror( 'Error', 'invalid argument' )
 
-    def Open():
-        filelist = askopenfiles()
-        if askopenfiles() != []:
+    def Load():
+        nonlocal ret
+        fname = askopenfilenames()
+        if fname != '':
             t.quit()
-            ret = filelist[0]
+            ret = fname[1:-1]
 
     def Exit():
         t.quit()
@@ -62,7 +64,7 @@ def tk_Startup():
     btn = Frame( t, relief = RAISED )
     btn.pack( side = RIGHT, expand = YES, fill = Y, ipadx = 1, ipady = 1 )
     Button( btn, text = 'Create', width = 10, command = Create ).pack( side = TOP )
-    Button( btn, text = 'Open', width = 10, command = Open ).pack( side = TOP )
+    Button( btn, text = 'Load', width = 10, command = Load ).pack( side = TOP )
     Button( btn, text = 'Exit', width = 10, command = Exit ).pack( side = TOP )
     lab = Frame( t, relief = RAISED )
     lab.pack( side = LEFT, expand = YES, fill = BOTH, ipadx = 1, ipady = 1 )
@@ -406,4 +408,4 @@ class clientGUI( Toplevel ):
 """
 
 if __name__ == '__main__':
-    Startup()
+    print( Startup() )
