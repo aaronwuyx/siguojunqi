@@ -396,15 +396,15 @@ class Lineup( Positions ):
         try:
             for line in f.readlines():
                 if line[:7] == 'lineup=':
-                    for item in line.split():
-                        value = int( item.strip() )
+                    for item in line[7:].split():
                         if pos > MAXCHESS:
-                            raise Exception( 'Position Exceed ' + str( MAXCHESS ) )
+                            break
+                        value = int( item.strip() )
                         if tmp.Place( pos, Chess( value , self.player, VIS_SELF ) ) == False:
                             raise Exception( 'Cannot place ' + item + 'at ' + str( pos ) )
-                        count[ value] -= 1
+                        count[value] -= 1
                         if count[value] < 0:
-                            raise Exception( 'Number of chess ' + item + ' is incorrect' )
+                            raise Exception( 'Number of ' + item + ' is invalid' )
                         pos += 1
                         while self.item[pos].IsSafe():
                             self.item[pos].SetChess( None )
@@ -412,6 +412,9 @@ class Lineup( Positions ):
                 else:
                     if DEBUG:
                         print( line )
+            for key, value in count.items():
+                if value != 0:
+                    raise Exception( 'Number of chess is invalid.' )
         except:
             if DEBUG:
                 exc_info = sys.exc_info()
@@ -420,9 +423,34 @@ class Lineup( Positions ):
             return
 
         tmp.Dump( self )
+        try:
+            f.close()
+        except:
+            pass
 
     def Save( self, filename ):
-        return
+        try:
+            f = open ( filename, 'w' )
+        except:
+            if DEBUG:
+                exc_info = sys.exc_info()
+                print( exc_info[0], '\n', exc_info[1] )
+                traceback.print_tb( exc_info[2] )
+            return
+
+        f.write( 'You can add comment anywhere except in the next line:\n' )
+        f.write( 'lineup=' )
+
+        for pos in range( MAXCHESS ):
+            if not self.item[pos].IsSafe():
+                f.write( self.item[pos].GetChess().GetValue(), ' ' )
+
+        f.write( '\n' )
+
+        try:
+            f.close()
+        except:
+            pass
 
 if __name__ == '__main__':
     Positions( MAXPOSITION )

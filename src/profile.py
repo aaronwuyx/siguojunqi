@@ -32,9 +32,14 @@ class Profile:
             id = 0
         if name == '':
             name = 'default'
-
         self.id = id #0..3
         self.name = name #identify himself from other players
+
+        self.init() #initialize settings
+        self.load() #load customed settings
+        self.save() #immediately save settings, for future reload
+
+    def init( self ):
         self.bg = Profile.Bgcolor[id]
         self.fg = Profile.Fgcolor[id]
         self.acbg = Profile.ActiveBgColor[id]
@@ -50,9 +55,6 @@ class Profile:
         self.win = 0
         self.total = 0
 
-        self.init() #initialize settings
-        self.load() #load customed settings
-        self.save() #immediately save settings, for future reload
 
     def load( self ):
         try:
@@ -131,61 +133,11 @@ class Profile:
             pass
 
 """
-class Configuration:
-    def __init__( self ):
         self.place = GetDefaultPlace( self.player )
-
         self.spacex = 200
         self.spacey = 200
         self.offx = 3 #6 to have shadow?
         self.offy = 3
-
-    def load
-                    if key == 'space':
-                    try:
-                        xs, ys = value.split( ',' )
-                        x = string.atoi( xs )
-                        y = string.atoi( ys )
-                        self.spacex = x
-                        self.spacey = y
-                    except:
-                        pass
-                if key == 'offset':
-                    try:
-                        xs, ys = value.split( ',' )
-                        x = string.atoi( xs )
-                        y = string.atoi( ys )
-                        self.offx = x
-                        self.offy = y
-                    except:
-                        pass
------------------------
-        backfile = self.placefile
-        backplace = self.place
-        if self.loadPlace( self.placefile ):
-            if not ( rule.CheckPlace1( self.place ) & rule.CheckPlace2( self.place ) ):
-                self.placefile = backfile
-                self.place = backplace
-        else:
-            self.placefile = backfile
-            self.place = backplace
-------------------------
-    def save
-        f.write( 'place=%s\n' % ( self.placefile ) )
-        f.write( 'offset=%d,%d\n' % ( self.offx, self.offy ) )
-        f.write( 'space=%d,%d\n' % ( self.spacex, self.spacey ) )
-        self.savePlace( self.placefile )
-
-
-    def savePlace( self, filename ):
-        try:
-            f = open( filename, 'w' )
-        except:
-            return False
-        for place in self.place:
-            f.write( str( place.getValue() ) + ' ' )
-        f.write( '\n' )
-        return True
 """
 
 if __name__ == '__main__':
