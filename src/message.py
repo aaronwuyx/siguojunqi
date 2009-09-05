@@ -14,9 +14,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from socket import *
-from defines import *
-import locale
+import socket
+import define
 
 CMD_WAIT = 'wait' #Wait for client/server
 CMD_MOVE = 'move' #tell server to move...

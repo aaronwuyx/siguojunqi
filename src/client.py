@@ -14,16 +14,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import socket
 import os
 import sys
-import time
-import thread
+#import socket
+#import time
+#import thread
 
-from define import CheckerBoard, Chess, Lineup
+from define import CheckerBoard, Chess, Lineup, DEBUG
 from profile import Profile
-from message import *
-from clientGUI import *
+#from message import *
+from clientGUI import clientGUI, Startup
 
 CLI_INIT = 'init'
 CLI_MOVE = 'move'
@@ -33,25 +33,26 @@ class Client():
 
     def __init__( self ):
         self.stat = CLI_INIT
-        name, id, graphic = Startup()
+        filename = Startup()
+        if filename == None:
+            sys.exit()
+        name = filename.split( os.path.sep )[-1].split( '.' )[0]
+        if DEBUG:
+            print( 'username :', name )
         self.map = CheckerBoard()
-        self.prof = Profile( '' )
+        self.prof = Profile( name )
         self.prof.load()
+        self.gui = clientGUI( self )
 
+    def run( self ):
+        self.gui.mainloop()
+
+"""
         rule.PlaceOne( self.conf.place, self.map, self.conf.player )
-
-        self.guiopt = thread.allocate_lock()
-        self.top = None
-        self.menus = {}
-        self.toolbutton = []
-
         self.socket = None
         self.remain = ''
 
     def run( self ):
-        self.make_gui()
-        self.top.mainloop()
-
         self.closeConnection()
         self.conf.Save( 'default.cfg' )
 
@@ -83,7 +84,7 @@ class Client():
             if cmd == 'error':
                 raise Exception( str( obj ) )
             self.status = CLIENT_START
-
+"""
 if __name__ == '__main__':
     c = Client()
     c.run()

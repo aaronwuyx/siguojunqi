@@ -43,7 +43,7 @@ def tk_Startup():
                 showerror( 'Error', 'profile already exist' )
                 return
             p.save()
-            t.quit()
+            t.destroy()
             ret = p.filename
         else:
             showerror( 'Error', 'invalid argument' )
@@ -52,11 +52,11 @@ def tk_Startup():
         nonlocal ret
         fname = askopenfilenames()
         if fname != '':
-            t.quit()
+            t.destroy()
             ret = fname[1:-1]
 
     def Exit():
-        t.quit()
+        t.destroy()
         sys.exit()
 
     t = Toplevel()
@@ -73,6 +73,7 @@ def tk_Startup():
     Label( lab, text = 'GUI:' ).grid( column = 0, row = 3 )
     s1 = StringVar()
     s2 = IntVar()
+    s3 = IntVar()
     Entry( lab, textvariable = s1, bd = 1 ).grid( column = 1, row = 0, sticky = E )
     side = Frame( lab )
     side.grid( column = 1, row = 1 , rowspan = 2 )
@@ -80,40 +81,160 @@ def tk_Startup():
     Radiobutton( side, text = 'Yellow', variable = s2, value = 1 ).grid( column = 1, row = 0, sticky = W )
     Radiobutton( side, text = 'Green', variable = s2, value = 2 ).grid( column = 0, row = 1, sticky = W )
     Radiobutton( side, text = 'Blue', variable = s2, value = 3 ).grid( column = 1, row = 1, sticky = W )
+    gui = Frame( lab )
+    gui.grid( column = 1, row = 3 )
+    Radiobutton( gui, text = 'Tk', variable = s3, value = 0 ).pack( side = LEFT )
     s1.set( '' )
     s2.set( 0 )
-    t.mainloop()
+    s3.set( 0 )
+    t.focus_set()
+    t.grab_set()
+    t.wait_window()
     return ret
 
 class clientGUI( Toplevel ):
 
-    def __init__( self ):
+    def __init__( self , client ):
         Toplevel.__init__( self )
+        self.client = client
+        self.toolbarbutton = {}
+        self.menu = {}
+        self.init( client )
+
+    def init( self, client ):
+        if client == None:
+            self.title( 'SiGuo client' )
+        else:
+            self.title( 'SiGuo client - ' + client.prof.name )
+        self.protocol( 'WM_DELETE_WINDOW', self.GUI_Exit )
+        self.config( bg = 'white' )
+        self.add_menu()
+        self.add_toolbar()
+        self.add_sidebar()
+#        self.board = Board()
+
+    def add_menu( self ):
+        main = Menu( self )
+        self.config( menu = main )
+        self.menu['main'] = main
+
+        game = Menu( main, tearoff = 0 )
+        game.add_command( label = 'Connect', command = self.GUI_Connect, underline = 0 )
+        game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
+        game.add_command( label = 'Disconnect', command = self.GUI_Disconnect, underline = 0 )
+        game.add_separator()
+        game.add_command( label = 'Save', command = ( lambda:0 ), underline = 0 )
+        game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
+        game.add_separator()
+        game.add_command( label = 'Exit', command = self.GUI_Exit, underline = 1 )
+        self.menu['game'] = game
+        main.add_cascade( label = 'Game', menu = game, underline = 0 )
+
+        option = Menu( main, tearoff = 0 )
+        option.add_command( label = 'Reload', command = self.GUI_Reload, underline = 0 )
+        option.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
+        option.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
+        option.add_separator()
+        option.add_command( label = 'Profile', command = self.GUI_Profile, underline = 0 )
+        option.add_command( label = 'Rule', command = ( lambda: 0 ), underline = 3 )
+        self.menu['option'] = option
+        main.add_cascade( label = 'Option', menu = option, underline = 0 )
+
+        helps = Menu( main, tearoff = 0 )
+        helps.add_command( label = 'Help', command = self.GUI_Help, underline = 0 )
+        helps.add_separator()
+        helps.add_command( label = 'License', command = self.GUI_License, underline = 0 )
+        helps.add_command( label = 'About', command = self.GUI_About, underline = 0 )
+        self.menu['help'] = helps
+        main.add_cascade( label = 'Help', menu = helps, underline = 0 )
+
+        for ( name, menu ) in self.menu.items():
+            menu.config( bg = 'white', fg = 'black', activebackground = 'blue', activeforeground = 'white', disabledforeground = 'grey', postcommand = self.Update_MenuToolbar )
+
+    def add_toolbar( self ):
+        self.toolbar = Frame( self )
+        self.toolbar.pack( side = BOTTOM, expand = YES, fill = X , anchor = S )
+        self.toolbar.config( relief = FLAT, bd = 1, padx = 1, pady = 1, bg = 'white' )
+
+        self.toolbarbutton['exit'] = Button( self.toolbar, text = 'Exit', command = self.GUI_Exit )
+        self.toolbarbutton['connect'] = Button( self.toolbar, text = 'Connect', command = self.GUI_Connect )
+        self.toolbarbutton['disconnect'] = Button( self.toolbar, text = 'Disconnect', command = self.GUI_Disconnect )
+        self.toolbarbutton['test'] = Button( self.toolbar, text = 'TEST ONLY!!!', command = self.GUI_Test )
+        for ( name, button ) in self.toolbarbutton.items():
+            button.pack( side = RIGHT )
+            button.config( width = 15, relief = GROOVE )
+            Label( text = ' ' ).pack( side = RIGHT )
+
+    def add_sidebar( self ):
+        self.sidebar = Frame( self )
+        self.sidebar.pack( side = RIGHT, expand = YES, fill = Y, anchor = E )
+        self.sidebar.config( relief = FLAT, bd = 1, padx = 1, pady = 1, bg = 'white' )
+        self.add_move()
+
+    def add_move( self ):
+        def execute():
+            try:
+                f = int( self.movef.get() )
+                t = int( self.movet.get() )
+                if DEBUG:
+                    print( 'from = ', f, 'to = ', t )
+            except:
+                pass
+        def clear():
+            self.movef.set( '' )
+            self.movet.set( '' )
+
+        self.side_move = Frame( self.sidebar )
+        self.movef = StringVar()
+        self.movet = StringVar()
+        Label( self.side_move, text = 'Movement' ).grid( column = 0, row = 0, columnspan = 3 )
+        Label( self.side_move, text = 'FROM' ).grid( column = 0, row = 1, sticky = W )
+        Label( self.side_move, text = ' TO ' ).grid( column = 0, row = 2, sticky = W )
+        Button( self.side_move, text = 'exec', command = execute ).grid( column = 0, row = 3, sticky = W )
+        Button( self.side_move, text = 'clear', command = clear ).grid( column = 2, row = 3, sticky = E )
+        Entry( self.side_move, textvariable = self.movef ).grid( column = 1, row = 1, columnspan = 2 )
+        Entry( self.side_move, textvariable = self.movet ).grid( column = 1, row = 2, columnspan = 2 )
+        self.movef.set( '' )
+        self.movet.set( '' )
+        self.side_move.pack( side = TOP )
+        self.side_move.config( bd = 1 , relief = GROOVE )
+
+    def Update_MenuToolbar( self ):
+        return
+
+    def GUI_Exit( self ):
+        self.quit()
+        sys.exit()
+
+    def GUI_Connect( self ):
+        return
+
+    def GUI_Disconnect( self ):
+        return
+
+    def GUI_Reload( self ):
+        return
+
+    def GUI_Profile( self ):
+        return
+
+    def GUI_License( self ):
+        return
+
+    def GUI_Help( self ):
+        return
+
+    def GUI_About( self ):
+        return
+
+    def GUI_Test( self ):
+        return
 
 """
-    def __init__( self ):
-        self.menus = {}
-        self.toolbutton = []
-
-    def run( self ):
-        self.make_gui()
-        self.top.mainloop()
-
     def GUI_Disconnect( self ):
         if tkMessageBox.askyesno( 'Warning', 'Do you really want to close connection?' ):
             if self.closeConnection() == False:
                 tkMessageBox.showerror( 'Error', 'Connection already closed' )
-
-    def createConnection( self ):
-        if self.socket == None:
-            self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-            self.socket.connect( ( self.conf.host, self.conf.port ) )
-            Sendline( self.socket, Combline( CMD_ADD, 'int', self.conf.player ) )
-            data, self.remain = Recvline( self.socket, self.remain )
-            cmd, arg, obj = Sepline( data )
-            if cmd == 'error':
-                raise Exception( str( obj ) )
-            self.status = CLIENT_START
 
     def GUI_Connect( self ):
         def jump( ignore = None ):
@@ -158,92 +279,15 @@ class clientGUI( Toplevel ):
         t.focus_set()
         t.wait_window()
 
-    def make_gui( self ):
-        self.top = Tk()
-        self.top.title( 'SiGuo client program - player : ' + self.conf.name )
-        self.add_menus()
-        self.add_toolbar()
-        self.add_widgets()
-
-    def add_menus( self ):
-        self.menubar = Frame( self.top )
-        self.menubar.pack( side = TOP, expand = YES, fill = X )
-
-        gbutton = Menubutton( self.menubar, text = 'Game', underline = 0, bg = '#eeeeee' )
-        gbutton.pack( side = LEFT )
-        Game = Menu( gbutton, tearoff = 0 )
-        Game.add_command( label = 'Connect', command = self.GUI_Connect, underline = 0 )
-        Game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
-        Game.add_command( label = 'Disconnect...', command = self.GUI_Disconnect, underline = 0 )
-        Game.add_separator()
-        Game.add_command( label = 'Save', command = ( lambda:0 ), underline = 0 )
-        Game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
-        Game.add_separator()
-        Game.add_command( label = 'Exit', command = self.GUI_exit, underline = 1 )
-        gbutton.config( menu = Game )
-        self.menus['game'] = Game
-
-        obutton = Menubutton( self.menubar, text = 'Option', underline = 0 , bg = '#eeeeee' )
-        obutton.pack( side = LEFT )
-        Option = Menu( obutton , tearoff = 0 )
-        Option.add_command( label = 'Discard', command = self.GUI_Discard, underline = 0 )
-        Option.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
-        Option.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
-        Option.add_separator()
-        Option.add_command( label = 'Name...', command = self.GUI_Name, underline = 0 )
-        color = IntVar()
-        color.set( self.conf.player )
-        def setPlayer( x ):
-            rule.CleanOne( self.map, self.conf.player )
-            self.conf.player = x
-            rule.PlaceOne( self.conf.place, self.map, self.conf.player )
-            self.board.Draw_Map( self.map, self.conf.player )
-        Bgcolor = Menu( Option, tearoff = 0 )
-        Bgcolor.add_radiobutton( label = 'Red', variable = color, value = 1, command = ( lambda : setPlayer( 1 ) ), underline = 0 )
-        Bgcolor.add_radiobutton( label = 'Yellow', variable = color, value = 2, command = ( lambda: setPlayer( 2 ) ), underline = 0 )
-        Bgcolor.add_radiobutton( label = 'Green', variable = color, value = 3, command = ( lambda: setPlayer( 3 ) ), underline = 0 )
-        Bgcolor.add_radiobutton( label = 'Blue', variable = color, value = 4, command = ( lambda: setPlayer( 4 ) ), underline = 0 )
-        Option.add_cascade( label = 'Colour', menu = Bgcolor, underline = 0 )
-        Option.add_command( label = 'Rule', command = ( lambda:0 ), underline = 0 )
-        obutton.config( menu = Option )
-        self.menus['option'] = Option
-
-        hbutton = Menubutton( self.menubar, text = 'Help', underline = 0, bg = '#eeeeee' )
-        hbutton.pack( side = RIGHT )
-        Help = Menu( hbutton , tearoff = 0 )
-        Help.add_command( label = 'Help', command = ( lambda:0 ), underline = 0 )
-        Help.add_separator()
-        Help.add_command( label = 'License...', command = self.GUI_License, underline = 0 )
-        Help.add_command( label = 'About...', command = self.GUI_About, underline = 0 )
-        hbutton.config( menu = Help )
-        self.menus['help'] = Help
-
-        self.menubar.config( bg = '#eeeeee' )
-        for name, menu in self.menus.items():
-            menu.config( bg = '#eeeeee', fg = '#111111', activebackground = '#ffffff', activeforeground = '#000000', disabledforeground = '#666666', postcommand = self.updateMenuToolbar )
-
-    def add_toolbar( self ):
-        self.toolbar = Frame()
-        self.toolbutton.append( Button( self.toolbar, text = 'Exit', command = self.GUI_exit ) )
-        self.toolbutton.append( Button( self.toolbar, text = 'Connect', command = self.GUI_Connect ) )
-        self.toolbutton.append( Button( self.toolbar, text = 'Disconnect', command = self.GUI_Disconnect ) )
-        self.toolbutton.append( Button( self.toolbar, text = 'Test', command = self.GUI_test ) )
-        for button in self.toolbutton:
-            button.pack( side = RIGHT )
-            Label( text = ' ' ).pack( side = RIGHT )
-            button.config( width = 15, relief = RAISED )
-        self.toolbar.pack( side = BOTTOM, expand = YES, fill = X )
-        self.toolbar.config( relief = GROOVE, bd = 2, background = 'white' )
-
     def updateMenuToolbar( self ):
         if self.status == CLIENT_INIT:
-            self.menus['game'].entryconfig( 1, state = DISABLED )
-            self.menus['game'].entryconfig( 2, state = DISABLED )
-            self.menus['game'].entryconfig( 4, state = DISABLED )
+            self.menu['game'].entryconfig( 1, state = DISABLED )
+            self.menu['game'].entryconfig( 2, state = DISABLED )
+            self.menu['game'].entryconfig( 4, state = DISABLED )
         elif self.status == CLIENT_START:
-            self.menus['option'].entryconfig( 0, state = DISABLED )
-            self.menus['option'].entryconfig( 1, state = DISABLED )
-            self.menus['option'].entryconfig( 4, state = DISABLED )
+            self.menu['option'].entryconfig( 0, state = DISABLED )
+            self.menu['option'].entryconfig( 1, state = DISABLED )
+            self.menu['option'].entryconfig( 4, state = DISABLED )
 
     def GUI_About( self ):
         t = Toplevel()
@@ -288,112 +332,10 @@ class clientGUI( Toplevel ):
         t.focus_set()
         t.wait_window()
 
-    def add_widgets( self ):
-        self.guiopt.acquire()
-        self.add_sidebar()
-        self.board = board.Board( self.top, self.conf )
-        self.board.Draw_Map( self.map , self.conf.player )
-        self.guiopt.release()
-
-    def add_sidebar( self ):
-        self.statusframe = Frame( self.top )
-        self.statusframe.pack( side = RIGHT, expand = YES, fill = Y )
-        self.statusframe.config( relief = GROOVE, bd = 1, bg = 'white' )
-        self.moveframe = Frame( self.statusframe )
-        Label( self.moveframe, text = 'Move :' ).pack( side = TOP, expand = YES, fill = X )
-        but = Frame( self.moveframe, bd = 1 )
-        def execute():
-            try:
-                f = string.atoi( self.movef.get() )
-                t = string.atoi( self.movet.get() )
-                if DEBUG:
-                    print 'from = ', f, 'to = ', t
-                    print 'Available ? ', self.map.Move( f, t )
-                if self.map.Move( f, t ):
-                    self.board.Draw_Map( self.map, self.conf.player )
-            except:
-                pass
-        Button( but, text = 'exec', command = execute ).pack( side = LEFT, anchor = W )
-        def clear():
-            self.movef.set( '' )
-            self.movet.set( '' )
-        Button( but, text = 'clear', command = clear ).pack( side = RIGHT, anchor = E )
-        but.pack( side = BOTTOM, expand = YES, fill = X )
-        lab = Frame( self.moveframe, bd = 1 )
-        ent = Frame( self.moveframe, bd = 1 )
-        Label( lab, text = 'From' ).pack( side = TOP, anchor = NW )
-        Label( lab, text = 'To' ).pack( side = TOP, anchor = NW )
-        self.movef = StringVar()
-        self.movet = StringVar()
-        self.movef.set( '' )
-        self.movet.set( '' )
-        Entry( ent, textvariable = self.movef ).pack( side = TOP, expand = YES, fill = X )
-        Entry( ent, textvariable = self.movet ).pack( side = TOP, expand = YES, fill = X )
-        lab.pack( side = LEFT )
-        ent.pack( side = RIGHT )
-        self.moveframe.pack( side = TOP )
-
     def GUI_exit( self ):
        if tkMessageBox.askyesno( 'Warning', 'Do you really want to exit?' ):
             self.closeConnection()
             self.top.quit()
-
-    def GUI_test( self ):
-        Sendline( self.socket, 'Hello, this is a test!' )
-        f = open( 'pos.txt', 'w' )
-        for i in range( MAXPOSITION ):
-            f.write( str( i ) + ':' + str( Pos4[i].x ) + ':' + str( Pos4[i].y ) + ':' )
-            if Pos4[i].safe:
-                f.write( '1:' )
-            elif Pos4[i].move == False:
-                f.write( '3:' )
-            elif i >= 120:
-                f.write( '2:' )
-            else:
-                f.write( '0:' )
-            if Pos4[i].move:
-                f.write( '1:' )
-            else:
-                f.write( '0:' )
-            if Pos4[i].safe:
-                f.write( '1:' )
-            else:
-                f.write( '0:' )
-            if i >= 120:
-                f.write( '2:' )
-            elif i in PosH:
-                f.write( '1:' )
-            else:
-                f.write( '0:' )
-            last = None
-            for rail in Railways:
-                if i in rail:
-                    if last == None:
-                        f.write( str( Railways.index( rail ) ) )
-                        last = 0
-                    else:
-                        f.write( ',' + str( Railways.index( rail ) ) )
-            f.write( ':' )
-            last = None
-            for item in Pos4[i].link:
-                if self.map.OnRailway( item ) == ( -1, -1 ):
-                    if last == None:
-                        f.write( str( item ) )
-                        last = 0
-                    else:
-                        f.write( ',' + str( item ) )
-            f.write( ':' )
-            last = None
-            for item in Pos4[i].link:
-                if self.map.OnRailway( item ) != ( -1, -1 ):
-                    if last == None:
-                        f.write( str( item ) )
-                        last = 0
-                    else:
-                        f.write( ',' + str( item ) )
-            f.write( ':comment\n' )
-        f.close()
-
 
     def GUI_Discard( self ):
         if self.status == CLIENT_INIT:
@@ -403,9 +345,21 @@ class clientGUI( Toplevel ):
                 rule.PlaceOne( self.conf.place, self.map, self.conf.player )
                 self.board.Draw_Map( self.map, self.conf.player )
 
-    def Lose( self ):
-        return False
+    def add_move( self ):
+        def execute():
+            try:
+                f = int( self.movef.get() )
+                t = int( self.movet.get() )
+                if DEBUG:
+                    print( 'from = ', f, 'to = ', t )
+                #    print( 'Available ? ', self.map.Move( f, t ) )
+                #if self.map.Move( f, t ):
+                #    self.board.Draw_Map( self.map, self.conf.player )
+            except:
+                pass
+
 """
 
 if __name__ == '__main__':
-    print( Startup() )
+    pass
+#clientGUI( None )

@@ -176,7 +176,7 @@ class Positions:
 
 
 class CheckerBoard( Positions ):
-    def __init__( self, size ):
+    def __init__( self ):
         Positions.__init__( self, MAXPOSITION )
 
     def CanSelect( self, pos, player ):

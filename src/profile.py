@@ -30,10 +30,8 @@ class Profile:
         if name == '':
             name = 'default'
         self.name = name #identify himself from other players
-
+        self.filename = self.name + '.cfg'
         self.init() #initialize settings
-#        self.load() #load customed settings
-#        self.save() #immediately save settings, for future reload
 
     def init( self ):
         self.id = 0
@@ -45,7 +43,6 @@ class Profile:
         self.host = 'localhost'
         self.port = 30000
 
-        self.filename = self.name + '.cfg'
         self.bgfile = 'blank.gif'
         self.placefile = ''
 
@@ -62,6 +59,7 @@ class Profile:
                 print( exc_info[0], '\n', exc_info[1] )
                 traceback.print_tb( exc_info[2] )
             return
+
         for line in f.readlines():
             try:
                 key, value = line.split( '=', 1 )
@@ -101,10 +99,11 @@ class Profile:
                     self.acbg = value
 
             except:
-                if define.DEBUG:
-                    exc_info = sys.exc_info()
-                    print( exc_info[0], '\n', exc_info[1] )
-                    traceback.print_tb( exc_info[2] )
+                pass
+                #if define.DEBUG:
+                #    exc_info = sys.exc_info()
+                #    print( exc_info[0], '\n', exc_info[1] )
+                #    traceback.print_tb( exc_info[2] )
 
         try:
             f.close()
