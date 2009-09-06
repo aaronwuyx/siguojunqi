@@ -15,8 +15,8 @@
 """
 
 from tkinter import *
-from tkinter.messagebox import *
-from tkinter.filedialog import *
+from tkinter.messagebox import askyesno, showerror
+from tkinter.filedialog import askopenfilenames
 import os
 
 import define
@@ -26,8 +26,7 @@ def Startup():
     return tk_Startup()
 
 def tk_Startup():
-    root = Tk()
-    root.withdraw()
+    Tk().withdraw()
     ret = None
 
     def Create():
@@ -102,16 +101,17 @@ class clientGUI( Toplevel ):
         self.init( client )
 
     def init( self, client ):
-        if client == None:
-            self.title( 'SiGuo client' )
-        else:
+        if client:
             self.title( 'SiGuo client - ' + client.prof.name )
+        else:
+            self.title( 'SiGuo client' )
         self.protocol( 'WM_DELETE_WINDOW', self.GUI_Exit )
         self.config( bg = 'white' )
         self.add_menu()
         self.add_toolbar()
         self.add_sidebar()
-#        self.board = Board()
+        self.add_board()
+        self.focus()
 
     def add_menu( self ):
         main = Menu( self )
@@ -136,7 +136,7 @@ class clientGUI( Toplevel ):
         option.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
         option.add_separator()
         option.add_command( label = 'Profile', command = self.GUI_Profile, underline = 0 )
-        option.add_command( label = 'Rule', command = ( lambda: 0 ), underline = 3 )
+        option.add_command( label = 'Rule', command = ( lambda: 0 ), underline = 2 )
         self.menu['option'] = option
         main.add_cascade( label = 'Option', menu = option, underline = 0 )
 
@@ -150,6 +150,10 @@ class clientGUI( Toplevel ):
 
         for ( name, menu ) in self.menu.items():
             menu.config( bg = 'white', fg = 'black', activebackground = 'blue', activeforeground = 'white', disabledforeground = 'grey', postcommand = self.Update_MenuToolbar )
+
+        self.menu['game'].entryconfig( 1, state = DISABLED )
+        self.menu['game'].entryconfig( 2, state = DISABLED )
+        self.menu['game'].entryconfig( 4, state = DISABLED )
 
     def add_toolbar( self ):
         self.toolbar = Frame( self )
@@ -170,6 +174,7 @@ class clientGUI( Toplevel ):
         self.sidebar.pack( side = RIGHT, expand = YES, fill = Y, anchor = E )
         self.sidebar.config( relief = FLAT, bd = 1, padx = 1, pady = 1, bg = 'white' )
         self.add_move()
+        self.add_user()
 
     def add_move( self ):
         def execute():
@@ -196,67 +201,63 @@ class clientGUI( Toplevel ):
         Entry( self.side_move, textvariable = self.movet ).grid( column = 1, row = 2, columnspan = 2 )
         self.movef.set( '' )
         self.movet.set( '' )
-        self.side_move.pack( side = TOP )
+        self.side_move.pack( side = TOP, expand = YES, fill = X )
         self.side_move.config( bd = 1 , relief = GROOVE )
+
+    def add_user( self ):
+        self.side_user = Frame( self.sidebar )
+        Label( self.side_user, text = 'Player' ).pack( side = TOP, expand = YES, fill = X )
+        l = Listbox( self.side_user, height = 5 )
+        l.insert( END, 'Name' )
+        l.insert( END, 'Hi,' )
+        l.insert( END, 'it' )
+        l.insert( END, 'is' )
+        l.insert( END, 'unavailable' )
+        l.pack( side = LEFT, expand = YES, fill = X )
+        m = Listbox( self.side_user, height = 5, width = 6 )
+        m.insert( END, 'Color' )
+        m.insert( END, 'Hi,' )
+        m.insert( END, 'it' )
+        m.insert( END, 'is' )
+        m.insert( END, 'unavailable' )
+        m.pack( side = RIGHT, expand = YES, fill = X )
+        self.side_user.pack( side = TOP, expand = YES, fill = X )
+        self.side_user.config( bd = 1 , relief = GROOVE )
 
     def Update_MenuToolbar( self ):
         return
 
-    def GUI_Exit( self ):
-        self.quit()
-        sys.exit()
-
-    def GUI_Connect( self ):
+    def add_board( self ):
         return
-
-    def GUI_Disconnect( self ):
-        return
-
-    def GUI_Reload( self ):
-        return
-
-    def GUI_Profile( self ):
-        return
-
-    def GUI_License( self ):
-        return
-
-    def GUI_Help( self ):
-        return
-
-    def GUI_About( self ):
-        return
-
-    def GUI_Test( self ):
-        return
-
-"""
-    def GUI_Disconnect( self ):
-        if tkMessageBox.askyesno( 'Warning', 'Do you really want to close connection?' ):
-            if self.closeConnection() == False:
-                tkMessageBox.showerror( 'Error', 'Connection already closed' )
 
     def GUI_Connect( self ):
         def jump( ignore = None ):
+            nonlocal ent2
             ent2.focus()
             ent2.select_range( 0, END )
 
         def fetch( ignore = None ):
-            self.conf.host = s.get()
-            self.conf.port = i.get()
+            nonlocal s
+            nonlocal i
+            nonlocal ent1
+            host = s.get()
+            port = int( i.get() )
             try:
-                self.createConnection()
+                self.client.Connection_Create( host, port )
+                self.client.prof.host = host
+                self.client.prof.port = port
                 t.destroy()
             except Exception as exc:
-                self.closeConnection()
+                #self.client.Connection_Close()
                 showerror( 'Error', str( exc ) )
+                ent1.focus()
 
         t = Toplevel()
         t.title( 'Connect server' )
         b = Frame( t )
         b.pack( side = BOTTOM, expand = YES, fill = X )
-        Button( b, text = 'Connect', command = fetch ).pack( side = LEFT )
-        Button( b, text = 'Cancel', command = t.destroy ).pack( side = RIGHT )
+        Button( b, text = 'Connect', command = fetch, width = 10 ).pack( side = LEFT )
+        Button( b, text = 'Cancel', command = t.destroy, width = 10 ).pack( side = RIGHT )
         lab = Frame( t, bd = 2 )
         lab.pack( side = LEFT, expand = YES, fill = Y )
         Label( lab, text = 'Host address' ).pack( side = TOP )
@@ -265,8 +266,8 @@ class clientGUI( Toplevel ):
         ent.pack( side = RIGHT, expand = YES, fill = BOTH )
         s = StringVar()
         i = IntVar()
-        s.set( self.conf.host )
-        i.set ( self.conf.port )
+        #s.set( self.client.prof.host )
+        #i.set ( self.client.prof.port )
         ent1 = Entry( ent, textvariable = s )
         ent2 = Entry( ent, textvariable = i )
         ent1.bind( '<Return>', jump )
@@ -279,22 +280,58 @@ class clientGUI( Toplevel ):
         t.focus_set()
         t.wait_window()
 
-    def updateMenuToolbar( self ):
-        if self.status == CLIENT_INIT:
-            self.menu['game'].entryconfig( 1, state = DISABLED )
-            self.menu['game'].entryconfig( 2, state = DISABLED )
-            self.menu['game'].entryconfig( 4, state = DISABLED )
-        elif self.status == CLIENT_START:
-            self.menu['option'].entryconfig( 0, state = DISABLED )
-            self.menu['option'].entryconfig( 1, state = DISABLED )
-            self.menu['option'].entryconfig( 4, state = DISABLED )
+    def GUI_Disconnect( self ):
+        if askyesno( 'Warning', 'Close connection and quit the game?' ):
+            try:
+                self.client.Connection_Close()
+            except Exception as e:
+                showerror( 'Error', str( e ) )
 
-    def GUI_About( self ):
-        t = Toplevel()
-        t.title( 'About SiGuo' )
-        Label( t, text = 'SiGuo svn ' + SVN + '\n' + VERSION ).pack( side = TOP )
-        Label( t, text = ' You can find source code in http://code.google.com/p/siguojunqi/' ).pack( side = TOP )
-        Button( t, text = 'OK', command = t.destroy ).pack( side = RIGHT )
+    def GUI_Reload( self ):
+        return
+
+    def GUI_Profile( self ):
+        def fetch( quit ):
+            if quit:
+                t.destroy()
+
+        def Select():
+            return
+
+        t = Toplevel( bg = 'white' )
+        t.title( 'Profile' )
+        lab = Frame( t, bg = 'white' )
+        lab.pack( side = LEFT, expand = YES, fill = Y )
+        Label( lab, text = 'Name', bg = 'white' ).pack( side = TOP )
+        Label( lab, text = 'Id', bg = 'white' ).pack( side = TOP )
+        Label( lab, text = 'Color', bg = 'white' ).pack( side = TOP )
+        btn = Frame( t, relief = GROOVE, bg = 'white' )
+        btn.pack( side = BOTTOM, expand = YES, fill = X )
+        Button( btn, text = 'OK', command = ( lambda : fetch( True ) ), width = 10 ).pack( side = LEFT, anchor = SW )
+        Button( btn, text = 'Cancel', command = t.destroy, width = 10 ).pack( side = LEFT, anchor = SW )
+        Button( btn, text = 'Apply', command = ( lambda : fetch( False ) ), width = 10 ).pack( side = LEFT, anchor = SW )
+        ent = Frame( t )
+        ent.pack( side = RIGHT, expand = YES, fill = BOTH )
+        name = StringVar()
+        id = IntVar()
+        color = StringVar()
+        #name.set(self.client.prof.name)
+        #id.set(self.client.prof.id)
+        e1 = Entry( ent, textvariable = name )
+        e1.pack( side = TOP, expand = YES, fill = X, anchor = NW )
+        e1.bind( '<Return>', ( lambda : fetch( True ) ) )
+        e1.focus()
+        e1.select_range( 0, END )
+        idf = Frame( ent )
+        idf.pack( side = TOP, expand = YES, fill = X, anchor = NW )
+        Radiobutton( idf, text = '0', variable = id, value = 0 ).pack( side = LEFT )
+        Radiobutton( idf, text = '1', variable = id, value = 1 ).pack( side = LEFT )
+        Radiobutton( idf, text = '2', variable = id, value = 2 ).pack( side = LEFT )
+        Radiobutton( idf, text = '3', variable = id, value = 3 ).pack( side = LEFT )
+        clf = Frame( ent )
+        clf.pack( side = TOP, expand = YES, fill = X, anchor = NW )
+        Entry( clf ).pack( side = LEFT )
+        Button( clf, text = 'Select', command = Select ).pack()
         t.grab_set()
         t.focus_set()
         t.wait_window()
@@ -302,41 +339,55 @@ class clientGUI( Toplevel ):
     def GUI_License( self ):
         t = Toplevel()
         t.title( 'License' )
-        Button( t, text = 'OK', command = t.destroy ).pack( side = BOTTOM )
-        l = Text( t )
-        l.pack()
+        Button( t, text = 'Close', command = t.destroy, width = 15 ).pack( side = BOTTOM, anchor = SE )
+        l = Text( t , bg = 'white' )
+        ybar = Scrollbar( t )
+        ybar.config( command = l.yview, relief = SUNKEN )
+        l.config( yscrollcommand = ybar.set )
+        ybar.pack( side = RIGHT, expand = YES, fill = Y )
+        l.pack( side = LEFT, expand = YES, fill = BOTH )
+        text = ''
+        try:
+            text = open( 'license.txt', 'r' ).read()
+        except:
+            showerror( 'Error', 'cannot find license.txt' )
+        l.delete( '1.0', END )
+        l.insert( '1.0', text )
         t.grab_set()
         t.focus_set()
         t.wait_window()
 
-    def GUI_Name( self ):
-        def fetch( ignore = None ):
-            self.conf.name = s.get()
-            t.destroy()
 
+    def GUI_Help( self ):
+        return
+
+    def GUI_About( self ):
         t = Toplevel()
-        t.title( 'Option' )
-        b = Frame( t, bd = 2 )
-        b.pack( side = BOTTOM, expand = YES, fill = X )
-        Button( b, text = 'ok', command = fetch ).pack( side = LEFT )
-        Button( b, text = 'cancel', command = t.destroy ).pack( side = RIGHT )
-        Label( t, text = 'Name' ).pack( side = LEFT )
-        s = StringVar()
-        s.set( self.conf.name )
-        ent = Entry( t, textvariable = s )
-        ent.bind( '<Return>', fetch )
-        ent.pack( side = RIGHT, expand = YES, fill = X )
-        ent.focus()
-        ent.select_range( 0, END )
+        t.title( 'About SiGuo' )
+        lab = Frame( t, bg = 'white' )
+        btn = Frame( t, bg = '#cccccc' )
+        btn.pack( side = BOTTOM, expand = YES, fill = X )
+        lab.pack( side = TOP, expand = YES, fill = BOTH )
+        Label( lab, text = 'SiGuo game ' + define.STABLEVERSION + ' revision ' + define.STABLESVN, bg = 'white' ).pack( side = TOP, anchor = NW )
+        Label( lab, text = ' You can find source code in http://code.google.com/p/siguojunqi/', bg = 'white' ).pack( side = TOP, anchor = NW )
+        Button( btn, text = 'OK', command = t.destroy, width = 15 ).pack( side = RIGHT, anchor = SE )
         t.grab_set()
         t.focus_set()
         t.wait_window()
 
-    def GUI_exit( self ):
-       if tkMessageBox.askyesno( 'Warning', 'Do you really want to exit?' ):
-            self.closeConnection()
-            self.top.quit()
+    def GUI_Test( self ):
+        return
 
+    def GUI_Exit( self ):
+        if askyesno( 'Warning', 'Do you really want to exit?' ):
+            try:
+                self.client.Connection_Close()
+            except Exception as e:
+                print( str( e ) )
+            self.quit()
+            sys.exit()
+
+"""
     def GUI_Discard( self ):
         if self.status == CLIENT_INIT:
             if tkMessageBox.askyesno( 'Warning', 'Discard all changes?' ):
@@ -344,8 +395,7 @@ class clientGUI( Toplevel ):
                 self.conf.place = GetDefaultPlace( self.conf.player )
                 rule.PlaceOne( self.conf.place, self.map, self.conf.player )
                 self.board.Draw_Map( self.map, self.conf.player )
-
-    def add_move( self ):
+                
         def execute():
             try:
                 f = int( self.movef.get() )
@@ -357,9 +407,8 @@ class clientGUI( Toplevel ):
                 #    self.board.Draw_Map( self.map, self.conf.player )
             except:
                 pass
-
 """
 
 if __name__ == '__main__':
-    pass
-#clientGUI( None )
+    Tk().withdraw()
+    clientGUI( None ).mainloop()
