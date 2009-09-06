@@ -22,7 +22,7 @@ import define
 class Profile:
 
     Bgcolor = ['#dd2222', '#dddd22', '#22dd22', '#2222dd']
-    Fgcolor = ['#dddddd', '#222222', '#dddddd', '#222222']
+    Fgcolor = ['#dddddd', '#222222', '#222222', '#dddddd']
     ActiveBgColor = ['red', 'yellow', 'green', 'blue']
     Team = [[0, 2], [1, 3]]
 

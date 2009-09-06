@@ -89,7 +89,7 @@ class Board( Frame ):
                     continue
                 x2, y2 = self.GetCoordinate( j )
                 if self.board.item[i].IsRailway():
-                    id = self.draw.create_line( x1, y1, x2, y2, width = 5, fill = '#dd2222' )
+                    id = self.draw.create_line( x1, y1, x2, y2, width = 6, fill = '#dd7777' )
                 else:
                     id = self.draw.create_line( x1, y1, x2, y2, width = 3, fill = '#222222' )
                 self.back.append( id )

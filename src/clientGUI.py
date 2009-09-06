@@ -113,7 +113,17 @@ class clientGUI( Toplevel ):
         self.add_toolbar()
         self.add_sidebar()
         self.add_board()
+        self.add_events()
         self.focus()
+
+
+    def add_events( self ):
+        self.event_add( '<<name>>' , '<Button-2>' , 'n', 'a' )
+        self.bind( '<<name>>', self.onNameChange )
+        self.event_add( '<<id>>' , '<Button-2>' , 'i', 'd' )
+        self.bind( '<<id>>', self.onIdChange )
+        self.event_add( '<<color>>' , '<Button-2>' , 'c', 'o' )
+        self.bind( '<<color>>', self.onColorChange )
 
     def add_menu( self ):
         main = Menu( self )
@@ -300,6 +310,7 @@ class clientGUI( Toplevel ):
             nonlocal name, id, color
             if name.get() != '':
                 self.client.prof.name = name.get()
+                self.event_generate( '<<name>>' )
             else:
                 showerror( 'Error', 'Name should not be empty' )
                 name.set( self.client.prof.name )
@@ -307,10 +318,13 @@ class clientGUI( Toplevel ):
             if id.get() in range( define.MAXPLAYER ):
                 self.client.prof.id = int( id.get() )
                 id.set( self.client.prof.id )
+                self.event_generate( '<<id>>' )
             else:
                 showerror( 'Error', 'Id should be in 0..3' )
                 return
-            self.client.prof.bg = color
+            #self.client.prof.bg = color
+            #self.event_generate( '<<color>>' )
+            self.client.prof.save()
             if quit:
                 t.destroy()
 
@@ -427,7 +441,7 @@ class clientGUI( Toplevel ):
             self.quit()
             sys.exit()
 
-"""
+    """
     def GUI_Discard( self ):
         if self.status == CLIENT_INIT:
             if tkMessageBox.askyesno( 'Warning', 'Discard all changes?' ):
@@ -447,7 +461,16 @@ class clientGUI( Toplevel ):
                 #    self.board.Draw_Map( self.map, self.conf.player )
             except:
                 pass
-"""
+    """
+
+    def onNameChange( self, event ):
+        self.title( 'SiGuo client - ' + self.client.prof.name )
+
+    def onIdChange( self, event ):
+        self.board.Draw_Chess()
+
+    def onColorChange( self, event ):
+        return
 
 if __name__ == '__main__':
     import client
