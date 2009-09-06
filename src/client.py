@@ -20,7 +20,7 @@ import sys
 #import time
 #import thread
 
-from define import CheckerBoard, Chess, Lineup, DEBUG
+from define import *
 from profile import Profile
 #from message import *
 from clientGUI import clientGUI, Startup
@@ -36,7 +36,7 @@ class Client():
         filename = Startup()
         if filename == None:
             sys.exit()
-        name = filename.split( os.path.sep )[-1].split( '.' )[0]
+        name = filename.split( '/' )[-1].split( '\\' )[-1].rsplit( '.' )[0]
         if DEBUG:
             print( 'username :', name )
         self.map = CheckerBoard()

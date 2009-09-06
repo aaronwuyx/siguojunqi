@@ -14,13 +14,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
 from tkinter import *
 from tkinter.messagebox import askyesno, showerror
 from tkinter.filedialog import askopenfilenames
-import os
+from tkinter.colorchooser import askcolor
 
 import define
 from profile import Profile
+from board import Board
 
 def Startup():
     return tk_Startup()
@@ -228,7 +230,10 @@ class clientGUI( Toplevel ):
         return
 
     def add_board( self ):
-        return
+        self.board = Board( self , bg = 'white', bd = 1, relief = FLAT )
+        self.board.pack( side = LEFT, expand = YES, fill = BOTH )
+        self.board.SetClient( self.client )
+        self.board.Draw_Background()
 
     def GUI_Connect( self ):
         def jump( ignore = None ):
@@ -266,8 +271,8 @@ class clientGUI( Toplevel ):
         ent.pack( side = RIGHT, expand = YES, fill = BOTH )
         s = StringVar()
         i = IntVar()
-        #s.set( self.client.prof.host )
-        #i.set ( self.client.prof.port )
+        s.set( self.client.prof.host )
+        i.set( self.client.prof.port )
         ent1 = Entry( ent, textvariable = s )
         ent2 = Entry( ent, textvariable = i )
         ent1.bind( '<Return>', jump )
@@ -292,11 +297,32 @@ class clientGUI( Toplevel ):
 
     def GUI_Profile( self ):
         def fetch( quit ):
+            nonlocal name, id, color
+            if name.get() != '':
+                self.client.prof.name = name.get()
+            else:
+                showerror( 'Error', 'Name should not be empty' )
+                name.set( self.client.prof.name )
+                return
+            if id.get() in range( define.MAXPLAYER ):
+                self.client.prof.id = int( id.get() )
+                id.set( self.client.prof.id )
+            else:
+                showerror( 'Error', 'Id should be in 0..3' )
+                return
+            self.client.prof.bg = color
             if quit:
                 t.destroy()
 
         def Select():
-            return
+            nonlocal color
+            c = askcolor()
+            if c:
+                try:
+                    exp.config( bg = c[1] )
+                    color = c[1]
+                except Exception:
+                    exp.config( bg = color )
 
         t = Toplevel( bg = 'white' )
         t.title( 'Profile' )
@@ -314,9 +340,10 @@ class clientGUI( Toplevel ):
         ent.pack( side = RIGHT, expand = YES, fill = BOTH )
         name = StringVar()
         id = IntVar()
-        color = StringVar()
-        #name.set(self.client.prof.name)
-        #id.set(self.client.prof.id)
+        color = 'white'
+        name.set( self.client.prof.name )
+        id.set( self.client.prof.id )
+        color = self.client.prof.bg
         e1 = Entry( ent, textvariable = name )
         e1.pack( side = TOP, expand = YES, fill = X, anchor = NW )
         e1.bind( '<Return>', ( lambda : fetch( True ) ) )
@@ -330,8 +357,10 @@ class clientGUI( Toplevel ):
         Radiobutton( idf, text = '3', variable = id, value = 3 ).pack( side = LEFT )
         clf = Frame( ent )
         clf.pack( side = TOP, expand = YES, fill = X, anchor = NW )
-        Entry( clf ).pack( side = LEFT )
-        Button( clf, text = 'Select', command = Select ).pack()
+        exp = Entry( clf )
+        exp.pack( side = LEFT )
+        Button( clf, text = 'Select', command = Select ).pack( side = LEFT )
+        exp.config( bg = color )
         t.grab_set()
         t.focus_set()
         t.wait_window()
@@ -357,7 +386,6 @@ class clientGUI( Toplevel ):
         t.focus_set()
         t.wait_window()
 
-
     def GUI_Help( self ):
         return
 
@@ -376,7 +404,19 @@ class clientGUI( Toplevel ):
         t.wait_window()
 
     def GUI_Test( self ):
-        return
+        tmp = define.Lineup( 0 )
+        tmp.SetToDefault()
+        self.client.map.Dump( tmp )
+        tmp = define.Lineup( 1 )
+        tmp.SetToDefault()
+        self.client.map.Dump( tmp, 30 )
+        tmp = define.Lineup( 2 )
+        tmp.SetToDefault()
+        self.client.map.Dump( tmp, 60 )
+        tmp = define.Lineup( 3 )
+        tmp.SetToDefault()
+        self.client.map.Dump( tmp, 90 )
+        self.board.Draw_Chess()
 
     def GUI_Exit( self ):
         if askyesno( 'Warning', 'Do you really want to exit?' ):
@@ -410,5 +450,7 @@ class clientGUI( Toplevel ):
 """
 
 if __name__ == '__main__':
+    import client
     Tk().withdraw()
-    clientGUI( None ).mainloop()
+    c = client.Client()
+    c.run()

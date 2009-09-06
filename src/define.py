@@ -95,16 +95,20 @@ class Position:
         return self.rail
 
     def IsRailway( self ):
-        return ( self.rail != None )
+        return ( self.rail != [] )
 
-    def getChess( self ):
+    def GetChess( self ):
         return self.chess
 
-    def setChess( self, chess = None ):
+    def SetChess( self, chess = None ):
         self.chess = chess
 
     def IsChess( self ):
         return ( self.chess != None )
+
+    def __str__( self ):
+        dict = {'pos':self.pos, 'x':self.x, 'y':self.y, 'pic':self.pic, 'direct':self.direct, 'movable':self.movable, 'safe':self.safe, 'link':self.link, 'rlink':self.rlink, 'rail':self.rail, 'chess':self.chess, 'selected':self.selected}
+        return str( dict )
 
 #Replace MAP_*
 VIS_NONE = 'none'
@@ -130,6 +134,10 @@ class Chess:
             self.moverule = Chess.Move[value]
         self.player = player
         self.visible = visible
+
+    def __str__( self ):
+        dict = {'value':self.value, 'player':self.player, 'visible':self.visible}
+        return str( dict )
 
     def GetPlayer( self ):
         return self.player
@@ -174,6 +182,15 @@ class Positions:
         self.item[pos].SetChess( None )
         return tmp
 
+    def Dump( self, other, start = 0, num = -1 ):
+        if num == -1:
+            num = other.size
+        pos1 = start
+        pos2 = 0
+        while ( pos1 < self.size ) & ( pos2 < num ):
+            self.item[pos1].SetChess( other.item[pos2].GetChess() )
+            pos1 += 1
+            pos2 += 1
 
 class CheckerBoard( Positions ):
     def __init__( self ):
@@ -189,13 +206,6 @@ class CheckerBoard( Positions ):
         if self.item[pos].selected:
             return False
         return self.item[pos].GetChess().GetInitmove()
-
-    def PutCovered( self, otherplayer, visible ):
-        covered = Chess( None, otherplayer, visible )
-        for i in range( MAXCHESS ):
-            pos = otherplayer * MAXCHESS + i
-            if not self.item[pos].IsSafe():
-                self.item[pos].SetChess( covered )
 
     def Move( self, fpos, tpos, result = None ):
         if self.CanMove( fpos, tpos ):
@@ -318,6 +328,8 @@ class Lineup( Positions ):
         for value in default:
             self.item[pos].SetChess( Chess( value, self.player, VIS_SELF ) )
             pos += 1
+            if pos >= self.size:
+                break
             while self.item[pos].IsSafe():
                 self.item[pos].SetChess( None )
                 pos += 1
@@ -370,10 +382,6 @@ class Lineup( Positions ):
             return True
         return False
 
-    def Dump( self, other ):
-        for pos in range( MAXCHESS ):
-            other.item[pos].SetChess( self.item[pos].GetChess() )
-
     def Load( self, filename ):
         try:
             f = open ( filename, 'r' )
@@ -406,6 +414,8 @@ class Lineup( Positions ):
                         if count[value] < 0:
                             raise Exception( 'Number of ' + item + ' is invalid' )
                         pos += 1
+                        if pos >= self.size:
+                            break
                         while self.item[pos].IsSafe():
                             self.item[pos].SetChess( None )
                         pos += 1

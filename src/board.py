@@ -13,141 +13,191 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
 
 from tkinter import *
-from defines import *
-import rule, traceback
-
-try:
-    import Image, ImageTk
-    isPIL = True
-except:
-    isPIL = False
+from tkinter.messagebox import showerror
+import define
+import profile
 
 class Board( Frame ):
-    def __init__( self, master = None, config = Configuration() ):
-        Frame.__init__( self, master )
-        self.conf = config
-        self.pack( expand = YES, fill = BOTH )
-        self.config( relief = GROOVE, bd = 1 )
-        self.back = Canvas( self )
-        self.back.pack()
+    def __init__( self, master = None, **config ):
+        Frame.__init__( self, master, config )
+        self.draw = Canvas( self, bg = '#eeeeee', width = 630, height = 630 )
+        xbar = Scrollbar( master , orient = HORIZONTAL )
+        ybar = Scrollbar( master )
+        xbar.pack( side = BOTTOM, expand = YES, fill = X )
+        ybar.pack( side = RIGHT, expand = YES, fill = Y )
+        self.draw.pack()
+        xbar.config( command = self.draw.xview, relief = SUNKEN )
+        ybar.config( command = self.draw.yview, relief = SUNKEN )
+        self.draw.config( xscrollcommand = xbar.set, yscrollcommand = ybar.set )
 
-        if self.conf.bgfile:
-            self.Draw_Background( self.conf.bgfile )
+        self.init()
 
-        self.chessw = 30
-        self.chessh = 18
-        self.sepwidth = 10
-        self.sepheight = 10
-        self.bgcolor = 'white'
-        self.textfont = ( 'Courier', 9, 'normal' )
-        self.posfont = ( 'times', 8, 'normal' )
-        self.pos_rectangle = {}
-        self.pos_text = {}
-        self.pos_pos = {}
+    def init( self ):
+        self.chess_width = 32
+        self.chess_height = 18
+        self.rect_width = 26
+        self.rect_height = 14
+        self.oval_width = 36
+        self.oval_height = 20
+        self.space_width = 42
+        self.space_height = 28
+        self.offset_x = 50
+        self.offset_y = 50
 
-    def Draw_Background( self, filename ):
-        if isPIL:
-            self.backimage = ImageTk.PhotoImage( file = filename )
-        else:
-            self.backimage = PhotoImage( file = filename )
-        self.backwidth = self.backimage.width()
-        self.backheight = self.backimage.height()
-        self.back.create_image( self.backwidth / 2 + self.conf.spacex / 2, self.backheight / 2 + self.conf.spacey / 2, im = self.backimage )
-        self.back.config( height = self.backheight + self.conf.spacex, width = self.backwidth + self.conf.spacey )
-#TODO: exactly draw map...
+        self.text_font = ( 'Courier', 9, 'normal' )
+        self.inst_font = ( 'Times', 8, 'normal' )
+        self.client = None
+        self.board = None
 
-    def Draw_Map( self, m, player ):
-        for pos in range( 0, m.size ):
-            self.Draw_Position( m, pos, player )
-
-    def Clear_Map( self, m ):
-        for pos in range( 0, m.size ):
-            self.Clear_Position( pos )
+        self.Clear_All()
 
     def Clear_All( self ):
-        self.back.delete( 'all' )
-        self.pos_rectangle = {}
-        self.pos_text = {}
-        self.pos_pos = {}
+        self.draw.delete( 'all' )
+        self.back = []
+        self.inst = []
+        self.text = {}
+        self.rect = {}
 
-    def Clear_Position( self, pos ):
-        if self.pos_rectangle.get( pos ):
-            if self.pos_rectangle[pos]:
-                self.back.delete( self.pos_rectangle[pos] )
-            self.pos_rectangle[pos] = None
-        if self.pos_text.get( pos ):
-            if self.pos_text[pos]:
-                self.back.delete( self.pos_text[pos] )
-            self.pos_text[pos] = None
-        if self.pos_pos.get( pos ):
-            if self.pos_pos[pos]:
-                self.back.delete( self.pos_pos[pos] )
-            self.pos_pos[pos] = None
+    def SetClient( self, client ):
+        self.client = client
+        self.board = client.map
 
-    def Draw_Position( self, m, pos, viewer, highlight = True ):
-        self.Clear_Position( pos )
-        x, y, vert = self.getXY( pos )
-        acbg = bg = self.bgcolor
-        player = m.item[pos].getPlayer()
-        status = m.item[pos].getStatus()
-        show = self.getPolicy( viewer, player, status )
-        if player != None:
-            bg = Team4[player - 1].background
-            fg = Team4[player - 1].foreground
-            acbg = Team4[player - 1].activebackground
-        if vert == 'V':
-            self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessh / 2, y - self.chessw / 2, x + self.chessh / 2, y + self.chessw / 2, width = 2, fill = bg, activefill = acbg )
-        elif vert == 'H':
-            self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessw / 2, y - self.chessh / 2, x + self.chessw / 2, y + self.chessh / 2, width = 2, fill = bg, activefill = acbg )
-        elif vert == 'VH':
-            self.pos_rectangle[pos] = self.back.create_rectangle( x - self.chessw / 2, y - self.chessw / 2, x + self.chessw / 2, y + self.chessw / 2, width = 2, fill = bg, activefill = acbg )
-        self.pos_pos[pos] = self.back.create_text( x + 15, y + 15, text = str( pos ), font = self.posfont, fill = '#33bb33' )
-        if ( player != None ) & show:
-            value = m.item[pos].getValue()
-            name = m.item[pos].getName()
-            if vert == 'V':
-            #currently i can only wrap text... to rotate it with tkinter is impossible, use gdmodule?
-                self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg, width = 1 )
-            elif vert == 'H':
-                self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg )
-            elif vert == 'VH':
-                self.pos_text[pos] = self.back.create_text( x, y, text = name, font = self.textfont, fill = fg )
+    def Draw_Background( self ):
+        if os.path.exists( self.client.prof.bgfile ):
+            self.bgimage = PhotoImage( file = self.client.prof.bgfile )
+            bgwidth = self.bgimage.width()
+            bgheight = self.bgimage.height()
+            if bgwidth < 200:
+                bgwidth = 200
+            if bgheight < 200:
+                bgheight = 200
+            id = self.draw.create_image( bgwidth / 2, bgheight / 2, im = self.bgimage )
+            self.back.append( id )
+        for i in range( self.board.size ):
+            x1, y1 = self.GetCoordinate( i )
+            for j in self.board.item[i].link:
+                if i > j:
+                     continue
+                x2, y2 = self.GetCoordinate( j )
+                id = self.draw.create_line( x1, y1, x2, y2, width = 3, fill = '#222222' )
+                self.back.append( id )
+            for j in self.board.item[i].rlink:
+                if i > j:
+                    continue
+                x2, y2 = self.GetCoordinate( j )
+                if self.board.item[i].IsRailway():
+                    id = self.draw.create_line( x1, y1, x2, y2, width = 5, fill = '#dd2222' )
+                else:
+                    id = self.draw.create_line( x1, y1, x2, y2, width = 3, fill = '#222222' )
+                self.back.append( id )
+        for i in range( self.board.size ):
+            x, y = self.GetCoordinate( i )
+            if self.board.item[i].pic in [0, 2, 3, 4, 5, 6] :
+                if self.board.item[i].direct == 0:
+                    id = self.draw.create_rectangle( x - self.rect_height / 2, y - self.rect_width / 2 , x + self.rect_height / 2, y + self.rect_width / 2, width = 1, fill = 'white' )
+                elif self.board.item[i].direct == 1:
+                    id = self.draw.create_rectangle( x - self.rect_width / 2, y - self.rect_height / 2 , x + self.rect_width / 2, y + self.rect_height / 2, width = 1, fill = 'white' )
+                else:
+                    id = self.draw.create_rectangle( x - self.rect_width / 2, y - self.rect_width / 2 , x + self.rect_width / 2, y + self.rect_width / 2, width = 1, fill = 'white' )
+                self.back.append( id )
+            elif self.board.item[i].pic == 1:
+                if self.board.item[i].direct == 0:
+                    id = self.draw.create_oval( x - self.oval_height / 2, y - self.oval_width / 2 , x + self.oval_height / 2, y + self.oval_width / 2, width = 1, fill = 'white' )
+                elif self.board.item[i].direct == 1:
+                    id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_height / 2 , x + self.oval_width / 2, y + self.oval_height / 2, width = 1, fill = 'white' )
+                else:
+                    id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_width / 2 , x + self.oval_width / 2, y + self.oval_width / 2, width = 1, fill = 'white' )
+                self.back.append( id )
 
-    def getXY( self, pos ):
-        if ( pos >= MAXPOSITION ) | ( pos < 0 ):
+    def Clear_Background( self ):
+        for item in self.back:
+            self.draw.delete( item )
+        self.back = []
+
+    def GetCoordinate( self, pos ):
+        if ( pos >= self.client.map.size ) | ( pos < 0 ):
             return
-        xoff = self.conf.offx + self.conf.spacex / 2
-        yoff = self.conf.offy + self.conf.spacey / 2
-        hinc = self.chessh + self.sepheight
-        winc = self.chessw + self.sepwidth
-        if pos in PosV:
-            if pos in PosH:
-                vert = 'VH'
-                xadd = self.chessw / 2
-                yadd = self.chessw / 2
+        x = self.offset_x
+        y = self.offset_y
+        if self.board.item[pos].direct == 0:
+            x = x + self.chess_height / 2
+            y = y + self.chess_width / 2
+        elif self.board.item[pos].direct == 1:
+            x = x + self.chess_width / 2
+            y = y + self.chess_height / 2
+        else:
+            x = x + self.chess_width / 2
+            y = y + self.chess_width / 2
+
+        vx = self.board.item[pos].x
+        vy = self.board.item[pos].y
+        if vx < 6:
+            x += vx * self.space_height
+        else:
+            x += 6 * self.space_height
+            if vx < 11:
+                x += ( vx - 6 ) * self.space_width
             else:
-                vert = 'V'
-                xadd = self.chessh / 2
-                yadd = self.chessw / 2
+                x += 5 * self.space_width + ( vx - 11 ) * self.space_height
+        if vy < 6:
+            y += vy * self.space_height
         else:
-            vert = 'H'
-            xadd = self.chessw / 2
-            yadd = self.chessh / 2
-        if Pos4[pos].x < 6:
-            x = xoff + xadd + Pos4[pos].x * hinc
-        elif Pos4[pos].x < 11:
-            x = xoff + xadd + 6 * hinc + ( Pos4[pos].x - 6 ) * winc
+            y += 6 * self.space_height
+            if vy < 11:
+                y += ( vy - 6 ) * self.space_width
+            else:
+                y += 5 * self.space_width + ( vy - 11 ) * self.space_height
+        return ( x, y )
+
+    def Draw_Chess( self ):
+        for i in range( self.board.size ):
+            self.Draw_Pos( i )
+
+    def Clear_Chess( self ):
+        for pos in self.text.keys():
+            self.draw.delete( self.text[pos] )
+        self.text = {}
+
+    def Clear_Pos( self, pos ):
+        if pos in self.text.keys():
+            self.draw.delete( self.text.pop( pos ) )
+
+    def Draw_Pos( self, pos ):
+        self.Clear_Pos( pos )
+        if self.board.item[pos].IsChess() == False:
+            return
+        x, y = self.GetCoordinate( pos )
+        c = self.board.item[pos].chess
+        if c.IsVisible( self.client.prof.id ):
+            txt = c.GetName()
         else:
-            x = xoff + xadd + 6 * hinc + 5 * winc + ( Pos4[pos].x - 11 ) * hinc
-        if Pos4[pos].y < 6:
-            y = yoff + yadd + Pos4[pos].y * hinc
-        elif Pos4[pos].y < 11:
-            y = yoff + yadd + 6 * hinc + ( Pos4[pos].y - 6 ) * winc
-        else:
-            y = yoff + yadd + 6 * hinc + 5 * winc + ( Pos4[pos].y - 11 ) * hinc
-        return ( x, y, vert )
+            txt = '　　'
+        id = c.GetPlayer()
+        bg = profile.Profile.Bgcolor[id]
+        fg = profile.Profile.Fgcolor[id]
+        acbg = profile.Profile.ActiveBgColor[id]
+        def notdone():
+            showerror( 'Error', 'Function not implemented' )
+
+        if self.board.item[pos].direct == 0:
+            w = Button( self.draw, text = txt, wraplength = 1 )
+        elif self.board.item[pos].direct in [1, 2]:
+            w = Button( self.draw, text = txt )
+        w.pack()
+        w.config( relief = FLAT, background = bg, foreground = fg, activebackground = acbg, font = self.text_font, command = notdone )
+        if self.board.item[pos].direct == 0:
+            id = self.draw.create_window( x , y, window = w, width = self.chess_height, height = self.chess_width )
+        elif self.board.item[pos].direct in [1, 2]:
+            id = self.draw.create_window( x , y, window = w, height = self.chess_height, width = self.chess_width )
+        self.text[pos] = id
+"""
+        self.pos_pos[pos] = self.back.create_text( x + 15, y + 15, text = str( pos ), font = self.posfont, fill = '#33bb33' )
+"""
 
 if __name__ == '__main__':
-    Board().mainloop()
+    root = Tk()
+    Board( root, None ).pack()
+

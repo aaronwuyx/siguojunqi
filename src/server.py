@@ -14,10 +14,10 @@
 """
 
 from socket import *
-from defines import *
+
+import define
 from message import *
-import rule
-import string, random, thread, time
+import random, thread, time
 
 class Server:
     def __init__( self , URL = 'localhost', Port = 30000 ):
@@ -44,7 +44,7 @@ class Server:
     def add_client( self ):
         conn, addr = self.socket.accept()
         if DEBUG:
-            print 'connection from address ', addr
+            print( 'connection from address ', addr )
         data, remain = Recvline( conn, '' )
         cmd, arg, player = Sepline( data )
         if ( cmd != CMD_ADD ) or ( arg != 'int' ) or ( player <= 0 ) or ( player > DEFAULTPLAYER ):
@@ -63,7 +63,7 @@ class Server:
         self.clientcount += 1
         self.clientlock.release()
         if DEBUG:
-            print ' player no ', player
+            print( ' player no ', player )
         self.tlocks[k].acquire()
         Sendline( conn, Combline( CMD_PLACE, 'int', k ) )
         data, self.remain[k] = Recvline( self.client[k][0], self.remain[k] )
@@ -98,7 +98,7 @@ class Server:
             self.clientcount -= 1
             self.tlocks[k].release()
             if DEBUG:
-                print 'connection close, Player no ', obj
+                print( 'connection close, Player no ', obj )
         self.clientlock.release()
 
     def run( self ):
@@ -147,11 +147,11 @@ class Server:
                 if self.map.move( fpos, tpos ):
                     self.tell_others( k, Combline( CMD_MOVE, 'int,int', obj ) )
                     if DEBUG:
-                        print 'move from', fpos, 'to', tpos, ', Player no ', k + 1
+                        print( 'move from', fpos, 'to', tpos, ', Player no ', k + 1 )
                     self.onmove = ( self.onmove + 1 ) % DEFAULTPLAYER
             else:
                 if DEBUG:
-                    print cmd, arg, obj
+                    print( cmd, arg, obj )
                 raise Exception( 'Unknown str ' + cmd )
 
     def wait4connection( self ):
