@@ -116,7 +116,8 @@ class clientGUI( Toplevel ):
         self.add_events()
         self.focus()
 
-
+    #one way to tell other widgets about value changes, use virtual events
+    #another is widget.after(...)
     def add_events( self ):
         self.event_add( '<<name>>' , '<Button-2>' , 'n', 'a' )
         self.bind( '<<name>>', self.onNameChange )
@@ -185,10 +186,12 @@ class clientGUI( Toplevel ):
         self.sidebar = Frame( self )
         self.sidebar.pack( side = RIGHT, expand = YES, fill = Y, anchor = E )
         self.sidebar.config( relief = FLAT, bd = 1, padx = 1, pady = 1, bg = 'white' )
-        self.add_move()
-        self.add_user()
+        self.add_move( self.sidebar )
+        self.add_user( self.sidebar )
+        self.add_log( self.sidebar )
+        self.add_msg( self.sidebar )
 
-    def add_move( self ):
+    def add_move( self, master ):
         def execute():
             try:
                 f = int( self.movef.get() )
@@ -201,7 +204,7 @@ class clientGUI( Toplevel ):
             self.movef.set( '' )
             self.movet.set( '' )
 
-        self.side_move = Frame( self.sidebar )
+        self.side_move = Frame( master )
         self.movef = StringVar()
         self.movet = StringVar()
         Label( self.side_move, text = 'Movement' ).grid( column = 0, row = 0, columnspan = 3 )
@@ -216,8 +219,8 @@ class clientGUI( Toplevel ):
         self.side_move.pack( side = TOP, expand = YES, fill = X )
         self.side_move.config( bd = 1 , relief = GROOVE )
 
-    def add_user( self ):
-        self.side_user = Frame( self.sidebar )
+    def add_user( self, master ):
+        self.side_user = Frame( master )
         Label( self.side_user, text = 'Player' ).pack( side = TOP, expand = YES, fill = X )
         l = Listbox( self.side_user, height = 5 )
         l.insert( END, 'Name' )
@@ -235,6 +238,22 @@ class clientGUI( Toplevel ):
         m.pack( side = RIGHT, expand = YES, fill = X )
         self.side_user.pack( side = TOP, expand = YES, fill = X )
         self.side_user.config( bd = 1 , relief = GROOVE )
+
+    def add_log( self, master ):
+        self.side_log = Frame( master )
+        Label( self.side_log, text = 'Log' ).pack( side = TOP, expand = YES, fill = X )
+        self.side_log_listbox = Listbox( self.side_log, bg = 'white', height = 10 )
+        self.side_log_listbox.pack( side = TOP, expand = YES, fill = BOTH )
+        self.side_log.pack( side = TOP, expand = YES, fill = X )
+        self.side_log.config( bd = 1 , relief = GROOVE )
+
+    def add_msg( self , master ):
+        self.side_msg = Frame( master )
+        Label( self.side_msg, text = 'Message' ).pack( side = TOP, expand = YES, fill = X )
+        self.side_msg_text = Text( self.side_msg, bg = 'white', height = 10 )
+        self.side_msg_text.pack( side = TOP, expand = YES, fill = BOTH )
+        self.side_msg.pack( side = TOP, expand = YES, fill = X )
+        self.side_msg.config( bd = 1 , relief = GROOVE )
 
     def Update_MenuToolbar( self ):
         return
@@ -322,8 +341,13 @@ class clientGUI( Toplevel ):
             else:
                 showerror( 'Error', 'Id should be in 0..3' )
                 return
-            #self.client.prof.bg = color
-            #self.event_generate( '<<color>>' )
+            try:
+                exp.config( bg = color.get() )
+                self.client.prof.bg = color.get()
+                self.event_generate( '<<color>>' )
+            except TclError:
+                color.set( self.client.prof.bg )
+                exp.config( bg = self.client.prof.bg )
             self.client.prof.save()
             if quit:
                 t.destroy()
@@ -333,10 +357,13 @@ class clientGUI( Toplevel ):
             c = askcolor()
             if c:
                 try:
-                    exp.config( bg = c[1] )
-                    color = c[1]
-                except Exception:
-                    exp.config( bg = color )
+                    color.set( c[1] )
+                    exp.config( bg = color.get() )
+                    self.client.prof.bg = color.get()
+                    self.event_generate( '<<color>>' )
+                except TclError:
+                    color.set( self.client.prof.bg )
+                    exp.config( bg = self.client.prof.bg )
 
         t = Toplevel( bg = 'white' )
         t.title( 'Profile' )
@@ -354,10 +381,10 @@ class clientGUI( Toplevel ):
         ent.pack( side = RIGHT, expand = YES, fill = BOTH )
         name = StringVar()
         id = IntVar()
-        color = 'white'
+        color = StringVar()
         name.set( self.client.prof.name )
         id.set( self.client.prof.id )
-        color = self.client.prof.bg
+        color.set( self.client.prof.bg )
         e1 = Entry( ent, textvariable = name )
         e1.pack( side = TOP, expand = YES, fill = X, anchor = NW )
         e1.bind( '<Return>', ( lambda : fetch( True ) ) )
@@ -371,10 +398,12 @@ class clientGUI( Toplevel ):
         Radiobutton( idf, text = '3', variable = id, value = 3 ).pack( side = LEFT )
         clf = Frame( ent )
         clf.pack( side = TOP, expand = YES, fill = X, anchor = NW )
-        exp = Entry( clf )
-        exp.pack( side = LEFT )
-        Button( clf, text = 'Select', command = Select ).pack( side = LEFT )
-        exp.config( bg = color )
+        clr = Entry( clf, textvariable = color, width = 7 )
+        clr.pack( side = LEFT, anchor = NW )
+        exp = Entry( clf , width = 12 )
+        exp.pack( side = LEFT, anchor = NW )
+        Button( clf, text = 'Select', command = Select, width = 10 ).pack( side = RIGHT, anchor = NE )
+        exp.config( bg = color.get() )
         t.grab_set()
         t.focus_set()
         t.wait_window()

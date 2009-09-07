@@ -23,15 +23,15 @@ import profile
 class Board( Frame ):
     def __init__( self, master = None, **config ):
         Frame.__init__( self, master, config )
-        self.draw = Canvas( self, bg = '#eeeeee', width = 630, height = 630 )
-        xbar = Scrollbar( master , orient = HORIZONTAL )
-        ybar = Scrollbar( master )
-        xbar.pack( side = BOTTOM, expand = YES, fill = X )
-        ybar.pack( side = RIGHT, expand = YES, fill = Y )
-        self.draw.pack()
+        self.draw = Canvas( self, bg = '#eeeeee' )
+        xbar = Scrollbar( self , orient = HORIZONTAL )
+        ybar = Scrollbar( self )
         xbar.config( command = self.draw.xview, relief = SUNKEN )
         ybar.config( command = self.draw.yview, relief = SUNKEN )
-        self.draw.config( xscrollcommand = xbar.set, yscrollcommand = ybar.set )
+        self.draw.config( scrollregion = ( 0, 0, 630, 630 ), xscrollcommand = xbar.set, yscrollcommand = ybar.set )
+        xbar.grid( row = 1, column = 0 , sticky = EW )
+        ybar.grid( row = 0, column = 1, sticky = NS )
+        self.draw.grid( row = 0, column = 0, sticky = NSEW )
 
         self.init()
 
@@ -52,11 +52,11 @@ class Board( Frame ):
         self.client = None
         self.board = None
 
+        self.tag_bg = 'background'
         self.Clear_All()
 
     def Clear_All( self ):
         self.draw.delete( 'all' )
-        self.back = []
         self.inst = []
         self.text = {}
         self.rect = {}
@@ -74,48 +74,41 @@ class Board( Frame ):
                 bgwidth = 200
             if bgheight < 200:
                 bgheight = 200
-            id = self.draw.create_image( bgwidth / 2, bgheight / 2, im = self.bgimage )
-            self.back.append( id )
+            id = self.draw.create_image( bgwidth / 2, bgheight / 2, im = self.bgimage, tag = self.tag_bg )
         for i in range( self.board.size ):
             x1, y1 = self.GetCoordinate( i )
             for j in self.board.item[i].link:
                 if i > j:
                      continue
                 x2, y2 = self.GetCoordinate( j )
-                id = self.draw.create_line( x1, y1, x2, y2, width = 3, fill = '#222222' )
-                self.back.append( id )
+                id = self.draw.create_line( x1, y1, x2, y2, width = 3, fill = '#222222', tag = self.tag_bg )
             for j in self.board.item[i].rlink:
                 if i > j:
                     continue
                 x2, y2 = self.GetCoordinate( j )
                 if self.board.item[i].IsRailway():
-                    id = self.draw.create_line( x1, y1, x2, y2, width = 6, fill = '#dd7777' )
+                    id = self.draw.create_line( x1, y1, x2, y2, width = 6, fill = '#dd7777', tag = self.tag_bg )
                 else:
-                    id = self.draw.create_line( x1, y1, x2, y2, width = 3, fill = '#222222' )
-                self.back.append( id )
+                    id = self.draw.create_line( x1, y1, x2, y2, width = 3, fill = '#222222', tag = self.tag_bg )
         for i in range( self.board.size ):
             x, y = self.GetCoordinate( i )
             if self.board.item[i].pic in [0, 2, 3, 4, 5, 6] :
                 if self.board.item[i].direct == 0:
-                    id = self.draw.create_rectangle( x - self.rect_height / 2, y - self.rect_width / 2 , x + self.rect_height / 2, y + self.rect_width / 2, width = 1, fill = 'white' )
+                    id = self.draw.create_rectangle( x - self.rect_height / 2, y - self.rect_width / 2 , x + self.rect_height / 2, y + self.rect_width / 2, width = 1, fill = 'white' , tag = self.tag_bg )
                 elif self.board.item[i].direct == 1:
-                    id = self.draw.create_rectangle( x - self.rect_width / 2, y - self.rect_height / 2 , x + self.rect_width / 2, y + self.rect_height / 2, width = 1, fill = 'white' )
+                    id = self.draw.create_rectangle( x - self.rect_width / 2, y - self.rect_height / 2 , x + self.rect_width / 2, y + self.rect_height / 2, width = 1, fill = 'white', tag = self.tag_bg )
                 else:
-                    id = self.draw.create_rectangle( x - self.rect_width / 2, y - self.rect_width / 2 , x + self.rect_width / 2, y + self.rect_width / 2, width = 1, fill = 'white' )
-                self.back.append( id )
+                    id = self.draw.create_rectangle( x - self.rect_width / 2, y - self.rect_width / 2 , x + self.rect_width / 2, y + self.rect_width / 2, width = 1, fill = 'white', tag = self.tag_bg )
             elif self.board.item[i].pic == 1:
                 if self.board.item[i].direct == 0:
-                    id = self.draw.create_oval( x - self.oval_height / 2, y - self.oval_width / 2 , x + self.oval_height / 2, y + self.oval_width / 2, width = 1, fill = 'white' )
+                    id = self.draw.create_oval( x - self.oval_height / 2, y - self.oval_width / 2 , x + self.oval_height / 2, y + self.oval_width / 2, width = 1, fill = 'white' , tag = self.tag_bg )
                 elif self.board.item[i].direct == 1:
-                    id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_height / 2 , x + self.oval_width / 2, y + self.oval_height / 2, width = 1, fill = 'white' )
+                    id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_height / 2 , x + self.oval_width / 2, y + self.oval_height / 2, width = 1, fill = 'white' , tag = self.tag_bg )
                 else:
-                    id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_width / 2 , x + self.oval_width / 2, y + self.oval_width / 2, width = 1, fill = 'white' )
-                self.back.append( id )
+                    id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_width / 2 , x + self.oval_width / 2, y + self.oval_width / 2, width = 1, fill = 'white' , tag = self.tag_bg )
 
     def Clear_Background( self ):
-        for item in self.back:
-            self.draw.delete( item )
-        self.back = []
+        self.draw.delete( self.tag_bg )
 
     def GetCoordinate( self, pos ):
         if ( pos >= self.client.map.size ) | ( pos < 0 ):
