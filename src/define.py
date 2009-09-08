@@ -27,6 +27,9 @@ MAXCHESS = 30 #Number of pieces
 POSFILENAME = 'position.txt'
 POSDATA = None
 
+DEFAULTSERVERURL = 'localhost'
+DEFAULTSERVERPORT = 30000
+
 #safe - True if chess in the position cannot be removed...
 #movable - True if chess in the position can move
 #pic - 0 - rectangle 1 - oval 2 - cross 3 - castle down 4 - castle left 5 - castle up 6 - castle right

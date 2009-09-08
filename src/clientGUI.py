@@ -51,7 +51,7 @@ def tk_Startup():
 
     def Load():
         nonlocal ret
-        fname = askopenfilenames()
+        fname = askopenfilenames( title = 'Load your profile', filetypes = [ ( 'Profile', '*.cfg' ) ] )
         if fname != '':
             t.destroy()
             ret = fname[1:-1]
@@ -261,9 +261,14 @@ class clientGUI( Toplevel ):
 
     def add_msg( self , master ):
         self.side_msg = Frame( master )
-        Label( self.side_msg, text = 'Message' ).pack( side = TOP, expand = YES, fill = X )
+        Label( self.side_msg, text = 'Message' ).grid( row = 0, column = 0, columnspan = 3, sticky = EW )
         self.side_msg_text = Text( self.side_msg, bg = 'white', height = 10 )
-        self.side_msg_text.pack( side = TOP, expand = YES, fill = BOTH )
+        self.side_msg_text.grid( row = 1, column = 0, columnspan = 3, rowspan = 2, sticky = NSEW )
+        s = StringVar()
+        s.set( '' )
+        Label( self.side_msg, text = 'Enter here:' ).grid( row = 3, column = 0, sticky = W )
+        ent = Entry( self.side_msg, textvariable = s, bg = 'white' )
+        ent.grid( row = 3, column = 1, columnspan = 2, sticky = EW )
         self.side_msg.pack( side = TOP, expand = YES, fill = X )
         self.side_msg.config( bd = 1 , relief = GROOVE )
 
@@ -288,14 +293,13 @@ class clientGUI( Toplevel ):
             nonlocal ent1
             host = s.get()
             port = int( i.get() )
-            try:
-                self.client.Connection_Create( host, port )
+            self.client.Connection_Create( host, port )
+            if self.client.socket:
                 self.client.prof.host = host
                 self.client.prof.port = port
                 t.destroy()
-            except Exception as exc:
-                #self.client.Connection_Close()
-                showerror( 'Error', str( exc ) )
+            else:
+                showerror( 'Error' , 'Connection not created,\nView logs for more detail' )
                 ent1.focus()
 
         t = Toplevel()
@@ -328,10 +332,7 @@ class clientGUI( Toplevel ):
 
     def GUI_Disconnect( self ):
         if askyesno( 'Warning', 'Close connection and quit the game?' ):
-            try:
-                self.client.Connection_Close()
-            except Exception as e:
-                showerror( 'Error', str( e ) )
+            self.client.Connection_Close()
 
     def GUI_Reload( self ):
         return
@@ -475,12 +476,7 @@ class clientGUI( Toplevel ):
 
     def GUI_Exit( self ):
         if askyesno( 'Warning', 'Do you really want to exit?' ):
-            try:
-                self.client.Connection_Close()
-            except Exception as e:
-                print( str( e ) )
             self.quit()
-            sys.exit()
 
     """
     def GUI_Discard( self ):

@@ -16,13 +16,14 @@
 
 import os
 import sys
-#import socket
+
+import socket
+#import queue
 #import time
 #import thread
 
-from define import *
+import define
 from profile import Profile
-#from message import *
 from clientGUI import clientGUI, Startup
 
 CLI_INIT = 'init'
@@ -37,53 +38,76 @@ class Client():
         if filename == None:
             sys.exit()
         name = filename.split( '/' )[-1].split( '\\' )[-1].rsplit( '.' )[0]
-        if DEBUG:
+        if define.DEBUG:
             print( 'username :', name )
-        self.map = CheckerBoard()
+        name = 'sean' #Test only
+        self.map = define.CheckerBoard()
         self.prof = Profile( name )
         self.prof.load()
+        self.socket = None
+        self.socketbufsize = 1024
         self.gui = clientGUI( self )
 
     def run( self ):
         self.gui.mainloop()
-
-"""
-        rule.PlaceOne( self.conf.place, self.map, self.conf.player )
-        self.socket = None
-        self.remain = ''
-
-    def run( self ):
-        self.closeConnection()
-        self.conf.Save( 'default.cfg' )
-
-    def closeConnection( self ):
-        if self.socket != None:
-            #inform server
+        if self.socket:
             try:
-                Sendline( self.socket, Combline( CMD_EXIT, 'int', self.conf.player ) )
-            except Exception:
-                pass
-            #try to close connection anyway
-            try:
-                self.socket.close()
-            except Exception:
-                pass
+                self.Connection_Close()
+            except Exception as e:
+                if define.DEBUG:
+                    print( str( e ) )
+        self.prof.save()
 
-            self.socket = None
-            self.status = CLIENT_INIT
-            return True
-        return False
+    def test( self ):
+        if not self.socket:
+            return
+        while True:
+            data = input( '> ' )
+            if not data:
+                break
+            data += os.linesep
+            self.socket.send( data.encode( 'utf8' ) )
+            data = self.socket.recv( self.socketbufsize )
+            if not data:
+                break
+            print( data.strip() )
 
-    def createConnection( self ):
+    def Connection_Create( self ):
         if self.socket == None:
             self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-            self.socket.connect( ( self.conf.host, self.conf.port ) )
+            try:
+                self.socket.connect( ( self.prof.host, self.prof.port ) )
+                self.status = CLI_WAIT
+            except Exception as e:
+                if define.DEBUG:
+                    print( str( e ) )
+                self.socket = None
+
+    def Connection_Close( self ):
+        if self.socket:
+            try:
+                self.socket.close()
+            except Exception as e:
+                if define.DEBUG:
+                    print( str( e ) )
+            self.socket = None
+            self.status = CLI_INIT
+
+
+"""
+    def createConnection( self ):
             Sendline( self.socket, Combline( CMD_ADD, 'int', self.conf.player ) )
             data, self.remain = Recvline( self.socket, self.remain )
             cmd, arg, obj = Sepline( data )
             if cmd == 'error':
                 raise Exception( str( obj ) )
-            self.status = CLIENT_START
+
+    def closeConnection( self ):
+            #inform server
+            try:
+                Sendline( self.socket, Combline( CMD_EXIT, 'int', self.conf.player ) )
+            except Exception:
+                pass
 """
 if __name__ == '__main__':
     c = Client()

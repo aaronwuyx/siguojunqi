@@ -13,14 +13,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from socket import *
+import socket
+import socketserver
+import random
+import time
 
 import define
-from message import *
-import random, thread, time
 
-class Server:
-    def __init__( self , URL = 'localhost', Port = 30000 ):
+class EchoRequestHandler( socketserver.StreamRequestHandler ):
+    def handle( self ):
+        print( 'Connection from: ', self.client_address )
+        data = self.rfile.readline().decode()
+        self.wfile.write( data.encode( 'utf8' ) )
+        self.server.serve_forever()
+
+class SiGuoServer:
+    def __init__( self, URL = define.DEFAULTSERVERURL, Port = define.DEFAULTSERVERPORT ):
+        self.server = socketserver.TCPServer( ( URL, Port ), EchoRequestHandler )
+
+    def run( self ):
+        self.server.serve_forever()
+
+"""
+class SiGuoServer:
+    def __init__( self, URL = 'localhost', Port = 30000 ):
         self.map = rule.Map( len( Pos4 ) )
         self.status = CMD_WAIT #status
         self.extra = None #indicate who move/exit/wait
@@ -162,7 +178,8 @@ class Server:
                 break
             self.clientlock.release()
             time.sleep( 1 )
+"""
 
 if __name__ == '__main__':
-    s = Server()
+    s = SiGuoServer()
     s.run()
