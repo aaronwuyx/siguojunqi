@@ -114,7 +114,6 @@ class clientGUI( Toplevel ):
         self.add_sidebar()
         self.add_board()
         self.add_events()
-        self.focus()
 
     #one way to tell other widgets about value changes, use virtual events
     #another is widget.after(...)
@@ -131,7 +130,7 @@ class clientGUI( Toplevel ):
         self.config( menu = main )
         self.menu['main'] = main
 
-        game = Menu( main, tearoff = 0 )
+        game = Menu( main )
         game.add_command( label = 'Connect', command = self.GUI_Connect, underline = 0 )
         game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
         game.add_command( label = 'Disconnect', command = self.GUI_Disconnect, underline = 0 )
@@ -143,7 +142,7 @@ class clientGUI( Toplevel ):
         self.menu['game'] = game
         main.add_cascade( label = 'Game', menu = game, underline = 0 )
 
-        option = Menu( main, tearoff = 0 )
+        option = Menu( main )
         option.add_command( label = 'Reload', command = self.GUI_Reload, underline = 0 )
         option.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
         option.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
@@ -153,7 +152,20 @@ class clientGUI( Toplevel ):
         self.menu['option'] = option
         main.add_cascade( label = 'Option', menu = option, underline = 0 )
 
-        helps = Menu( main, tearoff = 0 )
+        view = Menu( main )
+        self.menu['view'] = view
+        for item in ['self.view_move', 'self.view_log', 'self.view_record', 'self.view_msg', 'self.view_player']:
+            exec( item + '= IntVar()' )
+            exec( item + '.set(1)' )
+        view.add_checkbutton( label = 'Record', variable = self.view_record, underline = 0 )
+        view.add_checkbutton( label = 'Player', variable = self.view_player, underline = 0 )
+        view.add_checkbutton( label = 'Message', variable = self.view_msg, underline = 0 )
+        view.add_separator()
+        view.add_checkbutton( label = 'DEBUG: Move', variable = self.view_move, underline = 0 )
+        view.add_checkbutton( label = 'DEBUG: Log', variable = self.view_log, underline = 0 )
+        main.add_cascade( label = 'View', menu = view, underline = 0 )
+
+        helps = Menu( main )
         helps.add_command( label = 'Help', command = self.GUI_Help, underline = 0 )
         helps.add_separator()
         helps.add_command( label = 'License', command = self.GUI_License, underline = 0 )
@@ -162,7 +174,7 @@ class clientGUI( Toplevel ):
         main.add_cascade( label = 'Help', menu = helps, underline = 0 )
 
         for ( name, menu ) in self.menu.items():
-            menu.config( bg = 'white', fg = 'black', activebackground = 'blue', activeforeground = 'white', disabledforeground = 'grey', postcommand = self.Update_MenuToolbar )
+            menu.config( bg = 'white', fg = 'black', activebackground = 'blue', activeforeground = 'white', disabledforeground = 'grey', tearoff = 0, postcommand = self.Update_MenuToolbar )
 
         self.menu['game'].entryconfig( 1, state = DISABLED )
         self.menu['game'].entryconfig( 2, state = DISABLED )

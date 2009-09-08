@@ -123,7 +123,7 @@ class Chess:
     #rule: 0-all 1-last two lines 2-not first line 3-unmovable place
     Rule = {42:2, 41:1, 40:0, 39:0, 38:0, 37:0, 36:0, 35:0, 34:0, 33:0, 32:0, 31:1}
     #move: 0-none 1-normal 2-'fly' on railway
-    Move = {42:1, 41:0, 40:1, 39:0, 38:0, 37:0, 36:0, 35:0, 34:0, 33:0, 32:2, 31:0}
+    Move = {42:1, 41:0, 40:1, 39:1, 38:1, 37:1, 36:1, 35:1, 34:1, 33:1, 32:2, 31:0}
 
     def __init__( self, value, player, visible ):
         self.value = value
@@ -197,15 +197,15 @@ class CheckerBoard( Positions ):
         Positions.__init__( self, MAXPOSITION )
 
     def CanSelect( self, pos, player ):
-        if self.item[pos].isMovable == False:
+        if self.item[pos].IsMovable() == False:
             return False
-        if self.item[pos].GetChess() == None:
+        if not self.item[pos].IsChess():
             return False
         if self.item[pos].GetChess().GetPlayer() != player:
             return False
-        if self.item[pos].selected:
-            return False
-        return self.item[pos].GetChess().GetInitmove()
+        #if self.item[pos].selected:
+        #    return False
+        return self.item[pos].GetChess().GetMoverule()
 
     def Move( self, fpos, tpos, result = None ):
         if self.CanMove( fpos, tpos ):
@@ -228,7 +228,7 @@ class CheckerBoard( Positions ):
         if self.item[fpos].IsChess() == False:
             return False
         #chess cannot move, normally it cannot be selected...
-        if self.item[fpos].GetChess().GetMoverule() == False:
+        if self.item[fpos].GetChess().GetMoverule() == 0:
             return False
         #position cannot move
         if self.item[fpos].IsMovable() == False:

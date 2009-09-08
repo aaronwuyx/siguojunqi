@@ -46,24 +46,27 @@ class Board( Frame ):
         self.space_height = 28
         self.offset_x = 50
         self.offset_y = 50
-
         self.text_font = ( 'Courier', 9, 'normal' )
         self.inst_font = ( 'Times', 8, 'normal' )
+
         self.client = None
         self.board = None
-
         self.tag_bg = 'background'
+        self.tag_chess = 'chess'
+        self.tag_dbg = 'debug'
+        self.tag_chess_prefix = 'chs'
+        self.tag_pos_prefix = 'pos'
+        self.tag_id_prefix = 'id'
+        self.selectnum = 0
+        self.selectpos = -1
         self.Clear_All()
-
-    def Clear_All( self ):
-        self.draw.delete( 'all' )
-        self.inst = []
-        self.text = {}
-        self.rect = {}
 
     def SetClient( self, client ):
         self.client = client
         self.board = client.map
+
+    def Clear_All( self ):
+        self.draw.delete( 'all' )
 
     def Draw_Background( self ):
         if os.path.exists( self.client.prof.bgfile ):
@@ -86,26 +89,33 @@ class Board( Frame ):
                 if i > j:
                     continue
                 x2, y2 = self.GetCoordinate( j )
+                id = self.draw.create_line( x1, y1, x2, y2, tag = self.tag_bg )
                 if self.board.item[i].IsRailway():
-                    id = self.draw.create_line( x1, y1, x2, y2, width = 6, fill = '#dd7777', tag = self.tag_bg )
+                    self.draw.itemconfigure( id, width = 6, fill = '#dd7777' )
                 else:
-                    id = self.draw.create_line( x1, y1, x2, y2, width = 3, fill = '#222222', tag = self.tag_bg )
+                    self.draw.itemconfigure( id, width = 3, fill = '#222222' )
+
         for i in range( self.board.size ):
             x, y = self.GetCoordinate( i )
             if self.board.item[i].pic in [0, 2, 3, 4, 5, 6] :
                 if self.board.item[i].direct == 0:
-                    id = self.draw.create_rectangle( x - self.rect_height / 2, y - self.rect_width / 2 , x + self.rect_height / 2, y + self.rect_width / 2, width = 1, fill = 'white' , tag = self.tag_bg )
+                    id = self.draw.create_rectangle( x - self.rect_height / 2, y - self.rect_width / 2 , x + self.rect_height / 2, y + self.rect_width / 2 )
                 elif self.board.item[i].direct == 1:
-                    id = self.draw.create_rectangle( x - self.rect_width / 2, y - self.rect_height / 2 , x + self.rect_width / 2, y + self.rect_height / 2, width = 1, fill = 'white', tag = self.tag_bg )
+                    id = self.draw.create_rectangle( x - self.rect_width / 2, y - self.rect_height / 2 , x + self.rect_width / 2, y + self.rect_height / 2 )
                 else:
-                    id = self.draw.create_rectangle( x - self.rect_width / 2, y - self.rect_width / 2 , x + self.rect_width / 2, y + self.rect_width / 2, width = 1, fill = 'white', tag = self.tag_bg )
+                    id = self.draw.create_rectangle( x - self.rect_width / 2, y - self.rect_width / 2 , x + self.rect_width / 2, y + self.rect_width / 2 )
             elif self.board.item[i].pic == 1:
                 if self.board.item[i].direct == 0:
-                    id = self.draw.create_oval( x - self.oval_height / 2, y - self.oval_width / 2 , x + self.oval_height / 2, y + self.oval_width / 2, width = 1, fill = 'white' , tag = self.tag_bg )
+                    id = self.draw.create_oval( x - self.oval_height / 2, y - self.oval_width / 2 , x + self.oval_height / 2, y + self.oval_width / 2 )
                 elif self.board.item[i].direct == 1:
-                    id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_height / 2 , x + self.oval_width / 2, y + self.oval_height / 2, width = 1, fill = 'white' , tag = self.tag_bg )
+                    id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_height / 2 , x + self.oval_width / 2, y + self.oval_height / 2 )
                 else:
-                    id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_width / 2 , x + self.oval_width / 2, y + self.oval_width / 2, width = 1, fill = 'white' , tag = self.tag_bg )
+                    id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_width / 2 , x + self.oval_width / 2, y + self.oval_width / 2 )
+            self.draw.itemconfigure( id, fill = 'white', width = 1, tag = self.tag_pos_prefix + str( i ) )
+            def handler( event, self = self, sp = i ):
+                self.SelectPos( event, i )
+            self.draw.tag_bind( self.tag_pos_prefix + str( i ) , '<ButtonPress-1>', handler )
+            self.draw.addtag_withtag( self.tag_bg, self.tag_pos_prefix + str( i ) )
 
     def Clear_Background( self ):
         self.draw.delete( self.tag_bg )
@@ -150,13 +160,13 @@ class Board( Frame ):
             self.Draw_Pos( i )
 
     def Clear_Chess( self ):
-        for pos in self.text.keys():
-            self.draw.delete( self.text[pos] )
-        self.text = {}
+        self.draw.delete( self.tag_chess )
 
     def Clear_Pos( self, pos ):
-        if pos in self.text.keys():
-            self.draw.delete( self.text.pop( pos ) )
+        self.draw.delete( self.tag_chess_prefix + str( pos ) )
+
+    def Clear_Player( self, id ):
+        self.draw.delete( self.tag_id_prefix + str( id ) )
 
     def Draw_Pos( self, pos ):
         self.Clear_Pos( pos )
@@ -172,23 +182,51 @@ class Board( Frame ):
         bg = profile.Profile.Bgcolor[id]
         fg = profile.Profile.Fgcolor[id]
         acbg = profile.Profile.ActiveBgColor[id]
-        def notdone():
-            showerror( 'Error', 'Function not implemented' )
 
         if self.board.item[pos].direct == 0:
             w = Button( self.draw, text = txt, wraplength = 1 )
         elif self.board.item[pos].direct in [1, 2]:
             w = Button( self.draw, text = txt )
         w.pack()
-        w.config( relief = FLAT, background = bg, foreground = fg, activebackground = acbg, font = self.text_font, command = notdone )
+        w.config( relief = FLAT, background = bg, foreground = fg, activebackground = acbg, font = self.text_font, command = ( lambda sp = pos: self.SelectPos( None, sp ) ) )
         if self.board.item[pos].direct == 0:
-            id = self.draw.create_window( x , y, window = w, width = self.chess_height, height = self.chess_width )
+            nw = self.chess_height
+            nh = self.chess_width
         elif self.board.item[pos].direct in [1, 2]:
-            id = self.draw.create_window( x , y, window = w, height = self.chess_height, width = self.chess_width )
-        self.text[pos] = id
-"""
-        self.pos_pos[pos] = self.back.create_text( x + 15, y + 15, text = str( pos ), font = self.posfont, fill = '#33bb33' )
-"""
+            nw = self.chess_width
+            nh = self.chess_height
+        i = self.draw.create_window( x , y, window = w, width = nw, height = nh, tag = self.tag_chess_prefix + str( pos ) )
+        self.draw.addtag_withtag( self.tag_id_prefix + str( id ), self.tag_chess_prefix + str( pos ) )
+        self.draw.addtag_withtag( self.tag_chess, self.tag_chess_prefix + str( pos ) )
+        #self.pos_pos[pos] = self.back.create_text( x + 15, y + 15, text = str( pos ), font = self.posfont, fill = '#33bb33' )
+
+    def SelectPos( self, event, sp ):
+        if self.selectnum:
+            if self.board.item[sp].IsChess() :
+                if self.board.item[sp].GetChess().GetPlayer() == self.client.prof.id :
+                    self.selectpos = sp
+                    if define.DEBUG:
+                        print ( 'select pos', sp )
+                    return
+                else:
+                    pass
+                    #call another function?
+            else:
+                pass
+                #call another function?
+            if define.DEBUG:
+                print( 'select, move: ', self.selectpos, '->', sp )
+            self.selectnum = 0
+            self.selectpos = -1
+        else:
+            if self.board.CanSelect( sp, self.client.prof.id ):
+                self.selectnum = 1
+                self.selectpos = sp
+                if define.DEBUG:
+                    print ( 'select pos', sp )
+            else:
+                if define.DEBUG:
+                    print ( 'cannot select pos', sp )
 
 if __name__ == '__main__':
     root = Tk()
