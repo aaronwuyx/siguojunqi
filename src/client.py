@@ -93,7 +93,6 @@ class Client():
             self.socket = None
             self.status = CLI_INIT
 
-
 """
     def createConnection( self ):
             Sendline( self.socket, Combline( CMD_ADD, 'int', self.conf.player ) )

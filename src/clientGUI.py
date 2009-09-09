@@ -100,6 +100,8 @@ class clientGUI( Toplevel ):
         self.client = client
         self.toolbarbutton = {}
         self.menu = {}
+        self.lift()
+        self.maxsize()
         self.init( client )
 
     def init( self, client ):
@@ -217,6 +219,8 @@ class clientGUI( Toplevel ):
             self.movet.set( '' )
 
         self.side_move = Frame( master )
+        self.side_move.pack( side = TOP, expand = YES, fill = X )
+        self.side_move.config( bd = 1 , relief = GROOVE )
         self.movef = StringVar()
         self.movet = StringVar()
         Label( self.side_move, text = 'Movement' ).grid( column = 0, row = 0, columnspan = 3 )
@@ -228,39 +232,39 @@ class clientGUI( Toplevel ):
         Entry( self.side_move, textvariable = self.movet ).grid( column = 1, row = 2, columnspan = 2 )
         self.movef.set( '' )
         self.movet.set( '' )
-        self.side_move.pack( side = TOP, expand = YES, fill = X )
-        self.side_move.config( bd = 1 , relief = GROOVE )
 
     def add_user( self, master ):
         self.side_user = Frame( master )
-        Label( self.side_user, text = 'Player' ).pack( side = TOP, expand = YES, fill = X )
+        self.side_user.pack( side = TOP, expand = YES, fill = X )
+        self.side_user.config( bd = 1 , relief = GROOVE )
+        Label( self.side_user, text = 'Player' ).grid( column = 0, row = 0, columnspan = 2, sticky = EW )
         l = Listbox( self.side_user, height = 5 )
         l.insert( END, 'Name' )
         l.insert( END, 'Hi,' )
         l.insert( END, 'it' )
         l.insert( END, 'is' )
         l.insert( END, 'unavailable' )
-        l.pack( side = LEFT, expand = YES, fill = X )
+        l.grid( column = 0, row = 1 , sticky = NS )
         m = Listbox( self.side_user, height = 5, width = 6 )
         m.insert( END, 'Color' )
         m.insert( END, 'Hi,' )
         m.insert( END, 'it' )
         m.insert( END, 'is' )
         m.insert( END, 'unavailable' )
-        m.pack( side = RIGHT, expand = YES, fill = X )
-        self.side_user.pack( side = TOP, expand = YES, fill = X )
-        self.side_user.config( bd = 1 , relief = GROOVE )
+        m.grid( column = 1, row = 1 , sticky = NS )
 
     def add_log( self, master ):
         self.side_log = Frame( master )
-        Label( self.side_log, text = 'Log' ).pack( side = TOP, expand = YES, fill = X )
-        self.side_log_listbox = Listbox( self.side_log, bg = 'white', height = 10 )
-        self.side_log_listbox.pack( side = TOP, expand = YES, fill = BOTH )
         self.side_log.pack( side = TOP, expand = YES, fill = X )
         self.side_log.config( bd = 1 , relief = GROOVE )
+        Label( self.side_log, text = 'Log' ).grid( column = 0, row = 0, sticky = NSEW )
+        self.side_log_listbox = Listbox( self.side_log, bg = 'white', height = 10 )
+        self.side_log_listbox.grid( column = 0, row = 1, sticky = EW )
 
     def add_msg( self , master ):
         self.side_msg = Frame( master )
+        self.side_msg.pack( side = TOP, expand = YES, fill = X )
+        self.side_msg.config( bd = 1 , relief = GROOVE )
         Label( self.side_msg, text = 'Message' ).grid( row = 0, column = 0, columnspan = 3, sticky = EW )
         self.side_msg_text = Text( self.side_msg, bg = 'white', height = 10 )
         self.side_msg_text.grid( row = 1, column = 0, columnspan = 3, rowspan = 2, sticky = NSEW )
@@ -269,17 +273,16 @@ class clientGUI( Toplevel ):
         Label( self.side_msg, text = 'Enter here:' ).grid( row = 3, column = 0, sticky = W )
         ent = Entry( self.side_msg, textvariable = s, bg = 'white' )
         ent.grid( row = 3, column = 1, columnspan = 2, sticky = EW )
-        self.side_msg.pack( side = TOP, expand = YES, fill = X )
-        self.side_msg.config( bd = 1 , relief = GROOVE )
 
     def Update_MenuToolbar( self ):
         return
 
     def add_board( self ):
         self.board = Board( self , bg = 'white', bd = 1, relief = FLAT )
-        self.board.pack( side = LEFT, expand = YES, fill = BOTH )
+        self.board.pack( side = TOP, expand = YES, fill = BOTH )
         self.board.SetClient( self.client )
         self.board.Draw_Background()
+        self.board.config( height = 800, width = 800 )
 
     def GUI_Connect( self ):
         def jump( ignore = None ):

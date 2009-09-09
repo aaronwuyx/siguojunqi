@@ -14,6 +14,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
+import time
 
 from tkinter import *
 from tkinter.messagebox import showerror
@@ -23,16 +24,17 @@ import profile
 class Board( Frame ):
     def __init__( self, master = None, **config ):
         Frame.__init__( self, master, config )
-        self.draw = Canvas( self, bg = '#eeeeee' )
+        self.draw = Canvas( self, bg = '#eeeeee', width = 650, height = 650 )
         xbar = Scrollbar( self , orient = HORIZONTAL )
         ybar = Scrollbar( self )
         xbar.config( command = self.draw.xview, relief = SUNKEN )
         ybar.config( command = self.draw.yview, relief = SUNKEN )
         self.draw.config( scrollregion = ( 0, 0, 630, 630 ), xscrollcommand = xbar.set, yscrollcommand = ybar.set )
+        self.grid_columnconfigure( 1, pad = 0, minsize = 20, weight = 0 )
+        self.grid_rowconfigure( 1, pad = 0, minsize = 20, weight = 0 )
         xbar.grid( row = 1, column = 0 , sticky = EW )
         ybar.grid( row = 0, column = 1, sticky = NS )
         self.draw.grid( row = 0, column = 0, sticky = NSEW )
-
         self.init()
 
     def init( self ):
@@ -112,8 +114,16 @@ class Board( Frame ):
                 else:
                     id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_width / 2 , x + self.oval_width / 2, y + self.oval_width / 2 )
             self.draw.itemconfigure( id, fill = 'white', width = 1, tag = self.tag_pos_prefix + str( i ) )
-            def handler( event, self = self, sp = i ):
-                self.SelectPos( event, i )
+            def handler( event, self = self ):
+                tg = self.draw.gettags( self.draw.find_closest( event.x, event.y ) )
+                for i in range( len( tg ) ):
+                    k = len( self.tag_pos_prefix )
+                    if tg[i][:k] == self.tag_pos_prefix:
+                        try:
+                            u = int( tg[i][k:] )
+                        except:
+                            pass
+                self.SelectPos( event, u )
             self.draw.tag_bind( self.tag_pos_prefix + str( i ) , '<ButtonPress-1>', handler )
             self.draw.addtag_withtag( self.tag_bg, self.tag_pos_prefix + str( i ) )
 
@@ -189,6 +199,8 @@ class Board( Frame ):
             w = Button( self.draw, text = txt )
         w.pack()
         w.config( relief = FLAT, background = bg, foreground = fg, activebackground = acbg, font = self.text_font, command = ( lambda sp = pos: self.SelectPos( None, sp ) ) )
+        if pos == self.selectpos:
+            w.flash()
         if self.board.item[pos].direct == 0:
             nw = self.chess_height
             nh = self.chess_width
@@ -208,12 +220,7 @@ class Board( Frame ):
                     if define.DEBUG:
                         print ( 'select pos', sp )
                     return
-                else:
-                    pass
-                    #call another function?
-            else:
-                pass
-                #call another function?
+            self.OnMove( self.selectpos, sp )
             if define.DEBUG:
                 print( 'select, move: ', self.selectpos, '->', sp )
             self.selectnum = 0
@@ -227,6 +234,17 @@ class Board( Frame ):
             else:
                 if define.DEBUG:
                     print ( 'cannot select pos', sp )
+
+    def OnMove( self, fpos, tpos ):
+        x1, y1 = self.GetCoordinate( fpos )
+        x2, y2 = self.GetCoordinate( tpos )
+        count = 12
+        xinc = ( x2 - x1 ) / count
+        yinc = ( y2 - y1 ) / count
+        for i in range( count ):
+            self.draw.move( self.tag_chess_prefix + str( fpos ) , xinc, yinc )
+            self.draw.update()
+            time.sleep( 0.04 )
 
 if __name__ == '__main__':
     root = Tk()
