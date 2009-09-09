@@ -24,17 +24,20 @@ import profile
 class Board( Frame ):
     def __init__( self, master = None, **config ):
         Frame.__init__( self, master, config )
-        self.draw = Canvas( self, bg = '#eeeeee', width = 650, height = 650 )
+        self.draw = Canvas( self, bg = '#eeeeee' )
         xbar = Scrollbar( self , orient = HORIZONTAL )
         ybar = Scrollbar( self )
         xbar.config( command = self.draw.xview, relief = SUNKEN )
         ybar.config( command = self.draw.yview, relief = SUNKEN )
         self.draw.config( scrollregion = ( 0, 0, 630, 630 ), xscrollcommand = xbar.set, yscrollcommand = ybar.set )
-        self.grid_columnconfigure( 1, pad = 0, minsize = 20, weight = 0 )
-        self.grid_rowconfigure( 1, pad = 0, minsize = 20, weight = 0 )
         xbar.grid( row = 1, column = 0 , sticky = EW )
         ybar.grid( row = 0, column = 1, sticky = NS )
         self.draw.grid( row = 0, column = 0, sticky = NSEW )
+
+        self.columnconfigure( 0, weight = 1 )
+        self.columnconfigure( 1, pad = 1 )
+        self.rowconfigure( 0, weight = 1 )
+        self.rowconfigure( 1, pad = 1 )
         self.init()
 
     def init( self ):
@@ -115,7 +118,7 @@ class Board( Frame ):
                     id = self.draw.create_oval( x - self.oval_width / 2, y - self.oval_width / 2 , x + self.oval_width / 2, y + self.oval_width / 2 )
             self.draw.itemconfigure( id, fill = 'white', width = 1, tag = self.tag_pos_prefix + str( i ) )
             def handler( event, self = self ):
-                tg = self.draw.gettags( self.draw.find_closest( event.x, event.y ) )
+                tg = self.draw.gettags( self.draw.find_closest( self.draw.canvasx( event.x ), self.draw.canvasy( event.y ) ) )
                 for i in range( len( tg ) ):
                     k = len( self.tag_pos_prefix )
                     if tg[i][:k] == self.tag_pos_prefix:

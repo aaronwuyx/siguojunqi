@@ -25,9 +25,6 @@ from profile import Profile
 from board import Board
 
 def Startup():
-    return tk_Startup()
-
-def tk_Startup():
     Tk().withdraw()
     ret = None
 
@@ -91,6 +88,8 @@ def tk_Startup():
     t.focus_set()
     t.grab_set()
     t.wait_window()
+    if ret == None:
+        sys.exit()
     return ret
 
 class clientGUI( Toplevel ):
@@ -98,8 +97,6 @@ class clientGUI( Toplevel ):
     def __init__( self , client ):
         Toplevel.__init__( self )
         self.client = client
-        self.toolbarbutton = {}
-        self.menu = {}
         self.lift()
         self.maxsize()
         self.init( client )
@@ -111,11 +108,21 @@ class clientGUI( Toplevel ):
             self.title( 'SiGuo client' )
         self.protocol( 'WM_DELETE_WINDOW', self.GUI_Exit )
         self.config( bg = 'white' )
+
+        self.frm_mov = None
+        self.frm_log = None
+        self.frm_msg = None
+        self.frm_usr = None
+
+        self.menu = {}
         self.add_menu()
+        self.toolbarbutton = {}
         self.add_toolbar()
         self.add_sidebar()
         self.add_board()
         self.add_events()
+        self.columnconfigure( 0, pad = 1, minsize = 500 )
+        self.columnconfigure( 1, pad = 1 )
 
     #one way to tell other widgets about value changes, use virtual events
     #another is widget.after(...)
@@ -178,14 +185,9 @@ class clientGUI( Toplevel ):
         for ( name, menu ) in self.menu.items():
             menu.config( bg = 'white', fg = 'black', activebackground = 'blue', activeforeground = 'white', disabledforeground = 'grey', tearoff = 0, postcommand = self.Update_MenuToolbar )
 
-        self.menu['game'].entryconfig( 1, state = DISABLED )
-        self.menu['game'].entryconfig( 2, state = DISABLED )
-        self.menu['game'].entryconfig( 4, state = DISABLED )
-
     def add_toolbar( self ):
-        self.toolbar = Frame( self )
-        self.toolbar.pack( side = BOTTOM, expand = YES, fill = X , anchor = S )
-        self.toolbar.config( relief = FLAT, bd = 1, padx = 1, pady = 1, bg = 'white' )
+        self.toolbar = Frame( self, relief = GROOVE, bd = 1, padx = 1, pady = 1, bg = 'white' )
+        self.toolbar.grid( column = 0, row = 1, columnspan = 2, sticky = EW )
 
         self.toolbarbutton['exit'] = Button( self.toolbar, text = 'Exit', command = self.GUI_Exit )
         self.toolbarbutton['connect'] = Button( self.toolbar, text = 'Connect', command = self.GUI_Connect )
@@ -195,11 +197,15 @@ class clientGUI( Toplevel ):
             button.pack( side = RIGHT )
             button.config( width = 15, relief = GROOVE )
             Label( text = ' ' ).pack( side = RIGHT )
+        self.menu['game'].entryconfig( 1, state = DISABLED )
+        self.menu['game'].entryconfig( 2, state = DISABLED )
+        self.menu['game'].entryconfig( 0, state = NORMAL )
+        self.menu['game'].entryconfig( 4, state = DISABLED )
 
     def add_sidebar( self ):
-        self.sidebar = Frame( self )
-        self.sidebar.pack( side = RIGHT, expand = YES, fill = Y, anchor = E )
-        self.sidebar.config( relief = FLAT, bd = 1, padx = 1, pady = 1, bg = 'white' )
+        self.sidebar = Frame( self, relief = GROOVE, bd = 1, padx = 1, pady = 1, bg = 'white' )
+        self.sidebar.grid( column = 1, row = 0, sticky = NS )
+
         self.add_move( self.sidebar )
         self.add_user( self.sidebar )
         self.add_log( self.sidebar )
@@ -218,68 +224,90 @@ class clientGUI( Toplevel ):
             self.movef.set( '' )
             self.movet.set( '' )
 
-        self.side_move = Frame( master )
-        self.side_move.pack( side = TOP, expand = YES, fill = X )
-        self.side_move.config( bd = 1 , relief = GROOVE )
+        self.frm_mov = Frame( master, bd = 1, relief = RIDGE )
+        self.frm_mov.pack( side = TOP, expand = YES, fill = X )
         self.movef = StringVar()
         self.movet = StringVar()
-        Label( self.side_move, text = 'Movement' ).grid( column = 0, row = 0, columnspan = 3 )
-        Label( self.side_move, text = 'FROM' ).grid( column = 0, row = 1, sticky = W )
-        Label( self.side_move, text = ' TO ' ).grid( column = 0, row = 2, sticky = W )
-        Button( self.side_move, text = 'exec', command = execute ).grid( column = 0, row = 3, sticky = W )
-        Button( self.side_move, text = 'clear', command = clear ).grid( column = 2, row = 3, sticky = E )
-        Entry( self.side_move, textvariable = self.movef ).grid( column = 1, row = 1, columnspan = 2 )
-        Entry( self.side_move, textvariable = self.movet ).grid( column = 1, row = 2, columnspan = 2 )
+        Label( self.frm_mov, text = 'Movement' ).grid( column = 0, row = 0, columnspan = 3, sticky = EW )
+        Label( self.frm_mov, text = 'From' ).grid( column = 0, row = 1, sticky = W )
+        Label( self.frm_mov, text = 'To' ).grid( column = 0, row = 2, sticky = W )
+        Button( self.frm_mov, text = 'Execute', command = execute, width = 10 ).grid( column = 1, row = 3, sticky = W )
+        Button( self.frm_mov, text = 'Clear', command = clear, width = 10 ).grid( column = 2, row = 3, sticky = E )
+        Entry( self.frm_mov, textvariable = self.movef ).grid( column = 1, row = 1, columnspan = 2, sticky = EW )
+        Entry( self.frm_mov, textvariable = self.movet ).grid( column = 1, row = 2, columnspan = 2, sticky = EW )
+        self.frm_mov.columnconfigure( 0, pad = 1 )
+        self.frm_mov.columnconfigure( 2, pad = 1 )
+        self.frm_mov.columnconfigure( 1, weight = 1 )
         self.movef.set( '' )
         self.movet.set( '' )
 
     def add_user( self, master ):
-        self.side_user = Frame( master )
-        self.side_user.pack( side = TOP, expand = YES, fill = X )
-        self.side_user.config( bd = 1 , relief = GROOVE )
-        Label( self.side_user, text = 'Player' ).grid( column = 0, row = 0, columnspan = 2, sticky = EW )
-        l = Listbox( self.side_user, height = 5 )
-        l.insert( END, 'Name' )
-        l.insert( END, 'Hi,' )
-        l.insert( END, 'it' )
-        l.insert( END, 'is' )
-        l.insert( END, 'unavailable' )
-        l.grid( column = 0, row = 1 , sticky = NS )
-        m = Listbox( self.side_user, height = 5, width = 6 )
-        m.insert( END, 'Color' )
-        m.insert( END, 'Hi,' )
-        m.insert( END, 'it' )
-        m.insert( END, 'is' )
-        m.insert( END, 'unavailable' )
-        m.grid( column = 1, row = 1 , sticky = NS )
+        self.frm_usr = Frame( master, bd = 1, relief = RIDGE )
+        self.frm_usr.pack( side = TOP, expand = YES, fill = X )
+        Label( self.frm_usr, text = 'Player' ).grid( column = 0, row = 0, columnspan = 3, sticky = EW )
+        Label( self.frm_usr, text = 'Name' ).grid( column = 0, row = 1, sticky = EW )
+        Label( self.frm_usr, text = 'Color' ).grid( column = 1, row = 1, sticky = EW )
+        Label( self.frm_usr, text = 'xxx' ).grid( column = 2, row = 1, sticky = EW )
+        self.frm_usr_list_name = Listbox( self.frm_usr, height = 4, width = 11 )
+        self.frm_usr_list_name.insert( END, 'Here' )
+        self.frm_usr_list_name.insert( END, 'is' )
+        self.frm_usr_list_name.insert( END, 'my' )
+        self.frm_usr_list_name.insert( END, 'name' )
+        self.frm_usr_list_name.grid( column = 0, row = 2, sticky = NS )
+        self.frm_usr_list_color = Listbox( self.frm_usr, height = 4, width = 7 )
+        self.frm_usr_list_color.insert( END, 'Here' )
+        self.frm_usr_list_color.insert( END, 'is' )
+        self.frm_usr_list_color.insert( END, 'your' )
+        self.frm_usr_list_color.insert( END, 'color' )
+        self.frm_usr_list_color.grid( column = 1, row = 2 , sticky = NS )
+        self.frm_usr_list_xxx = Listbox( self.frm_usr, height = 4 )
+        self.frm_usr_list_xxx.insert( END, 'Here' )
+        self.frm_usr_list_xxx.insert( END, 'is' )
+        self.frm_usr_list_xxx.insert( END, 'the' )
+        self.frm_usr_list_xxx.insert( END, 'comment' )
+        self.frm_usr_list_xxx.grid( column = 2, row = 2, sticky = NSEW )
+        self.frm_usr.columnconfigure( 0, pad = 1 )
+        self.frm_usr.columnconfigure( 1, pad = 1 )
+        self.frm_usr.columnconfigure( 2, weight = 1 )
 
     def add_log( self, master ):
-        self.side_log = Frame( master )
-        self.side_log.pack( side = TOP, expand = YES, fill = X )
-        self.side_log.config( bd = 1 , relief = GROOVE )
-        Label( self.side_log, text = 'Log' ).grid( column = 0, row = 0, sticky = NSEW )
-        self.side_log_listbox = Listbox( self.side_log, bg = 'white', height = 10 )
-        self.side_log_listbox.grid( column = 0, row = 1, sticky = EW )
+        self.frm_log = Frame( master , bd = 1, relief = RIDGE )
+        self.frm_log.pack( side = TOP, expand = YES, fill = X )
+        Label( self.frm_log, text = 'Logs' ).grid( column = 0, row = 0, columnspan = 2, sticky = EW )
+        self.frm_log_listbox = Listbox( self.frm_log, bg = 'white', height = 10 )
+        self.frm_log_sbar = Scrollbar( self.frm_log )
+        self.frm_log_sbar.grid( column = 1, row = 1, sticky = NS )
+        self.frm_log_sbar.config( command = self.frm_log_listbox.yview() )
+        self.frm_log_listbox.config( yscrollcommand = self.frm_log_sbar.set )
+        self.frm_log_listbox.grid( column = 0, row = 1, sticky = NSEW )
+        self.frm_log.columnconfigure( 0, weight = 1 )
+        self.frm_log.columnconfigure( 1, pad = 1 )
 
     def add_msg( self , master ):
-        self.side_msg = Frame( master )
-        self.side_msg.pack( side = TOP, expand = YES, fill = X )
-        self.side_msg.config( bd = 1 , relief = GROOVE )
-        Label( self.side_msg, text = 'Message' ).grid( row = 0, column = 0, columnspan = 3, sticky = EW )
-        self.side_msg_text = Text( self.side_msg, bg = 'white', height = 10 )
-        self.side_msg_text.grid( row = 1, column = 0, columnspan = 3, rowspan = 2, sticky = NSEW )
-        s = StringVar()
-        s.set( '' )
-        Label( self.side_msg, text = 'Enter here:' ).grid( row = 3, column = 0, sticky = W )
-        ent = Entry( self.side_msg, textvariable = s, bg = 'white' )
-        ent.grid( row = 3, column = 1, columnspan = 2, sticky = EW )
+        self.frm_msg = Frame( master, bd = 1, relief = RIDGE )
+        self.frm_msg.pack( side = TOP, expand = YES, fill = X )
+        Label( self.frm_msg, text = 'Message' ).grid( column = 0, row = 0, columnspan = 3, sticky = EW )
+        Label( self.frm_msg, text = 'Enter new:' ).grid( column = 0, row = 2, sticky = W )
+        self.frm_msg_text = Text( self.frm_msg, bg = 'white', height = 10 )
+        self.frm_msg_text.grid( row = 1, column = 0, columnspan = 2, sticky = NSEW )
+        self.frm_msg_sbar = Scrollbar( self.frm_msg )
+        self.frm_msg_sbar.grid( row = 1, column = 2, sticky = NW )
+        self.frm_msg_sbar.config( command = self.frm_msg_text.yview() )
+        self.frm_msg_text.config( yscrollcommand = self.frm_msg_sbar.set )
+        msg = StringVar()
+        msg.set( '' )
+        ent = Entry( self.frm_msg, textvariable = msg, bg = 'white' )
+        ent.grid( column = 1, row = 3, columnspan = 2, sticky = EW )
+        self.frm_msg.columnconfigure( 0, pad = 1 )
+        self.frm_msg.columnconfigure( 1, weight = 1 )
+        self.frm_msg.columnconfigure( 2, pad = 1 )
 
     def Update_MenuToolbar( self ):
         return
 
     def add_board( self ):
-        self.board = Board( self , bg = 'white', bd = 1, relief = FLAT )
-        self.board.pack( side = TOP, expand = YES, fill = BOTH )
+        self.board = Board( self , relief = GROOVE, bd = 1, padx = 1, pady = 1, bg = 'white' )
+        self.board.grid( column = 0, row = 0, sticky = NSEW )
         self.board.SetClient( self.client )
         self.board.Draw_Background()
         self.board.config( height = 800, width = 800 )
@@ -302,7 +330,7 @@ class clientGUI( Toplevel ):
                 self.client.prof.port = port
                 t.destroy()
             else:
-                showerror( 'Error' , 'Connection not created,\nView logs for more detail' )
+                showerror( 'Error' , 'Connection not created, \nView logs for more detail' )
                 ent1.focus()
 
         t = Toplevel()
@@ -323,8 +351,8 @@ class clientGUI( Toplevel ):
         i.set( self.client.prof.port )
         ent1 = Entry( ent, textvariable = s )
         ent2 = Entry( ent, textvariable = i )
-        ent1.bind( '<Return>', jump )
-        ent2.bind( '<Return>', fetch )
+        ent1.bind( ' < Return > ', jump )
+        ent2.bind( ' < Return > ', fetch )
         ent1.pack( side = TOP, expand = YES, fill = X )
         ent1.select_range( 0, END )
         ent2.pack( side = TOP, expand = YES, fill = X )
@@ -345,7 +373,7 @@ class clientGUI( Toplevel ):
             nonlocal name, id, color
             if name.get() != '':
                 self.client.prof.name = name.get()
-                self.event_generate( '<<name>>' )
+                self.event_generate( ' << name >> ' )
             else:
                 showerror( 'Error', 'Name should not be empty' )
                 name.set( self.client.prof.name )
@@ -353,14 +381,14 @@ class clientGUI( Toplevel ):
             if id.get() in range( define.MAXPLAYER ):
                 self.client.prof.id = int( id.get() )
                 id.set( self.client.prof.id )
-                self.event_generate( '<<id>>' )
+                self.event_generate( ' << id >> ' )
             else:
                 showerror( 'Error', 'Id should be in 0..3' )
                 return
             try:
                 exp.config( bg = color.get() )
                 self.client.prof.bg = color.get()
-                self.event_generate( '<<color>>' )
+                self.event_generate( ' << color >> ' )
             except TclError:
                 color.set( self.client.prof.bg )
                 exp.config( bg = self.client.prof.bg )
@@ -376,7 +404,7 @@ class clientGUI( Toplevel ):
                     color.set( c[1] )
                     exp.config( bg = color.get() )
                     self.client.prof.bg = color.get()
-                    self.event_generate( '<<color>>' )
+                    self.event_generate( ' << color >> ' )
                 except TclError:
                     color.set( self.client.prof.bg )
                     exp.config( bg = self.client.prof.bg )
@@ -403,7 +431,7 @@ class clientGUI( Toplevel ):
         color.set( self.client.prof.bg )
         e1 = Entry( ent, textvariable = name )
         e1.pack( side = TOP, expand = YES, fill = X, anchor = NW )
-        e1.bind( '<Return>', ( lambda : fetch( True ) ) )
+        e1.bind( ' < Return > ', ( lambda : fetch( True ) ) )
         e1.focus()
         e1.select_range( 0, END )
         idf = Frame( ent )
@@ -514,6 +542,5 @@ class clientGUI( Toplevel ):
 
 if __name__ == '__main__':
     import client
-    Tk().withdraw()
     c = client.Client()
     c.run()
