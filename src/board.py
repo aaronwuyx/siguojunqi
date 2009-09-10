@@ -15,9 +15,13 @@
 """
 import os
 import time
+try:
+    from Tkinter import *
+    from tkMessageBox import showerror
+except ImportError:
+    from tkinter import *
+    from tkinter.messagebox import showerror
 
-from tkinter import *
-from tkinter.messagebox import showerror
 import define
 import profile
 

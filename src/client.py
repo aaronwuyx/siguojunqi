@@ -16,8 +16,8 @@
 
 import os
 import sys
-
 import socket
+
 #import queue
 #import time
 #import thread
@@ -26,17 +26,15 @@ import define
 from profile import Profile
 from clientGUI import clientGUI, Startup
 
-CLI_INIT = 'init'
-CLI_MOVE = 'move'
-CLI_WAIT = 'wait'
-
 class Client():
 
     def __init__( self ):
-        self.stat = CLI_INIT
+        self.stat = define.CLI_INIT
         filename = Startup()
         if filename == None:
             sys.exit()
+        if define.DEBUG:
+            print( filename )
         name = filename.split( '/' )[-1].split( '\\' )[-1].rsplit( '.' )[0]
         if define.DEBUG:
             print( 'username :', name )
@@ -50,13 +48,13 @@ class Client():
 
     def run( self ):
         self.gui.mainloop()
-        if self.socket:
-            try:
-                self.Connection_Close()
-            except Exception as e:
-                if define.DEBUG:
-                    print( str( e ) )
+        try:
+            self.Connection_Close()
+        except Exception as e:
+            if define.DEBUG:
+                print( str( e ) )
         self.prof.save()
+        sys.exit()
 
     def test( self ):
         if not self.socket:
@@ -77,7 +75,7 @@ class Client():
             self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
             try:
                 self.socket.connect( ( self.prof.host, self.prof.port ) )
-                self.status = CLI_WAIT
+                self.status = define.CLI_WAIT
             except Exception as e:
                 if define.DEBUG:
                     print( str( e ) )
@@ -91,7 +89,7 @@ class Client():
                 if define.DEBUG:
                     print( str( e ) )
             self.socket = None
-            self.status = CLI_INIT
+            self.status = define.CLI_INIT
 
 """
     def createConnection( self ):
@@ -102,12 +100,12 @@ class Client():
                 raise Exception( str( obj ) )
 
     def closeConnection( self ):
-            #inform server
             try:
                 Sendline( self.socket, Combline( CMD_EXIT, 'int', self.conf.player ) )
             except Exception:
                 pass
 """
+
 if __name__ == '__main__':
     c = Client()
     c.run()

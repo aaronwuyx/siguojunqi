@@ -14,41 +14,40 @@
 """
 
 import socket
-import socketserver
-import random
-import time
+try:
+    #python 2.x
+    import thread
+except ImportError:
+    #python 3.x
+    import _thread as thread
 
 import define
 
-class EchoRequestHandler( socketserver.StreamRequestHandler ):
-    def handle( self ):
-        print( 'Connection from: ', self.client_address )
-        data = self.rfile.readline().decode()
-        self.wfile.write( data.encode( 'utf8' ) )
-        self.server.serve_forever()
+class SiGuoServer( thread.Thread ):
+    def __init__( self, Port = define.DEFAULTSERVERPORT ):
+        self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+        self.socket.bind( ( socket.gethostname(), Port ) )
+        self.socket.listen( 4 )
+        self.init()
 
-class SiGuoServer:
-    def __init__( self, URL = define.DEFAULTSERVERURL, Port = define.DEFAULTSERVERPORT ):
-        self.server = socketserver.TCPServer( ( URL, Port ), EchoRequestHandler )
+    def init( self ):
+        self.map = define.CheckerBoard()
+        self.stat = define.SVR_INIT
+        self.onmove = random.choice( range( 0, DEFAULTPLAYER ) )
+        #client info & locks
+        self.client = []
+        self.clientcount = 0
+        self.maplock = allocate_lock()
 
     def run( self ):
-        self.server.serve_forever()
+        while True:
+            ( clientsocket, address ) = self.socket.accept()
+            ct = client_thread( clientsocket )
+            ct.run()
 
 """
-class SiGuoServer:
-    def __init__( self, URL = 'localhost', Port = 30000 ):
-        self.map = rule.Map( len( Pos4 ) )
-        self.status = CMD_WAIT #status
         self.extra = None #indicate who move/exit/wait
-        #create socket
-        self.socket = socket( AF_INET, SOCK_STREAM )
-        self.socket.bind( ( URL, Port ) )
-        self.socket.listen( 5 )
-        #client info & locks
-        self.clientcount = 0
-        self.client = []
         self.remain = []
-        self.tlocks = []
         for i in range( DEFAULTPLAYER ):
             self.client.append( None )
             self.remain.append( None )
@@ -119,7 +118,6 @@ class SiGuoServer:
 
     def run( self ):
         self.wait4connection()
-        self.onmove = random.choice( range( 0, DEFAULTPLAYER ) )
         self.status = CMD_MOVE
 
         for k in range( DEFAULTPLAYER ):

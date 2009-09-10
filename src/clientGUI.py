@@ -15,10 +15,16 @@
 """
 
 import os
-from tkinter import *
-from tkinter.messagebox import askyesno, showerror
-from tkinter.filedialog import askopenfilenames
-from tkinter.colorchooser import askcolor
+try:
+    from Tkinter import *
+    from tkMessageBox import askyesno, showerror
+    from tkFileDialog import askopenfilenames
+    from tkColorChooser import askcolor
+except ImportError:
+    from tkinter import *
+    from tkinter.messagebox import askyesno, showerror
+    from tkinter.filedialog import askopenfilenames
+    from tkinter.colorchooser import askcolor
 
 import define
 from profile import Profile
@@ -51,7 +57,11 @@ def Startup():
         fname = askopenfilenames( title = 'Load your profile', filetypes = [ ( 'Profile', '*.cfg' ) ] )
         if fname != '':
             t.destroy()
-            ret = fname[1:-1]
+            #patch under python 3.1.1
+            if type( fname ) == type( str() ):
+                ret = fname[1:-1] #under Windows, fname is a string
+            else:
+                ret = fname[0] #under Linux, fname is a tuple
 
     def Exit():
         t.destroy()
@@ -157,6 +167,7 @@ class clientGUI( Toplevel ):
         option = Menu( main )
         option.add_command( label = 'Reload', command = self.GUI_Reload, underline = 0 )
         option.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
+        option.add_command( label = 'Save As', command = ( lambda: 0 ), underline = 5 )
         option.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
         option.add_separator()
         option.add_command( label = 'Profile', command = self.GUI_Profile, underline = 0 )
@@ -188,6 +199,41 @@ class clientGUI( Toplevel ):
         for ( name, menu ) in self.menu.items():
             menu.config( bg = 'white', fg = 'black', activebackground = 'blue', activeforeground = 'white', disabledforeground = 'grey', tearoff = 0, postcommand = self.Update_MenuToolbar )
 
+    def Update_MenuToolbar( self ):
+        if self.client.stat == define.CLI_INIT:
+            self.menu['game'].entryconfig( 0, state = NORMAL )
+            self.menu['game'].entryconfig( 1, state = DISABLED )
+            self.menu['game'].entryconfig( 2, state = DISABLED )
+            self.menu['game'].entryconfig( 4, state = DISABLED )
+            self.menu['game'].entryconfig( 5, state = DISABLED )
+            self.menu['game'].entryconfig( 7, state = NORMAL )
+            self.menu['option'].entryconfig( 0, state = NORMAL )
+            self.menu['option'].entryconfig( 1, state = NORMAL )
+            self.menu['option'].entryconfig( 2, state = NORMAL )
+            self.menu['option'].entryconfig( 3, state = NORMAL )
+        elif self.client.stat == define.CLI_MOVE:
+            self.menu['game'].entryconfig( 0, state = DISABLED )
+            self.menu['game'].entryconfig( 1, state = NORMAL )
+            self.menu['game'].entryconfig( 2, state = NORMAL )
+            self.menu['game'].entryconfig( 4, state = DISABLED )
+            self.menu['game'].entryconfig( 5, state = DISABLED )
+            self.menu['game'].entryconfig( 7, state = NORMAL )
+            self.menu['option'].entryconfig( 0, state = DISABLED )
+            self.menu['option'].entryconfig( 1, state = DISABLED )
+            self.menu['option'].entryconfig( 2, state = DISABLED )
+            self.menu['option'].entryconfig( 3, state = DISABLED )
+        elif self.client.stat == define.CLI_WAIT:
+            self.menu['game'].entryconfig( 0, state = DISABLED )
+            self.menu['game'].entryconfig( 1, state = NORMAL )
+            self.menu['game'].entryconfig( 2, state = NORMAL )
+            self.menu['game'].entryconfig( 4, state = DISABLED )
+            self.menu['game'].entryconfig( 5, state = DISABLED )
+            self.menu['game'].entryconfig( 7, state = NORMAL )
+            self.menu['option'].entryconfig( 0, state = DISABLED )
+            self.menu['option'].entryconfig( 1, state = DISABLED )
+            self.menu['option'].entryconfig( 2, state = DISABLED )
+            self.menu['option'].entryconfig( 3, state = DISABLED )
+
     def add_toolbar( self ):
         self.toolbar = Frame( self, relief = GROOVE, bd = 1, padx = 1, pady = 1, bg = 'white' )
         self.toolbar.grid( column = 0, row = 1, columnspan = 2, sticky = EW )
@@ -200,10 +246,6 @@ class clientGUI( Toplevel ):
             button.pack( side = RIGHT )
             button.config( width = 15, relief = GROOVE )
             Label( text = ' ' ).pack( side = RIGHT )
-        self.menu['game'].entryconfig( 1, state = DISABLED )
-        self.menu['game'].entryconfig( 2, state = DISABLED )
-        self.menu['game'].entryconfig( 0, state = NORMAL )
-        self.menu['game'].entryconfig( 4, state = DISABLED )
 
     def add_sidebar( self ):
         self.sidebar = Frame( self, relief = GROOVE, bd = 1, padx = 1, pady = 1, bg = 'white' )
@@ -295,7 +337,7 @@ class clientGUI( Toplevel ):
         self.frm_msg_text.grid( row = 1, column = 0, columnspan = 2, sticky = NSEW )
         self.frm_msg_sbar = Scrollbar( self.frm_msg )
         self.frm_msg_sbar.grid( row = 1, column = 2, sticky = NS )
-        self.frm_msg_sbar.config( command = self.frm_msg_text.yview() )
+        self.frm_msg_sbar.config( command = self.frm_msg_text.yview )
         self.frm_msg_text.config( yscrollcommand = self.frm_msg_sbar.set )
         msg = StringVar()
         msg.set( '' )
@@ -304,9 +346,6 @@ class clientGUI( Toplevel ):
         self.frm_msg.columnconfigure( 0, pad = 1 )
         self.frm_msg.columnconfigure( 1, weight = 1 )
         self.frm_msg.columnconfigure( 2, pad = 1 )
-
-    def Update_MenuToolbar( self ):
-        return
 
     def add_board( self ):
         self.board = Board( self , relief = GROOVE, bd = 1, padx = 1, pady = 1, bg = 'white' )
@@ -514,7 +553,6 @@ class clientGUI( Toplevel ):
 
     """
     def GUI_Discard( self ):
-        if self.status == CLIENT_INIT:
             if tkMessageBox.askyesno( 'Warning', 'Discard all changes?' ):
                 rule.CleanOne( self.map, self.conf.player )
                 self.conf.place = GetDefaultPlace( self.conf.player )

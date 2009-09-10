@@ -27,7 +27,6 @@ MAXCHESS = 30 #Number of pieces
 POSFILENAME = 'position.txt'
 POSDATA = None
 
-DEFAULTSERVERURL = 'localhost'
 DEFAULTSERVERPORT = 30000
 
 #safe - True if chess in the position cannot be removed...
@@ -464,6 +463,16 @@ class Lineup( Positions ):
             f.close()
         except:
             pass
+
+#Constants used in Client.stat
+CLI_INIT = 'init'
+CLI_MOVE = 'move'
+CLI_WAIT = 'wait'
+
+#Constants used in Server.stat
+SVR_INIT = 'init'
+SVR_MOVE = 'move'
+SVR_FINI = 'fini'
 
 if __name__ == '__main__':
     Positions( MAXPOSITION )
