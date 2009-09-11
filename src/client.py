@@ -16,7 +16,6 @@
 
 import os
 import sys
-import socket
 
 #import queue
 #import time
@@ -25,10 +24,17 @@ import socket
 import define
 from profile import Profile
 from clientGUI import clientGUI, Startup
+from message import MsgSocket
+from definemsg import *
 
 class Client():
 
     def __init__( self ):
+        self.map = define.CheckerBoard()
+        self.socket = None
+        self.init()
+
+    def init( self ):
         self.stat = define.CLI_INIT
         filename = Startup()
         if filename == None:
@@ -38,12 +44,8 @@ class Client():
         name = filename.split( '/' )[-1].split( '\\' )[-1].rsplit( '.' )[0]
         if define.DEBUG:
             print( 'username :', name )
-        name = 'sean' #Test only
-        self.map = define.CheckerBoard()
         self.prof = Profile( name )
         self.prof.load()
-        self.socket = None
-        self.socketbufsize = 1024
         self.gui = clientGUI( self )
 
     def run( self ):
@@ -53,29 +55,25 @@ class Client():
         except Exception as e:
             if define.DEBUG:
                 print( str( e ) )
+
         self.prof.save()
-        sys.exit()
+        #sys.exit()
 
-    def test( self ):
-        if not self.socket:
-            return
-        while True:
-            data = input( '> ' )
-            if not data:
-                break
-            data += os.linesep
-            self.socket.send( data.encode( 'utf8' ) )
-            data = self.socket.recv( self.socketbufsize )
-            if not data:
-                break
-            print( data.strip() )
-
-    def Connection_Create( self ):
+    def Connection_Create( self, host = None, port = None ):
         if self.socket == None:
-            self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+            if ( host == None ) | ( port == None ):
+                host = self.prof.host
+                port = self.prof.port
+            self.socket = MsgSocket()
             try:
-                self.socket.connect( ( self.prof.host, self.prof.port ) )
+                self.socket.connect( ( host, port ) )
+                self.socket.send_join( CMD_ID, 'int', self.prof.id )
+                cmd, arg = self.socket.recv_split()
+                if cmd == CMD_ERROR:
+                    self.socket.close()
+                    raise Exception( 'arg' )
                 self.status = define.CLI_WAIT
+                #self.thread = start_new( Connection_Treat, () )
             except Exception as e:
                 if define.DEBUG:
                     print( str( e ) )
@@ -90,6 +88,9 @@ class Client():
                     print( str( e ) )
             self.socket = None
             self.status = define.CLI_INIT
+
+    def test( self ):
+        return
 
 """
     def createConnection( self ):

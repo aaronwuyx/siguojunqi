@@ -14,6 +14,7 @@
 """
 
 import socket
+import random
 try:
     #python 2.x
     import thread
@@ -22,44 +23,56 @@ except ImportError:
     import _thread as thread
 
 import define
+from message import MsgSocket
+from definemsg import *
 
-class SiGuoServer( thread.Thread ):
+class SiGuoServer():
     def __init__( self, Port = define.DEFAULTSERVERPORT ):
-        self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-        self.socket.bind( ( socket.gethostname(), Port ) )
+        self.socket = MsgSocket()
+        self.socket.bind( ( 'localhost', Port ) )
         self.socket.listen( 4 )
         self.init()
 
     def init( self ):
         self.map = define.CheckerBoard()
-        self.stat = define.SVR_INIT
-        self.onmove = random.choice( range( 0, DEFAULTPLAYER ) )
+        self.stat = define.SRV_INIT
+        self.onmove = random.choice( range( 0, define.MAXPLAYER ) )
         #client info & locks
         self.client = []
+        self.locks = []
         self.clientcount = 0
-        self.maplock = allocate_lock()
+        self.maplock = thread.allocate_lock()
+        for i in range( define.MAXPLAYER ):
+            self.client.append( None )
+            self.locks.append( thread.allocate_lock() )
 
     def run( self ):
         while True:
             ( clientsocket, address ) = self.socket.accept()
-            ct = client_thread( clientsocket )
-            ct.run()
+            if define.DEBUG:
+                print( 'Connection from address ', address )
+            id = self.client_add( clientsocket, address )
+            thread.start_new( self.client_run, ( id, ) )
+            if self.clientcount == 4:
+                break
+
+        self.stat = define.SRV_MOVE
+        while True:
+            return
+
+    def client_add( self, conn, addr ):
+        conn.send( 'Welcome, this is a SiGuo game server\n' )
+        conn.send( 'client address = ' + str( addr ) + '\n' )
+        str = conn.recv()
+
+    def client_run( self, id ):
+        return
+
+    def client_del( self, id ):
+        return
 
 """
-        self.extra = None #indicate who move/exit/wait
-        self.remain = []
-        for i in range( DEFAULTPLAYER ):
-            self.client.append( None )
-            self.remain.append( None )
-            #one lock per thread ... r/w message
-            self.tlocks.append( thread.allocate_lock() )
-        self.clientlock = thread.allocate_lock()
-        self.mainlock = thread.allocate_lock()
-
     def add_client( self ):
-        conn, addr = self.socket.accept()
-        if DEBUG:
-            print( 'connection from address ', addr )
         data, remain = Recvline( conn, '' )
         cmd, arg, player = Sepline( data )
         if ( cmd != CMD_ADD ) or ( arg != 'int' ) or ( player <= 0 ) or ( player > DEFAULTPLAYER ):
@@ -167,15 +180,6 @@ class SiGuoServer( thread.Thread ):
                 if DEBUG:
                     print( cmd, arg, obj )
                 raise Exception( 'Unknown str ' + cmd )
-
-    def wait4connection( self ):
-        while True:
-            self.add_client()
-            self.clientlock.acquire()
-            if self.clientcount == DEFAULTPLAYER:
-                break
-            self.clientlock.release()
-            time.sleep( 1 )
 """
 
 if __name__ == '__main__':

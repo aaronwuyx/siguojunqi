@@ -465,14 +465,14 @@ class Lineup( Positions ):
             pass
 
 #Constants used in Client.stat
+cli_stat = ['init', 'move', 'fini', 'wait' ]
 CLI_INIT = 'init'
 CLI_MOVE = 'move'
 CLI_WAIT = 'wait'
+CLI_FINI = 'fini'
 
 #Constants used in Server.stat
-SVR_INIT = 'init'
-SVR_MOVE = 'move'
-SVR_FINI = 'fini'
-
-if __name__ == '__main__':
-    Positions( MAXPOSITION )
+srv_stat = ['init', 'move', 'fini']
+SRV_INIT = 'init'
+SRV_MOVE = 'move'
+SRV_FINI = 'fini'

@@ -16,96 +16,141 @@
 
 import socket
 import define
+from definemsg import *
 
+"""
 CMD_WAIT = 'wait' #Wait for client/server
 CMD_MOVE = 'move' #tell server to move...
 CMD_ONMOVE = 'onmove' #tell a client to move...
 CMD_ADD = 'connect'
 CMD_EXIT = 'disconnect'
 CMD_PLACE = 'place'
-CMD_ERROR = 'error'
+"""
 
-def Recvline( connection, remainstr ):
-    if remainstr.find( '\n' ) == -1:
-        len = -1
+class MsgSocket( socket.socket ):
+    def __init__( self, other = None ):
+        if other:
+            #server: access socket
+            self = other
+        else:
+            #client: create MsgSocket()
+            socket.socket.__init__( self, socket.AF_INET, socket.SOCK_STREAM )
+
+        self.remainstr = ''
+
+    def recvline( self ):
+        l = self.remainstr.find( '\n' )
+        if l == -1:
+            while l == -1:
+                tmp = self.recv( self, 1024 ).decode( 'utf-8' ) #python 3
+                if tmp == '':
+                    ret = self.remainstr
+                    self.remainstr = ''
+                    return ret
+                else:
+                    self.remainstr = self.remainstr + tmp
+                    l = self.remianstr.find( '\n' )
+            ret = self.remainstr[0:l]
+            self.remainstr = self.remainstr[( l + 1 ):]
+            if define.DEBUG:
+                print( 'received:', ret )
+            return ret
+        else:
+            ret = self.remainstr[0:l]
+            self.remainstr = self.remainstr[( l + 1 ):]
+            if define.DEBUG:
+                print( 'received:', ret )
+            return ret
+
+    def sendline( self, target ):
+        if target == None:
+            return
+        if target[-1] != '\n':
+            target = target + '\n'
+        sent = 0
+        while sent != len( target ):
+            m = self.send( target.encode( 'utf-8' ) )
+            sent += m
+        if define.DEBUG:
+            print( 'sent:' + target[:-1] )
+        return sent
+
+    """
+        split a target into three parts
+        cmd  - what this line is sent for
+        type - type of obj, a str
+        arg  - arguments
+        ----------------------------------
+        type    type of arg
+        str        str
+        int        int
+        int,int    int,int
+        lineup     lineup.__str__
+    """
+    def split( self , target ):
+        if target == None:
+            return ( CMD_NONE, None )
+        if target == '':
+            return ( CMD_COMMENT, '' )
+        if target[0] == '#':
+            return ( CMD_COMMENT, target[1:] )
+        if target[0] == '?':
+            return ( CMD_ASK, target[1:] )
+        if target[0] == '!':
+            return ( CMD_ERROR, target[1:] )
+        if target[0] == '|':
+            return ( CMD_TELL, target[1:] )
         try:
-            while len == -1:
-                tmp = connection.recv( 1024 )
-                remainstr = remainstr + tmp
-                len = remainstr.find( '\n' )
-            ret = remainstr[0:len]
-            remainstr = remainstr[( len + 1 ):]
-            if DEBUG:
-                print( 'recv :', ret )
-            return ret, remainstr
-        except error:
-            pass
-    else:
-        len = remainstr.find( '\n' )
-        ret = remainstr[0:len]
-        remainstr = remainstr[( len + 1 ):]
-        if DEBUG:
-            print( 'recv :', ret )
-        return ret, remainstr
-
-def Sendline( connection, targetstr ):
-    if ( targetstr == None ) | ( targetstr == '' ):
-        return
-    if targetstr[-1] != '\n':
-        targetstr = targetstr + '\n'
-    sent = 0
-    while sent != len( targetstr ):
-        sent += connection.send( targetstr )
-    if DEBUG:
-        print( 'send :', targetstr[:-1] )
-    return sent
-
-'''
-cmd -     indicate what this line is done for...
-arg -     the type of obj
-obj -     extra arguments
----------------------------------
-cmd        action
-
----------------------------------
-arg                type of obj
-'string'             str
-'int'                int
-'int,int'            int,int
-'''
-def Sepline( line ):
-    cmd = ''
-    arg = ''
-    obj = None
-    try:
-        cmd, arg, line = line.split( ':', 2 )
-    except:
-        cmd = line
-        return ( cmd, '', None )
-    if arg == 'string':
-        obj = line
-    elif arg == 'int':
-        try:
-            obj = locale.atoi( line.strip() )
+            cmd, typ, obj = target.split( ':', 2 )
+            cmd = cmd.strip()
+            typ = typ.strip()
+            #obj = obj.strip()
         except:
-            pass
-    elif arg == 'int,int':
-        try:
-            l1, l2 = line.split( ',', 1 )
-            v1 = locale.atoi( l1.strip() )
-            v2 = locale.atoi( l2.strip() )
-            obj = ( v1, v2 )
-        except:
-            pass
-    return ( cmd, arg, obj )
+            #treat it as a comment
+            return ( CMD_COMMENT, target )
+        if typ == 'str':
+            return ( cmd, obj )
+        elif typ == 'int':
+            try:
+                arg = int( obj )
+                return ( cmd, arg )
+            except Exception as e:
+                if define.DEBUG:
+                    print( str( e ) )
+                return ( CMD_ERROR, target )
+        elif typ == 'int,int':
+            try:
+                x, y = obj.split( ',', 1 )
+                v1 = int( x.strip() )
+                v2 = int( y.strip() )
+                arg = ( v1, v2 )
+                return ( cmd, arg )
+            except Exception as e:
+                if define.DEBUG:
+                    print( str( e ) )
+                return ( CMD_ERROR, target )
+        return ( CMD_COMMENT, target )
 
-def Combline( cmd, arg = '', obj = None ):
-    line = cmd + ':' + arg + ':'
-    if arg == 'string':
-        line = line + obj
-    elif arg == 'int':
-        line = line + str( obj )
-    elif arg == 'int,int':
-        line = line + str( obj[0] ) + ',' + str( obj[1] )
-    line = line + '\n'
-    return line
+    def recv_split( self ):
+        target = self.recvline()
+        return self.split( target )
+
+    def join( self, cmd, typ, arg ):
+        if cmd == CMD_NONE:
+            return
+        if cmd == CMD_COMMENT:
+            return '#' + arg
+        if cmd == CMD_ASK:
+            return '?' + arg
+        target = cmd + ':' + typ + ':'
+        if typ == 'str':
+            return target + arg
+        if typ == 'int':
+            return target + str( arg )
+        if typ == 'int,int':
+            return target + str( arg[0] ) + ',' + str( arg[1] )
+        return target + '\n'
+
+    def send_join( self, cmd = CMD_NONE, typ = None, arg = None ):
+        target = join( cmd, typ, arg )
+        return self.sendline( target )

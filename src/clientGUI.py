@@ -22,7 +22,9 @@ try:
     from tkColorChooser import askcolor
 except ImportError:
     from tkinter import *
-    from tkinter.messagebox import askyesno, showerror
+    from tkinter.messagebox import showerror
+    from quickfix import askyesno
+    #do not import askyesno, this is a bug? Python 3.1.1 under Linux always return False...
     from tkinter.filedialog import askopenfilenames
     from tkinter.colorchooser import askcolor
 
@@ -261,10 +263,13 @@ class clientGUI( Toplevel ):
             try:
                 f = int( self.movef.get() )
                 t = int( self.movet.get() )
-                if DEBUG:
-                    print( 'from = ', f, 'to = ', t )
+                if define.DEBUG:
+                    print( 'from = ', f, 'to = ', t, 'Available = ', self.client.map.CanMove( f, t ) )
+                #if self.map.CanMove( f, t ):
+                self.board.Draw_Chess()
             except:
                 pass
+
         def clear():
             self.movef.set( '' )
             self.movet.set( '' )
@@ -393,8 +398,8 @@ class clientGUI( Toplevel ):
         i.set( self.client.prof.port )
         ent1 = Entry( ent, textvariable = s )
         ent2 = Entry( ent, textvariable = i )
-        ent1.bind( ' < Return > ', jump )
-        ent2.bind( ' < Return > ', fetch )
+        ent1.bind( '<Return>', jump )
+        ent2.bind( '<Return>', fetch )
         ent1.pack( side = TOP, expand = YES, fill = X )
         ent1.select_range( 0, END )
         ent2.pack( side = TOP, expand = YES, fill = X )
@@ -408,7 +413,14 @@ class clientGUI( Toplevel ):
             self.client.Connection_Close()
 
     def GUI_Reload( self ):
-        return
+        if askyesno( 'Warning', 'Discard any changes?' ):
+            pass
+    """
+                rule.CleanOne( self.map, self.conf.player )
+                self.conf.place = GetDefaultPlace( self.conf.player )
+                rule.PlaceOne( self.conf.place, self.map, self.conf.player )
+                self.board.Draw_Map( self.map, self.conf.player )                
+    """
 
     def GUI_Profile( self ):
         def fetch( quit ):
@@ -550,27 +562,6 @@ class clientGUI( Toplevel ):
     def GUI_Exit( self ):
         if askyesno( 'Warning', 'Do you really want to exit?' ):
             self.quit()
-
-    """
-    def GUI_Discard( self ):
-            if tkMessageBox.askyesno( 'Warning', 'Discard all changes?' ):
-                rule.CleanOne( self.map, self.conf.player )
-                self.conf.place = GetDefaultPlace( self.conf.player )
-                rule.PlaceOne( self.conf.place, self.map, self.conf.player )
-                self.board.Draw_Map( self.map, self.conf.player )
-                
-        def execute():
-            try:
-                f = int( self.movef.get() )
-                t = int( self.movet.get() )
-                if DEBUG:
-                    print( 'from = ', f, 'to = ', t )
-                #    print( 'Available ? ', self.map.Move( f, t ) )
-                #if self.map.Move( f, t ):
-                #    self.board.Draw_Map( self.map, self.conf.player )
-            except:
-                pass
-    """
 
     def onNameChange( self, event ):
         self.title( 'SiGuo client - ' + self.client.prof.name )
