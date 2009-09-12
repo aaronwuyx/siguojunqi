@@ -31,6 +31,7 @@ except ImportError:
 import define
 from profile import Profile
 from board import Board
+from guitools import add_menuitem
 
 def Startup():
     Tk().withdraw()
@@ -153,27 +154,26 @@ class clientGUI( Toplevel ):
         main = Menu( self )
         self.config( menu = main )
         self.menu['main'] = main
-
         game = Menu( main )
-        game.add_command( label = 'Connect', command = self.GUI_Connect, underline = 0 )
-        game.add_command( label = 'Yield', command = ( lambda:0 ), underline = 0 )
-        game.add_command( label = 'Disconnect', command = self.GUI_Disconnect, underline = 0 )
-        game.add_separator()
-        game.add_command( label = 'Save', command = ( lambda:0 ), underline = 0 )
-        game.add_command( label = 'Load', command = ( lambda:0 ), underline = 0 )
-        game.add_separator()
-        game.add_command( label = 'Exit', command = self.GUI_Exit, underline = 1 )
+        add_menuitem( game, [( 'Connect', 0, self.GUI_Connect ),
+                             ( 'Yield', 0, ( lambda:0 ) ),
+                             ( 'Disconnect', 0, self.GUI_Disconnect ),
+                             None,
+                             ( 'Save', 0, ( lambda:0 ) ),
+                             ( 'Load', 0, ( lambda:0 ) ),
+                             None,
+                             ( 'Exit', 1, self.GUI_Exit )] )
         self.menu['game'] = game
         main.add_cascade( label = 'Game', menu = game, underline = 0 )
 
         option = Menu( main )
-        option.add_command( label = 'Reload', command = self.GUI_Reload, underline = 0 )
-        option.add_command( label = 'Save', command = ( lambda: 0 ), underline = 0 )
-        option.add_command( label = 'Save As', command = ( lambda: 0 ), underline = 5 )
-        option.add_command( label = 'Load', command = ( lambda: 0 ), underline = 0 )
-        option.add_separator()
-        option.add_command( label = 'Profile', command = self.GUI_Profile, underline = 0 )
-        option.add_command( label = 'Rule', command = ( lambda: 0 ), underline = 2 )
+        add_menuitem( option, [( 'Reload', 0, self.GUI_Reload ),
+                               ( 'Save', 0, ( lambda:0 ) ),
+                               ( 'Save as', 0, ( lambda:0 ) ),
+                               ( 'Load', 0, ( lambda:0 ) ),
+                               None,
+                               ( 'Profile', 0, self.GUI_Profile ),
+                               ( 'Rule', 0, ( lambda:0 ) )] )
         self.menu['option'] = option
         main.add_cascade( label = 'Option', menu = option, underline = 0 )
 
@@ -191,10 +191,10 @@ class clientGUI( Toplevel ):
         main.add_cascade( label = 'View', menu = view, underline = 0 )
 
         helps = Menu( main )
-        helps.add_command( label = 'Help', command = self.GUI_Help, underline = 0 )
-        helps.add_separator()
-        helps.add_command( label = 'License', command = self.GUI_License, underline = 0 )
-        helps.add_command( label = 'About', command = self.GUI_About, underline = 0 )
+        add_menuitem( helps, [( 'Help', 0, self.GUI_Help ),
+                               None,
+                               ( 'License', 0, self.GUI_License ),
+                               ( 'About', 0, self.GUI_About )] )
         self.menu['help'] = helps
         main.add_cascade( label = 'Help', menu = helps, underline = 0 )
 
@@ -265,8 +265,7 @@ class clientGUI( Toplevel ):
                 t = int( self.movet.get() )
                 if define.DEBUG:
                     print( 'from = ', f, 'to = ', t, 'Available = ', self.client.map.CanMove( f, t ) )
-                #if self.map.CanMove( f, t ):
-                self.board.Draw_Chess()
+                self.board.OnMove( f, t )
             except:
                 pass
 

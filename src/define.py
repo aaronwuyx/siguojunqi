@@ -17,8 +17,8 @@
 import profile
 
 DEBUG = True
-STABLEVERSION = '0.05'
-STABLESVN = '37'
+STABLEVERSION = '0.06'
+STABLESVN = '61'
 
 MAXPLAYER = 4 #Number of players
 MAXPOSITION = 129 #Number of positions

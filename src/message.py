@@ -19,37 +19,28 @@ import define
 from definemsg import *
 
 """
-CMD_WAIT = 'wait' #Wait for client/server
-CMD_MOVE = 'move' #tell server to move...
-CMD_ONMOVE = 'onmove' #tell a client to move...
-CMD_ADD = 'connect'
 CMD_EXIT = 'disconnect'
 CMD_PLACE = 'place'
 """
 
-class MsgSocket( socket.socket ):
-    def __init__( self, other = None ):
-        if other:
-            #server: access socket
-            self = other
-        else:
-            #client: create MsgSocket()
-            socket.socket.__init__( self, socket.AF_INET, socket.SOCK_STREAM )
-
+#Existed socket
+class MsgMixin():
+    def __init__( self, socket ):
+        self.socket = socket
         self.remainstr = ''
 
     def recvline( self ):
         l = self.remainstr.find( '\n' )
         if l == -1:
             while l == -1:
-                tmp = self.recv( self, 1024 ).decode( 'utf-8' ) #python 3
+                tmp = self.socket.recv( 1024 ).decode( 'utf-8' ) #python 3
                 if tmp == '':
                     ret = self.remainstr
                     self.remainstr = ''
                     return ret
                 else:
                     self.remainstr = self.remainstr + tmp
-                    l = self.remianstr.find( '\n' )
+                    l = self.remainstr.find( '\n' )
             ret = self.remainstr[0:l]
             self.remainstr = self.remainstr[( l + 1 ):]
             if define.DEBUG:
@@ -68,8 +59,13 @@ class MsgSocket( socket.socket ):
         if target[-1] != '\n':
             target = target + '\n'
         sent = 0
+        count = 0
         while sent != len( target ):
-            m = self.send( target.encode( 'utf-8' ) )
+            m = self.socket.send( target.encode( 'utf-8' ) )
+            if m == 0:
+                count += 1
+                if count == 10:
+                    raise Exception( 'Network is busy' )
             sent += m
         if define.DEBUG:
             print( 'sent:' + target[:-1] )
@@ -152,5 +148,15 @@ class MsgSocket( socket.socket ):
         return target + '\n'
 
     def send_join( self, cmd = CMD_NONE, typ = None, arg = None ):
-        target = join( cmd, typ, arg )
+        target = self.join( cmd, typ, arg )
         return self.sendline( target )
+
+class MsgSocket( MsgMixin, socket.socket ):
+    def __init__( self ):
+        socket.socket.__init__( self, socket.AF_INET, socket.SOCK_STREAM )
+        MsgMixin.__init__( self, self )
+        print( self.family, ',', self.remainstr )
+
+if __name__ == '__main__':
+    m = MsgSocket()
+    print( m )

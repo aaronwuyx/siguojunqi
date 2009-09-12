@@ -15,6 +15,7 @@
 
 import socket
 import random
+import time
 try:
     #python 2.x
     import thread
@@ -23,12 +24,12 @@ except ImportError:
     import _thread as thread
 
 import define
-from message import MsgSocket
+from message import MsgMixin
 from definemsg import *
 
 class SiGuoServer():
     def __init__( self, Port = define.DEFAULTSERVERPORT ):
-        self.socket = MsgSocket()
+        self.socket = socket.socket()
         self.socket.bind( ( 'localhost', Port ) )
         self.socket.listen( 4 )
         self.init()
@@ -37,13 +38,15 @@ class SiGuoServer():
         self.map = define.CheckerBoard()
         self.stat = define.SRV_INIT
         self.onmove = random.choice( range( 0, define.MAXPLAYER ) )
+
         #client info & locks
-        self.client = []
-        self.locks = []
         self.clientcount = 0
-        self.maplock = thread.allocate_lock()
+        self.gamelock = thread.allocate_lock()
+
+        self.clients = []
+        self.locks = []
         for i in range( define.MAXPLAYER ):
-            self.client.append( None )
+            self.clients.append( None )
             self.locks.append( thread.allocate_lock() )
 
     def run( self ):
@@ -52,98 +55,92 @@ class SiGuoServer():
             if define.DEBUG:
                 print( 'Connection from address ', address )
             id = self.client_add( clientsocket, address )
+            if id == None:
+                continue
             thread.start_new( self.client_run, ( id, ) )
-            if self.clientcount == 4:
+            if self.clientcount == define.MAXPLAYER:
                 break
 
         self.stat = define.SRV_MOVE
+        while self.clientcount > 0:
+            time.sleep( 1 )
+        self.socket.close()
+
+    '''
+        check client's id, verify it, then add client into list self.clients,
+        in this version, add MsgMixin into self.clients
+        return value: client id, or None if it is invalid
+    '''
+    def client_add( self, connection, addr ):
+        conn = MsgMixin( connection )
         while True:
+            cmd, id = conn.recv_split()
+            if cmd == CMD_COMMENT:
+                continue
+            elif cmd == CMD_ID:
+                break
+            else:
+                conn.send_join( CMD_ERROR, 'str', 'send id at first' )
+                conn.close()
+                return
+        if ( id >= define.MAXPLAYER ) | ( id < 0 ):
+            conn.send_join( CMD_ERROR, 'str', 'invalid id number' )
+            conn.close()
+            return
+        if self.clients[id]:
+            conn.send_join( CMD_ERROR, 'str', 'duplicate id number' )
+            conn.close()
             return
 
-    def client_add( self, conn, addr ):
-        conn.send( 'Welcome, this is a SiGuo game server\n' )
-        conn.send( 'client address = ' + str( addr ) + '\n' )
-        str = conn.recv()
+        self.clients[id] = conn
+        self.clientcount += 1
+        return id
 
     def client_run( self, id ):
-        return
+        self.clients[id].send_join( CMD_ASK, 'str', 'name' )
+        #self.clients[id].send_join( CMD_ASK, 'str', 'lineup' )
+        #get lineup
+        #tell others about him
+        while True:
+            self.locks[id].acquire()
+            if self.clients[id] == None:
+                break
+            if self.stat == define.SRV_INIT:
+                self.clients[id].send_join( CMD_WAIT, 'float', 0.5 )
+            elif self.stat == define.SRV_MOVE:
+                if self.onmove == id:
+                    #      ask for move... verify it... tell others
+                    pass
+                else:
+                    self.clients[id].send_join( CMD_WAIT, 'float', 0.5 )
+            time.sleep( 1 )
+            self.locks[id].release()
+        #    if disconnecting... run client_del
 
     def client_del( self, id ):
-        return
+        if not self.clients[id]:
+            return
+        self.locks[id].acquire()
+        try:
+            self.clients[id].socket.close()
+        except Exception as e:
+            if define.DEBUG:
+                print( str( e ) )
+        self.clients[id] = None
+        self.clientcount -= 1
+        self.locks[id].release()
+        if define.DEBUG:
+            print( 'connection close, id = ', id )
 
 """
-    def add_client( self ):
-        data, remain = Recvline( conn, '' )
-        cmd, arg, player = Sepline( data )
-        if ( cmd != CMD_ADD ) or ( arg != 'int' ) or ( player <= 0 ) or ( player > DEFAULTPLAYER ):
-            Sendline( conn, Combline( CMD_ERROR, 'string', 'invalid player number' ) )
-            conn.close()
-            return False
-        self.clientlock.acquire()
-        k = player - 1
-        if self.client[k]:
-            Sendline( conn, Combline( CMD_ERROR, 'string', 'duplicate player number' ) )
-            self.clientlock.release()
-            conn.close()
-            return False
-        self.client[k] = ( conn, addr )
-        self.remain[k] = remain
-        self.clientcount += 1
-        self.clientlock.release()
-        if DEBUG:
-            print( ' player no ', player )
-        self.tlocks[k].acquire()
-        Sendline( conn, Combline( CMD_PLACE, 'int', k ) )
-        data, self.remain[k] = Recvline( self.client[k][0], self.remain[k] )
-        cmd, arg, obj = Sepline( data )
-        while cmd != CMD_PLACE:
-            data, self.remain[k] = Recvline( self.client[k][0], self.remain[k] )
-            if data == '':
-                break
-            cmd, arg, obj = Sepline( data )
-        self.tlocks[k].release()
-        if data == '':
-            #disconnected somehow
-            self.del_client( k )
-        else:
             rule.placeone( obj, self.map, player )
             self.tell_others( k, Combline( 'placeother', 'int', player ) )
-        return k
 
     def tell_others( self, k, targetstr ):
         for i in range( 0, DEFAULTPLAYER ):
             if i != k:
                 pass
         return
-
-    def del_client( self, k ):
-        self.clientlock.acquire()
-        if self.client[k]:
-            self.tlocks[k].acquire()
-            self.client[k][0].close()
-            self.client[k] = None
-            self.remain[k] = None
-            self.clientcount -= 1
-            self.tlocks[k].release()
-            if DEBUG:
-                print( 'connection close, Player no ', obj )
-        self.clientlock.release()
-
-    def run( self ):
-        self.wait4connection()
-        self.status = CMD_MOVE
-
-        for k in range( DEFAULTPLAYER ):
-            thread.start_new( self.run_client, ( k ) )
-
-        #wait for all players to exit...
-        while True:
-            self.clientlock.acquire()
-            if self.clientcount == 0:
-                break
-            self.clientlock.release()
-            time.sleep( 1 )
-        self.socket.close()
 
     def run_client( self, k ):
         while True:
