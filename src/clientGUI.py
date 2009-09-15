@@ -15,6 +15,7 @@
 """
 
 import os
+import sys
 try:
     from Tkinter import *
     from tkMessageBox import askyesno, showerror
@@ -32,6 +33,7 @@ import define
 from profile import Profile
 from board import Board
 from guitools import add_menuitem
+from log import TextOutput
 
 def Startup():
     Tk().withdraw()
@@ -418,7 +420,7 @@ class clientGUI( Toplevel ):
                 rule.CleanOne( self.map, self.conf.player )
                 self.conf.place = GetDefaultPlace( self.conf.player )
                 rule.PlaceOne( self.conf.place, self.map, self.conf.player )
-                self.board.Draw_Map( self.map, self.conf.player )                
+                self.board.Draw_Map( self.map, self.conf.player )
     """
 
     def GUI_Profile( self ):

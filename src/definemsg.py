@@ -15,12 +15,12 @@
 """
 
 #Constants used in Message/Client/Server
-msg_cmd = ['#', '!', '?', '|', 'none', 'id']
 CMD_COMMENT = '#'
 CMD_ERROR = '!'
 CMD_NONE = 'none'
 CMD_ASK = '?'
-CMD_TELL = '|'
-CMD_ID = 'id'
+CMD_TELL = 'tell'
 CMD_WAIT = 'wait'
 CMD_MOVE = 'move'
+CMD_EXIT = 'exit'
+msg_cmd = [CMD_COMMENT, CMD_ERROR, CMD_NONE, CMD_ASK, CMD_TELL, CMD_WAIT, CMD_MOVE, CMD_EXIT]

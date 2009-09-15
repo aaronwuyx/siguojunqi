@@ -16,10 +16,14 @@
 
 import os
 import sys
-
-#import queue
-#import time
-#import thread
+import queue
+import time
+try:
+    #Python 2.x
+    import thread
+except:
+    #Python 3.x
+    import _thread as thread
 
 import define
 from profile import Profile
@@ -30,7 +34,10 @@ from definemsg import *
 class Client():
 
     def __init__( self ):
+        self.input = sys.stdin
+        self.output = sys.stdout
         self.map = define.CheckerBoard()
+        self.queue = queue.Queue()
         self.socket = None
         self.init()
 
@@ -48,7 +55,19 @@ class Client():
         self.prof.load()
         self.gui = clientGUI( self )
 
+    def consumer( self, msec = 1000 ):
+        try:
+            data = self.queue.get( block = False )
+        except queue.Empty:
+            pass
+        else:
+            if define.DEBUG:
+                print( data )
+            #nothing to do....currently
+        self.gui.after( msec, self.consumer )
+
     def run( self ):
+        self.consumer()
         self.gui.mainloop()
         try:
             self.Connection_Close()
@@ -57,55 +76,84 @@ class Client():
                 print( str( e ) )
 
         self.prof.save()
+        sys.stdin = self.input
+        sys.stoud = self.output
         #sys.exit()
 
     def Connection_Create( self, host = None, port = None ):
-        if self.socket == None:
+        if not self.socket:
             if ( host == None ) | ( port == None ):
                 host = self.prof.host
                 port = self.prof.port
             self.socket = MsgSocket()
             try:
                 self.socket.connect( ( host, port ) )
-                self.socket.send_join( CMD_ID, 'int', self.prof.id )
-                cmd, arg = self.socket.recv_split()
-                if cmd == CMD_ERROR:
-                    self.socket.close()
-                    raise Exception( 'arg' )
-                self.status = define.CLI_WAIT
-                #self.thread = start_new( Connection_Treat, () )
             except Exception as e:
                 if define.DEBUG:
-                    print( str( e ) )
+                    print( e )
                 self.socket = None
+            return self.Connection_Init()
+
+    def Connection_Init( self ):
+        try:
+            while True:
+                cmd, arg = self.socket.recv_split()
+                if cmd == CMD_ERROR:
+                    raise Exception( arg )
+                elif cmd == CMD_COMMENT:
+                    if define.DEBUG:
+                        print( arg )
+                elif cmd == CMD_ASK:
+                    if arg == 'id':
+                        self.socket.send_join( CMD_TELL, 'int', self.prof.id )
+                    elif arg == 'name':
+                        self.socket.send_join( CMD_TELL, 'str', self.prof.name )
+                    elif arg == 'lineup':
+                        #todo: transfer lineup
+                        self.socket.send_join( CMD_TELL, 'int', 0 )
+                elif cmd == CMD_WAIT:
+                    break
+        except Exception as e:
+            if define.DEBUG:
+                print( e )
+            self.socket = None
+        else:
+            self.status = define.CLI_WAIT
+            self.thread = thread.start_new( self.Connection_Run, () )
+
+    def Connection_Run( self ):
+        while True:
+            self.socket.send_join( CMD_ASK, 'str', 'move' )
+            print( 'READING answer' )
+            cmd, arg = self.socket.recv_split()
+            if cmd == CMD_ERROR:
+                raise Exception( arg )
+            elif cmd == CMD_COMMENT:
+                if define.DEBUG:
+                    print( arg )
+            elif cmd == CMD_MOVE:
+                self.stat = define.CLI_MOVE
+                #todo: move step
+                self.stat = define.CLI_WAIT
+            time.sleep( 1 )
 
     def Connection_Close( self ):
         if self.socket:
             try:
+                self.socket.send_join( Combline( CMD_EXIT, 'int', self.prof.player ) )
+            except Exception as e:
+                if define.DEBUG:
+                    print( e )
+            try:
                 self.socket.close()
             except Exception as e:
                 if define.DEBUG:
-                    print( str( e ) )
+                    print( e )
             self.socket = None
-            self.status = define.CLI_INIT
+            self.stat = define.CLI_INIT
 
     def test( self ):
         return
-
-"""
-    def createConnection( self ):
-            Sendline( self.socket, Combline( CMD_ADD, 'int', self.conf.player ) )
-            data, self.remain = Recvline( self.socket, self.remain )
-            cmd, arg, obj = Sepline( data )
-            if cmd == 'error':
-                raise Exception( str( obj ) )
-
-    def closeConnection( self ):
-            try:
-                Sendline( self.socket, Combline( CMD_EXIT, 'int', self.conf.player ) )
-            except Exception:
-                pass
-"""
 
 if __name__ == '__main__':
     c = Client()

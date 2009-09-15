@@ -77,9 +77,10 @@ class MsgMixin():
         type - type of obj, a str
         arg  - arguments
         ----------------------------------
-        type    type of arg
+        type       type of arg
         str        str
         int        int
+        float      double
         int,int    int,int
         lineup     lineup.__str__
     """
@@ -88,44 +89,39 @@ class MsgMixin():
             return ( CMD_NONE, None )
         if target == '':
             return ( CMD_COMMENT, '' )
-        if target[0] == '#':
-            return ( CMD_COMMENT, target[1:] )
-        if target[0] == '?':
-            return ( CMD_ASK, target[1:] )
-        if target[0] == '!':
-            return ( CMD_ERROR, target[1:] )
-        if target[0] == '|':
-            return ( CMD_TELL, target[1:] )
+        for keyword in [CMD_COMMENT, CMD_ASK, CMD_ERROR]:
+            if target[:len( keyword )] == keyword:
+                return ( keyword, target[len( keyword ):] )
+        arg = None
         try:
             cmd, typ, obj = target.split( ':', 2 )
             cmd = cmd.strip()
             typ = typ.strip()
-            #obj = obj.strip()
+            obj = obj.strip()
         except:
             #treat it as a comment
             return ( CMD_COMMENT, target )
-        if typ == 'str':
-            return ( cmd, obj )
-        elif typ == 'int':
-            try:
+        if not ( cmd in msg_cmd ):
+            return ( CMD_ERROR, 'unknown keyword' )
+        try:
+            if typ == 'str':
+                arg = obj
+            elif typ == 'int':
                 arg = int( obj )
-                return ( cmd, arg )
-            except Exception as e:
-                if define.DEBUG:
-                    print( str( e ) )
-                return ( CMD_ERROR, target )
-        elif typ == 'int,int':
-            try:
+            elif typ == 'float':
+                arg = double( obj )
+            elif typ == 'int,int':
                 x, y = obj.split( ',', 1 )
                 v1 = int( x.strip() )
                 v2 = int( y.strip() )
                 arg = ( v1, v2 )
+            if arg != None:
                 return ( cmd, arg )
-            except Exception as e:
-                if define.DEBUG:
-                    print( str( e ) )
-                return ( CMD_ERROR, target )
-        return ( CMD_COMMENT, target )
+            return ( CMD_COMMENT, target )
+        except Exception as e:
+            if define.DEBUG:
+                print( str( e ) )
+            return ( CMD_ERROR, target )
 
     def recv_split( self ):
         target = self.recvline()
