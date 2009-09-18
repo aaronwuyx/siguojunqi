@@ -224,11 +224,11 @@ class Board( Frame ):
             if self.board.item[sp].IsChess() :
                 if self.board.item[sp].GetChess().GetPlayer() == self.client.prof.id :
                     self.selectpos = sp
-                    if define.DEBUG:
+                    if define.log_lv & define.LOG_GUI:
                         print ( 'select pos', sp )
                     return
             self.OnMove( self.selectpos, sp )
-            if define.DEBUG:
+            if define.log_lv & define.LOG_GUI:
                 print( 'select, move: ', self.selectpos, '->', sp )
             self.selectnum = 0
             self.selectpos = -1
@@ -236,10 +236,10 @@ class Board( Frame ):
             if self.board.CanSelect( sp, self.client.prof.id ):
                 self.selectnum = 1
                 self.selectpos = sp
-                if define.DEBUG:
+                if define.log_lv & define.LOG_GUI:
                     print ( 'select pos', sp )
             else:
-                if define.DEBUG:
+                if define.log_lv & define.LOG_GUI:
                     print ( 'cannot select pos', sp )
 
     def OnMove( self, fpos, tpos ):

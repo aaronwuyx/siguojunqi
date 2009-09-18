@@ -41,7 +41,7 @@ def Startup():
 
     def Create():
         nonlocal ret
-        if define.DEBUG:
+        if define.log_lv & define.LOG_GUI:
             print( s1.get(), ' ', s2.get() )
         if ( s1.get() != '' ) & ( int( s2.get() ) in range( define.MAXPLAYER ) ):
             name = s1.get()
@@ -265,7 +265,7 @@ class clientGUI( Toplevel ):
             try:
                 f = int( self.movef.get() )
                 t = int( self.movet.get() )
-                if define.DEBUG:
+                if define.log_lv & define.LOG_GUI:
                     print( 'from = ', f, 'to = ', t, 'Available = ', self.client.map.CanMove( f, t ) )
                 self.board.OnMove( f, t )
             except:
@@ -428,7 +428,7 @@ class clientGUI( Toplevel ):
             nonlocal name, id, color
             if name.get() != '':
                 self.client.prof.name = name.get()
-                self.event_generate( ' << name >> ' )
+                self.event_generate( '<<name>>' )
             else:
                 showerror( 'Error', 'Name should not be empty' )
                 name.set( self.client.prof.name )
@@ -436,14 +436,14 @@ class clientGUI( Toplevel ):
             if id.get() in range( define.MAXPLAYER ):
                 self.client.prof.id = int( id.get() )
                 id.set( self.client.prof.id )
-                self.event_generate( ' << id >> ' )
+                self.event_generate( '<<id>>' )
             else:
                 showerror( 'Error', 'Id should be in 0..3' )
                 return
             try:
                 exp.config( bg = color.get() )
                 self.client.prof.bg = color.get()
-                self.event_generate( ' << color >> ' )
+                self.event_generate( '<<color>>' )
             except TclError:
                 color.set( self.client.prof.bg )
                 exp.config( bg = self.client.prof.bg )
@@ -459,7 +459,7 @@ class clientGUI( Toplevel ):
                     color.set( c[1] )
                     exp.config( bg = color.get() )
                     self.client.prof.bg = color.get()
-                    self.event_generate( ' << color >> ' )
+                    self.event_generate( '<<color>>' )
                 except TclError:
                     color.set( self.client.prof.bg )
                     exp.config( bg = self.client.prof.bg )
@@ -486,7 +486,7 @@ class clientGUI( Toplevel ):
         color.set( self.client.prof.bg )
         e1 = Entry( ent, textvariable = name )
         e1.pack( side = TOP, expand = YES, fill = X, anchor = NW )
-        e1.bind( ' < Return > ', ( lambda : fetch( True ) ) )
+        e1.bind( '<Return>', ( lambda : fetch( True ) ) )
         e1.focus()
         e1.select_range( 0, END )
         idf = Frame( ent )
@@ -546,19 +546,7 @@ class clientGUI( Toplevel ):
         t.wait_window()
 
     def GUI_Test( self ):
-        tmp = define.Lineup( 0 )
-        tmp.SetToDefault()
-        self.client.map.Dump( tmp )
-        tmp = define.Lineup( 1 )
-        tmp.SetToDefault()
-        self.client.map.Dump( tmp, 30 )
-        tmp = define.Lineup( 2 )
-        tmp.SetToDefault()
-        self.client.map.Dump( tmp, 60 )
-        tmp = define.Lineup( 3 )
-        tmp.SetToDefault()
-        self.client.map.Dump( tmp, 90 )
-        self.board.Draw_Chess()
+        return
 
     def GUI_Exit( self ):
         if askyesno( 'Warning', 'Do you really want to exit?' ):
@@ -568,10 +556,15 @@ class clientGUI( Toplevel ):
         self.title( 'SiGuo client - ' + self.client.prof.name )
 
     def onIdChange( self, event ):
+        self.client.OnChangeId()
         self.board.Draw_Chess()
 
     def onColorChange( self, event ):
         return
+
+    def run( self ):
+        self.board.Draw_Chess()
+        self.mainloop()
 
 if __name__ == '__main__':
     import client

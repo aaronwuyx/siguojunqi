@@ -39,6 +39,7 @@ class Client():
         self.map = define.CheckerBoard()
         self.queue = queue.Queue()
         self.socket = None
+        self.lock = thread.allocate_lock()
         self.init()
 
     def init( self ):
@@ -46,13 +47,14 @@ class Client():
         filename = Startup()
         if filename == None:
             sys.exit()
-        if define.DEBUG:
+        if define.log_lv & define.LOG_DEF:
             print( filename )
         name = filename.split( '/' )[-1].split( '\\' )[-1].rsplit( '.' )[0]
-        if define.DEBUG:
+        if define.log_lv & define.LOG_DEF:
             print( 'username :', name )
         self.prof = Profile( name )
         self.prof.load()
+        self.map.Dump( self.prof.lineup, self.prof.id * define.MAXCHESS )
         self.gui = clientGUI( self )
 
     def consumer( self, msec = 1000 ):
@@ -61,18 +63,18 @@ class Client():
         except queue.Empty:
             pass
         else:
-            if define.DEBUG:
+            if define.log_lv & define.LOG_QUE:
                 print( data )
             #nothing to do....currently
         self.gui.after( msec, self.consumer )
 
     def run( self ):
         self.consumer()
-        self.gui.mainloop()
+        self.gui.run()
         try:
             self.Connection_Close()
         except Exception as e:
-            if define.DEBUG:
+            if define.log_lv & define.LOG_MSG:
                 print( str( e ) )
 
         self.prof.save()
@@ -89,7 +91,7 @@ class Client():
             try:
                 self.socket.connect( ( host, port ) )
             except Exception as e:
-                if define.DEBUG:
+                if define.log_lv & define.LOG_MSG:
                     print( e )
                 self.socket = None
             return self.Connection_Init()
@@ -101,20 +103,19 @@ class Client():
                 if cmd == CMD_ERROR:
                     raise Exception( arg )
                 elif cmd == CMD_COMMENT:
-                    if define.DEBUG:
+                    if define.log_lv & define.LOG_MSG:
                         print( arg )
                 elif cmd == CMD_ASK:
-                    if arg == 'id':
-                        self.socket.send_join( CMD_TELL, 'int', self.prof.id )
-                    elif arg == 'name':
-                        self.socket.send_join( CMD_TELL, 'str', self.prof.name )
-                    elif arg == 'lineup':
-                        #todo: transfer lineup
-                        self.socket.send_join( CMD_TELL, 'int', 0 )
+                    if arg == FIL_ID:
+                        self.socket.send_join( CMD_TELL, 'int', ( FIL_ID, self.prof.id ) )
+                    elif arg == FIL_NAME:
+                        self.socket.send_join( CMD_TELL, 'str', ( FIL_NAME, self.prof.name ) )
+                    elif arg == FIL_LINEUP:
+                        self.socket.send_join( CMD_TELL, 'str', ( FIL_LINEUP, self.prof.lineup.toStr() ) )
                 elif cmd == CMD_WAIT:
                     break
         except Exception as e:
-            if define.DEBUG:
+            if define.log_lv & define.LOG_MSG:
                 print( e )
             self.socket = None
         else:
@@ -123,34 +124,52 @@ class Client():
 
     def Connection_Run( self ):
         while True:
+            self.lock.acquire()
+            if self.socket == None:
+                self.lock.release()
+                break
             self.socket.send_join( CMD_ASK, 'str', 'move' )
             print( 'READING answer' )
             cmd, arg = self.socket.recv_split()
+            self.lock.release()
             if cmd == CMD_ERROR:
                 raise Exception( arg )
             elif cmd == CMD_COMMENT:
-                if define.DEBUG:
+                if define.log_lv & define.LOG_MSG:
                     print( arg )
+            elif cmd == CMD_TELL:
+                filter, arg = arg[0], arg[1]
+                if filter == FIL_MOVE:
+                    fpos, tpos = arg[0], arg[1]
+                    #todo: move step
             elif cmd == CMD_MOVE:
                 self.stat = define.CLI_MOVE
-                #todo: move step
+                #todo: get user's move
                 self.stat = define.CLI_WAIT
             time.sleep( 1 )
 
     def Connection_Close( self ):
         if self.socket:
+            self.lock.acquire()
             try:
-                self.socket.send_join( Combline( CMD_EXIT, 'int', self.prof.player ) )
+                self.socket.send_join( CMD_EXIT, 'int', self.prof.id )
             except Exception as e:
-                if define.DEBUG:
+                if define.log_lv & define.LOG_MSG:
                     print( e )
             try:
+                self.socket.recv_split()
                 self.socket.close()
             except Exception as e:
-                if define.DEBUG:
+                if define.log_lv & define.LOG_MSG:
                     print( e )
             self.socket = None
             self.stat = define.CLI_INIT
+            self.lock.release()
+
+    def OnChangeId( self ):
+        self.map.RemoveAll()
+        self.prof.loadlineup()
+        self.map.Dump( self.prof.lineup, self.prof.id * define.MAXCHESS )
 
     def test( self ):
         return

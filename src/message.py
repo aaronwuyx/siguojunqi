@@ -18,91 +18,100 @@ import socket
 import define
 from definemsg import *
 
-"""
-CMD_EXIT = 'disconnect'
-CMD_PLACE = 'place'
-"""
-
 #Existed socket
 class MsgMixin():
     def __init__( self, socket ):
         self.socket = socket
-        self.remainstr = ''
+        #buffer for recv / send in lines
+        self.recvstr = ''
+        self.sendstr = ''
 
     def recvline( self ):
-        l = self.remainstr.find( '\n' )
+        l = self.recvstr.find( '\n' )
         if l == -1:
             while l == -1:
-                tmp = self.socket.recv( 1024 ).decode( 'utf-8' ) #python 3
+                tmp = self.socket.recv( 512 ).decode( 'utf-8' ) #python 3
                 if tmp == '':
-                    ret = self.remainstr
-                    self.remainstr = ''
-                    return ret
+                    if self.recvstr != '':
+                        ret = self.recvstr
+                        self.recvstr = ''
+                        return ret
+                    else:
+                        raise socket.error( 'Connection closed' )
                 else:
-                    self.remainstr = self.remainstr + tmp
-                    l = self.remainstr.find( '\n' )
-            ret = self.remainstr[0:l]
-            self.remainstr = self.remainstr[( l + 1 ):]
-            if define.DEBUG:
-                print( 'received:', ret )
+                    self.recvstr = self.recvstr + tmp
+                    l = self.recvstr.find( '\n' )
+            ret = self.recvstr[0:l]
+            self.recvstr = self.recvstr[( l + 1 ):]
+            if define.log_lv & define.LOG_MSG:
+                print( 'recv :', ret )
             return ret
         else:
-            ret = self.remainstr[0:l]
-            self.remainstr = self.remainstr[( l + 1 ):]
-            if define.DEBUG:
+            ret = self.recvstr[0:l]
+            self.recvstr = self.recvstr[( l + 1 ):]
+            if define.log_lv & define.LOG_MSG:
                 print( 'received:', ret )
             return ret
 
     def sendline( self, target ):
-        if target == None:
+        if self.sendstr:
+            target = self.sendstr + target
+            self.sendstr = ''
+        if not target:
             return
-        if target[-1] != '\n':
-            target = target + '\n'
         sent = 0
         count = 0
-        while sent != len( target ):
-            m = self.socket.send( target.encode( 'utf-8' ) )
-            if m == 0:
-                count += 1
-                if count == 10:
-                    raise Exception( 'Network is busy' )
-            sent += m
-        if define.DEBUG:
-            print( 'sent:' + target[:-1] )
+        for line in target.splitlines():
+            lcount = 0
+            line = line + '\n'
+            while lcount != len( line ):
+                m = self.socket.send( line.encode( 'utf-8' ) )
+                if m == 0:
+                    count += 1
+                    if count == MAXERROR:
+                        raise socket.error( 'Network is busy' )
+                lcount += m
+            sent += lcount
+            if define.log_lv & define.LOG_MSG:
+                print( 'sent :' , line[:-1] )
         return sent
 
     """
         split a target into three parts
-        cmd  - what this line is sent for
-        type - type of obj, a str
-        arg  - arguments
-        ----------------------------------
-        type       type of arg
-        str        str
-        int        int
-        float      double
-        int,int    int,int
-        lineup     lineup.__str__
     """
     def split( self , target ):
         if target == None:
             return ( CMD_NONE, None )
         if target == '':
             return ( CMD_COMMENT, '' )
-        for keyword in [CMD_COMMENT, CMD_ASK, CMD_ERROR]:
-            if target[:len( keyword )] == keyword:
-                return ( keyword, target[len( keyword ):] )
-        arg = None
         try:
-            cmd, typ, obj = target.split( ':', 2 )
+            cmd, target = target.split( ':', 1 )
             cmd = cmd.strip()
+        except Exception as e:
+            return ( CMD_COMMENT, target )
+
+        arg = None
+        if not ( cmd in msg_cmd ):
+            return ( CMD_ERROR, 'unknown keyword' )
+        elif cmd in [CMD_COMMENT, CMD_ASK, CMD_ERROR]:
+            return ( cmd, target )
+
+        try:
+            typ, obj = target.split( ':', 1 )
             typ = typ.strip()
             obj = obj.strip()
         except:
             #treat it as a comment
             return ( CMD_COMMENT, target )
-        if not ( cmd in msg_cmd ):
-            return ( CMD_ERROR, 'unknown keyword' )
+
+        if cmd == CMD_TELL:
+            try:
+                objname, obj = obj.split( ':', 1 )
+                objname = objname.strip()
+                obj = obj.strip()
+            except Exception:
+                objname = ''
+
         try:
             if typ == 'str':
                 arg = obj
@@ -116,11 +125,14 @@ class MsgMixin():
                 v2 = int( y.strip() )
                 arg = ( v1, v2 )
             if arg != None:
-                return ( cmd, arg )
+                if cmd == CMD_TELL:
+                    return ( cmd, ( objname, arg ) )
+                else:
+                    return ( cmd, arg )
             return ( CMD_COMMENT, target )
         except Exception as e:
-            if define.DEBUG:
-                print( str( e ) )
+            if define.log_lv & define.LOG_MSG:
+                print( e )
             return ( CMD_ERROR, target )
 
     def recv_split( self ):
@@ -130,28 +142,35 @@ class MsgMixin():
     def join( self, cmd, typ, arg ):
         if cmd == CMD_NONE:
             return
-        if cmd == CMD_COMMENT:
-            return '#' + arg
-        if cmd == CMD_ASK:
-            return '?' + arg
+        if cmd in [CMD_COMMENT, CMD_ASK, CMD_ERROR]:
+            return cmd + ':' + arg
         target = cmd + ':' + typ + ':'
+        if cmd == CMD_TELL:
+            try:
+                target, arg = target + arg[0] + ':', arg[1]
+            except Exception:
+                target = target + ':'
         if typ == 'str':
             return target + arg
         if typ == 'int':
             return target + str( arg )
         if typ == 'int,int':
             return target + str( arg[0] ) + ',' + str( arg[1] )
+        if typ == 'float':
+            return target + str( arg )
         return target + '\n'
 
     def send_join( self, cmd = CMD_NONE, typ = None, arg = None ):
         target = self.join( cmd, typ, arg )
         return self.sendline( target )
 
+    def send_add( self, cmd = CMD_NONE, typ = None, arg = None ):
+        self.sendstr = self.sendstr + self.join( cmd, typ, arg )
+
 class MsgSocket( MsgMixin, socket.socket ):
     def __init__( self ):
         socket.socket.__init__( self, socket.AF_INET, socket.SOCK_STREAM )
         MsgMixin.__init__( self, self )
-        print( self.family, ',', self.remainstr )
 
 if __name__ == '__main__':
     m = MsgSocket()

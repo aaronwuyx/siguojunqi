@@ -28,7 +28,7 @@ from message import MsgMixin
 from definemsg import *
 
 class SiGuoServer():
-    def __init__( self, Port = define.DEFAULTSERVERPORT ):
+    def __init__( self, Port = define.DEFAULTPORT ):
         self.socket = socket.socket()
         self.socket.bind( ( 'localhost', Port ) )
         self.socket.listen( 4 )
@@ -54,7 +54,7 @@ class SiGuoServer():
     def run( self ):
         while True:
             ( clientsocket, address ) = self.socket.accept()
-            if define.DEBUG:
+            if define.log_lv & define.LOG_DEF:
                 print( 'Connection from address ', address )
             id = self.client_add( clientsocket, address )
             if id == None:
@@ -78,11 +78,14 @@ class SiGuoServer():
         Name = None
         lineup = None
         conn = MsgMixin( connection )
-        conn.send_join( CMD_ASK, 'str', 'id' )
+        conn.send_join( CMD_ASK, 'str', FIL_ID )
         while True:
             cmd, arg = conn.recv_split()
             print( cmd, arg )
             if cmd == CMD_TELL:
+                filter, arg = arg[0], arg[1]
+                if filter != FIL_ID:
+                    continue
                 if ( arg >= define.MAXPLAYER ) | ( arg < 0 ):
                     conn.send_join( CMD_ERROR, 'str', 'invalid id number' )
                     conn.close()
@@ -94,35 +97,48 @@ class SiGuoServer():
                 id = arg
                 break
             elif cmd == CMD_COMMENT:
-                if define.DEBUG:
+                if define.log_lv & define.LOG_MSG:
                     print( arg )
                 continue
             elif cmd == CMD_EXIT:
                 conn.close()
-        if define.DEBUG:
+        if define.log_lv & define.LOG_DEF:
             print( 'id = ', id )
-        conn.send_join( CMD_ASK, 'str', 'name' )
+        conn.send_join( CMD_ASK, 'str', FIL_NAME )
         while True:
             cmd, arg = conn.recv_split()
             if cmd == CMD_TELL:
+                filter, arg = arg[0], arg[1]
+                if filter != FIL_NAME:
+                    continue
                 name = arg
                 break
             elif cmd == CMD_COMMENT:
-                if define.DEBUG:
+                if define.log_lv & define.LOG_MSG:
                     print( arg )
                 continue
             elif cmd == CMD_EXIT:
                 conn.close()
-        if define.DEBUG:
+        if define.log_lv & define.LOG_DEF:
             print( 'name = ', name )
-        conn.send_join( CMD_ASK, 'str', 'lineup' )
+        conn.send_join( CMD_ASK, 'str', FIL_LINEUP )
         while True:
             cmd, arg = conn.recv_split()
             if cmd == CMD_TELL:
-                lineup = arg
+                filter, arg = arg[0], arg[1]
+                if filter != FIL_LINEUP:
+                    continue
+                lineupstr = arg
+                lineup = define.Lineup( id )
+                try:
+                    lineup.fromStr( lineupstr )
+                except Exception:
+                    conn.send_join( CMD_ERROR, 'str', 'invalid lineup' )
+                    conn.close()
+                    return
                 break
             elif cmd == CMD_COMMENT:
-                if define.DEBUG:
+                if define.log_lv & define.LOG_MSG:
                     print( arg )
                 continue
             elif cmd == CMD_EXIT:
@@ -130,10 +146,10 @@ class SiGuoServer():
 
         self.clients[id] = conn
         self.names[id] = name
-        #self.map.xxx(lineup)
+        self.map.Dump( lineup, id * define.MAXCHESS )
         self.gamelock.acquire()
         self.clientcount += 1
-        if define.DEBUG:
+        if define.log_lv & define.LOG_DEF:
             print( 'clientnum = ', self.clientcount )
         #tell others about him
         self.gamelock.release()
@@ -142,24 +158,32 @@ class SiGuoServer():
 
     def client_run( self, id ):
         while self.clients[id]:
-            print( 'Reading socket...' )
+            self.locks[id].acquire()
             cmd, arg = self.clients[id].recv_split()
+            self.locks[id].release()
             if cmd == CMD_COMMENT:
-                if define.DEBUG:
+                if define.log_lv & define.LOG_MSG:
                     print( arg )
                 continue
             elif cmd == CMD_ASK:
+                self.locks[id].acquire()
                 if self.stat == define.SRV_INIT:
                     self.clients[id].send_join( CMD_WAIT, 'int', 1 )
                 elif self.stat == define.SRV_MOVE:
                     if self.onmove == id:
-                        self.clients[id].send_join( CMD_ASK, 'str', 'move' )
+                        self.clients[id].send_join( CMD_ASK, 'str', FIL_MOVE )
                     else:
                         self.clients[id].send_join( CMD_WAIT, 'int', 1 )
+                self.locks[id].release()
             elif cmd == CMD_TELL:
-                if self.onmove == id:
-                    #verify move, move, tell all players
-                    pass
+                self.locks[id].acquire()
+                filter, arg = arg[0], arg[1]
+                if filter == FIL_MOVE:
+                    if self.onmove == id:
+                        #verify move, move, tell all players
+                        pass
+                self.clients[id].send_join( CMD_WAIT, 'int', 1 )
+                self.locks[id].release()
             elif cmd == CMD_EXIT:
                 self.client_del( id )
             time.sleep( 1 )
@@ -167,22 +191,31 @@ class SiGuoServer():
     def client_del( self, id ):
         if not self.clients[id]:
             return
-        try:
-            self.clients[id].close()
-        except Exception as e:
-            if define.DEBUG:
-                print( str( e ) )
         self.locks[id].acquire()
+        try:
+            self.clients[id].send_join( CMD_EXIT, 'int', id )
+            self.clients[id].socket.close()
+        except socket.error as e:
+            if define.log_lv & define.LOG_MSG:
+                print( e )
         self.clients[id] = None
+        self.names[id] = None
         self.locks[id].release()
+
         self.gamelock.acquire()
         self.clientcount -= 1
         self.gamelock.release()
-        if define.DEBUG:
+        if define.log_lv & define.LOG_DEF:
             print( 'connection close, id = ', id )
+        thread.exit()
 
+    def tell_all( self, cmd, typ, arg ):
+        self.gamelock.acquire()
+        for id in range( define.MAXPLAYER ):
+            #need buffer in message send
+            self.clients[id].send_add( cmd, typ, arg )
+        self.gamelock.release()
 """
-            rule.placeone( obj, self.map, player )
             self.tell_others( k, Combline( 'placeother', 'int', player ) )
 
     def tell_others( self, k, targetstr ):

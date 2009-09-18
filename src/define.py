@@ -15,10 +15,13 @@
 """
 
 import profile
+import sys
+import os
+import traceback
 
-DEBUG = True
-STABLEVERSION = '0.07'
-STABLESVN = '68'
+STABLEVERSION = '0.08'
+STABLESVN = '70'
+ChangeLog = 'Connect & Disconnect successfully'
 
 MAXPLAYER = 4 #Number of players
 MAXPOSITION = 129 #Number of positions
@@ -27,7 +30,17 @@ MAXCHESS = 30 #Number of pieces
 POSFILENAME = 'position.txt'
 POSDATA = None
 
-DEFAULTSERVERPORT = 30000
+DEFAULTPORT = 30000
+
+#define log levels, spams too much in console
+LOG_NONE = 0
+LOG_DEF = 1
+LOG_MSG = 2
+LOG_GUI = 4
+LOG_QUE = 8
+LOG_ALL = LOG_DEF | LOG_MSG | LOG_GUI | LOG_QUE
+
+log_lv = LOG_MSG
 
 #safe - True if chess in the position cannot be removed...
 #movable - True if chess in the position can move
@@ -77,7 +90,7 @@ class Position:
             for item in a10.split( ',' ):
                 self.rlink.append( int( item ) )
 
-        if DEBUG:
+        if log_lv & LOG_DEF:
             print( cert, ':', self.x, self.y, self.pic, self.movable, self.safe, \
                   self.direct, self.rail, self.link, self.rlink, a11 )
 
@@ -115,7 +128,7 @@ class Position:
 #Replace MAP_*
 VIS_NONE = 'none'
 VIS_SELF = 'self'
-#VIS_TEAM = 'team'
+VIS_TEAM = 'team' #only used in server
 VIS_ALL = 'all'
 
 class Chess:
@@ -194,6 +207,10 @@ class Positions:
             pos1 += 1
             pos2 += 1
 
+    def RemoveAll( self ):
+        for pos in range( self.size ):
+            self.Remove( pos )
+
 class CheckerBoard( Positions ):
     def __init__( self ):
         Positions.__init__( self, MAXPOSITION )
@@ -244,7 +261,7 @@ class CheckerBoard( Positions ):
                 return False
         #1 step
         if ( not self.item[fpos].IsRailway() ) | ( not self.item[tpos].IsRailway() ):
-            return ( tpos in Pos4[fpos].link ) | ( tpos in Pos4[fpos].rlink )
+            return ( tpos in self.item[fpos].link ) | ( tpos in self.item[fpos].rlink )
         #'fly'
         if self.item[fpos].GetChess().GetMoverule() == 2:
             return ( tpos in self.GetFlyArea( fpos ) )
@@ -379,62 +396,67 @@ class Lineup( Positions ):
                 self.item[pos].SetChess( chess )
             return True
         elif ( rule == 3 ) & ( ( pos == 1 ) | ( pos == 3 ) ):
-            if SkipOpt == False:
+            if nopt == False:
                 self.item[pos].SetChess( chess )
             return True
         return False
+
+    def fromStr( self, source ):
+        tmp = Lineup( self.player )
+        count = {}
+        for key, value in Chess.Num.items():
+            count[key] = value
+        pos = 0
+        for item in source.strip().split():
+            if pos > MAXCHESS:
+                break
+            value = int( item.strip() )
+            if tmp.Place( pos, Chess( value , self.player, VIS_SELF ) ) == False:
+                raise Exception( 'Cannot place ' + item + 'at ' + str( pos ) )
+            count[value] -= 1
+            if count[value] < 0:
+                raise Exception( 'Number of ' + item + ' is invalid' )
+            pos += 1
+            if pos >= self.size:
+                break
+            while self.item[pos].IsSafe():
+                self.item[pos].SetChess( None )
+                pos += 1
+        for key, value in count.items():
+            if value != 0:
+                raise Exception( 'Number of chess is invalid.' )
+        self.Dump( tmp )
+
+    def toStr( self ):
+        ret = ''
+        for pos in range( MAXCHESS ):
+            if not self.item[pos].IsSafe():
+                ret = ret + str( self.item[pos].GetChess().GetValue() ) + ' '
+        return ret
 
     def Load( self, filename ):
         try:
             f = open ( filename, 'r' )
         except:
-            if DEBUG:
+            if log_lv & LOG_DEF:
                 exc_info = sys.exc_info()
                 print( exc_info[0], '\n', exc_info[1] )
                 traceback.print_tb( exc_info[2] )
-            return
-
-        count = {}
-        for key, value in Chess.Num.items():
-            count[key] = value
-
-        tmp = Lineup( self.player )
-        self.Dump( tmp )
-
-        pos = 0
+            raise
 
         try:
             for line in f.readlines():
                 if line[:7] == 'lineup=':
-                    for item in line[7:].split():
-                        if pos > MAXCHESS:
-                            break
-                        value = int( item.strip() )
-                        if tmp.Place( pos, Chess( value , self.player, VIS_SELF ) ) == False:
-                            raise Exception( 'Cannot place ' + item + 'at ' + str( pos ) )
-                        count[value] -= 1
-                        if count[value] < 0:
-                            raise Exception( 'Number of ' + item + ' is invalid' )
-                        pos += 1
-                        if pos >= self.size:
-                            break
-                        while self.item[pos].IsSafe():
-                            self.item[pos].SetChess( None )
-                        pos += 1
+                    self.fromStr( line[7:] )
                 else:
-                    if DEBUG:
+                    if log_lv & LOG_DEF:
                         print( line )
-            for key, value in count.items():
-                if value != 0:
-                    raise Exception( 'Number of chess is invalid.' )
         except:
-            if DEBUG:
+            if log_lv & LOG_DEF:
                 exc_info = sys.exc_info()
                 print( exc_info[0], '\n', exc_info[1] )
                 traceback.print_tb( exc_info[2] )
-            return
-
-        tmp.Dump( self )
+            raise
         try:
             f.close()
         except:
@@ -444,20 +466,14 @@ class Lineup( Positions ):
         try:
             f = open ( filename, 'w' )
         except:
-            if DEBUG:
+            if log_lv & LOG_DEF:
                 exc_info = sys.exc_info()
                 print( exc_info[0], '\n', exc_info[1] )
                 traceback.print_tb( exc_info[2] )
-            return
+            raise
 
-        f.write( 'You can add comment anywhere except in the next line:\n' )
-        f.write( 'lineup=' )
-
-        for pos in range( MAXCHESS ):
-            if not self.item[pos].IsSafe():
-                f.write( self.item[pos].GetChess().GetValue(), ' ' )
-
-        f.write( '\n' )
+        f.write( 'You can comment at anywhere except the next line:\n' )
+        f.write( 'lineup=' + self.toStr() + '\n' )
 
         try:
             f.close()
@@ -476,3 +492,12 @@ srv_stat = ['init', 'move', 'fini']
 SRV_INIT = 'init'
 SRV_MOVE = 'move'
 SRV_FINI = 'fini'
+
+if __name__ == '__main__':
+    log_lv = LOG_NONE
+    l = Lineup( 0 )
+    l.SetToDefault()
+    l.Load( 'test' )
+    print( l.toStr() )
+    os.remove( 'test' )
+

@@ -14,13 +14,43 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+MAXERROR = 10
+
 #Constants used in Message/Client/Server
-CMD_COMMENT = '#'
-CMD_ERROR = '!'
-CMD_NONE = 'none'
-CMD_ASK = '?'
-CMD_TELL = 'tell'
-CMD_WAIT = 'wait'
+CMD_COMMENT = '#' #COMMENTS ONLY, not treated
+CMD_ERROR = '!' #error raised in server/client
+CMD_NONE = 'none' #nothing
+CMD_ASK = '?' #ask for a value, arg indicates its name
+CMD_TELL = 'tell' #transfer a return value, typ is its type
+CMD_WAIT = 'wait' #tell a client to wait
+CMD_EXIT = 'exit' #disconnect
 CMD_MOVE = 'move'
-CMD_EXIT = 'exit'
-msg_cmd = [CMD_COMMENT, CMD_ERROR, CMD_NONE, CMD_ASK, CMD_TELL, CMD_WAIT, CMD_MOVE, CMD_EXIT]
+msg_cmd = [CMD_COMMENT, CMD_ERROR, CMD_NONE, CMD_ASK, CMD_TELL, CMD_WAIT, CMD_EXIT, CMD_MOVE]
+
+msgdocstr = """
+each line transferred can be split into 3 parts
+cmd  - what this line is sent for
+type - type of obj, a str
+arg  - arguments
+
+valid cmd is listed in msg_cmd above.
+----------------------------------
+value of type      type of arg
+        str        str
+        int        int
+        float      double
+----------------------------------
+For CMD_TELL's, things are a little different, arg is a tuple
+        typ     arg[0]   arg[1]
+        int     'id'     id value
+        str     'name'   name
+        int,int 'move'   fpos,tpos
+        str     'lineup' lineup.toStr*
+
+*this will be implemented in next version        
+"""
+
+FIL_ID = 'id'
+FIL_NAME = 'name'
+FIL_LINEUP = 'lineup'
+FIL_MOVE = 'move'

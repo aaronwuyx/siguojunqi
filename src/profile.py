@@ -41,10 +41,11 @@ class Profile:
         self.teammate = Profile.Team[self.id % 2]
 
         self.host = 'localhost'
-        self.port = 30000
+        self.port = define.DEFAULTPORT
 
         self.bgfile = 'blank.gif'
-        self.placefile = ''
+        self.lineupfile = ''
+        self.lineup = None
 
         self.win = 0
         self.total = 0
@@ -54,7 +55,7 @@ class Profile:
         try:
             f = open( self.filename, 'r' )
         except:
-            if define.DEBUG:
+            if define.log_lv & define.LOG_DEF:
                 exc_info = sys.exc_info()
                 print( exc_info[0], '\n', exc_info[1] )
                 traceback.print_tb( exc_info[2] )
@@ -78,13 +79,13 @@ class Profile:
                         value = value.replace( '/', '\\' )
                     if os.path.exists( value ):
                         self.bgfile = value
-                if key == 'placefile':
+                if key == 'lineup':
                     if os.path.sep == '/':
                         value = value.replace( '\\', '/' )
                     elif os.path.sep == '\\':
                         value = value.replace( '/', '\\' )
                     if os.path.exists( value ):
-                        self.placefile = value
+                        self.lineupfile = value
 
                 if key == 'host':
                     self.host = value
@@ -109,6 +110,23 @@ class Profile:
             f.close()
         except:
             pass
+        self.loadlineup()
+
+    def loadlineup( self ):
+        bak = self.lineup
+        self.lineup = define.Lineup( self.id )
+        if self.lineupfile != '':
+            self.lineup = define.Lineup( self.id )
+            try:
+                self.lineup.Load( self.lineupfile )
+            except:
+                if bak:
+                    self.lineup = bak
+                else:
+                    self.lineupfile = ''
+                    self.lineup.SetToDefault()
+        else:
+            self.lineup.SetToDefault()
 
     def save( self ):
         try:
@@ -123,7 +141,7 @@ class Profile:
         f.write( 'name = ' + self.name + '\n' )
         f.write( 'id = ' + str( self.id ) + '\n' )
 
-        f.write( 'placefile = ' + self.placefile + '\n' )
+        f.write( 'lineup = ' + self.lineupfile + '\n' )
         f.write( 'bgfile = ' + self.bgfile + '\n' )
 
         f.write( 'host = ' + self.host + '\n' )
@@ -138,13 +156,7 @@ class Profile:
         except:
             pass
 
-"""
-        self.place = GetDefaultPlace( self.player )
-        self.spacex = 200
-        self.spacey = 200
-        self.offx = 3 #6 to have shadow?
-        self.offy = 3
-"""
+#       self.place = GetDefaultPlace( self.player )
 
 if __name__ == '__main__':
     pass
