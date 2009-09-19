@@ -243,6 +243,9 @@ class Board( Frame ):
                     print ( 'cannot select pos', sp )
 
     def OnMove( self, fpos, tpos ):
+        self.master.client.SetMove( fpos, tpos )
+
+    def OnDoMove( self, fpos, tpos ):
         x1, y1 = self.GetCoordinate( fpos )
         x2, y2 = self.GetCoordinate( tpos )
         count = 12

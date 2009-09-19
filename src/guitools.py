@@ -28,3 +28,8 @@ def add_menuitem( menu, list ):
             menu.add_cascade( label = item[0], underline = item[1], menu = p )
         else:
             menu.add_command( label = item[0], underline = item[1], command = item[2] )
+
+def add_toolitem( parent, list, **packopt ):
+    for item in list:
+        m = Button( parent, text = item[0], command = item[1] )
+        m.pack( packopt )

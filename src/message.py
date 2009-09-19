@@ -76,96 +76,87 @@ class MsgMixin():
                 print( 'sent :' , line[:-1] )
         return sent
 
-    """
-        split a target into three parts
-    """
-    def split( self , target ):
-        if target == None:
+    def split( self, target ):
+        if not target:
             return ( CMD_NONE, None )
-        if target == '':
-            return ( CMD_COMMENT, '' )
+        target = target.strip()
+        target0 = target
         try:
-            cmd, target = target.split( ':', 1 )
-            cmd = cmd.strip()
+            cmd, target = target.split( SEP, 1 )
         except Exception as e:
-            return ( CMD_COMMENT, target )
+            return ( CMD_ERROR, 'cannot find sep :' + target0 )
 
-        arg = None
         if not ( cmd in msg_cmd ):
-            return ( CMD_ERROR, 'unknown keyword' )
+            return ( CMD_ERROR, 'unknown keyword:' + cmd )
         elif cmd in [CMD_COMMENT, CMD_ASK, CMD_ERROR]:
             return ( cmd, target )
-
         try:
-            typ, obj = target.split( ':', 1 )
-            typ = typ.strip()
-            obj = obj.strip()
+            typestr, argstr = target.split( SEP, 1 )
+            types = typestr.split( TYPESEP )
+            args = argstr.split( ARGSEP )
         except:
-            #treat it as a comment
-            return ( CMD_COMMENT, target )
+            return ( CMD_ERROR, 'cannot find sep :' + target0 )
+        if len( types ) != len( args ):
+            return ( CMD_ERROR, 'len(arg) != len(type) :' + target0 )
 
-        if cmd == CMD_TELL:
+        total = len( types )
+        ret = []
+        for count in range( total ):
+            typ = types[count].strip()
             try:
-                objname, obj = obj.split( ':', 1 )
-                objname = objname.strip()
-                obj = obj.strip()
-            except Exception:
-                objname = ''
-
-        try:
-            if typ == 'str':
-                arg = obj
-            elif typ == 'int':
-                arg = int( obj )
-            elif typ == 'float':
-                arg = double( obj )
-            elif typ == 'int,int':
-                x, y = obj.split( ',', 1 )
-                v1 = int( x.strip() )
-                v2 = int( y.strip() )
-                arg = ( v1, v2 )
-            if arg != None:
-                if cmd == CMD_TELL:
-                    return ( cmd, ( objname, arg ) )
-                else:
-                    return ( cmd, arg )
-            return ( CMD_COMMENT, target )
-        except Exception as e:
-            if define.log_lv & define.LOG_MSG:
-                print( e )
-            return ( CMD_ERROR, target )
+                if typ == 'str':
+                    ret.append( args[count] )
+                elif typ == 'int':
+                    ret.append( int( args[count].strip() ) )
+                elif typ == 'float':
+                    ret.append( float( args[count].strip() ) )
+                elif typ == 'lineup':
+                    tmp = define.Lineup( -1 )
+                    tmp.fromStr( args[count] )
+                    ret.append( tmp )
+            except Exception as e:
+                if define.log_lv & define.LOG_MSG:
+                    print( e )
+                return ( CMD_ERROR, target0 )
+        return ( cmd, ret )
 
     def recv_split( self ):
         target = self.recvline()
         return self.split( target )
 
-    def join( self, cmd, typ, arg ):
-        if cmd == CMD_NONE:
-            return
-        if cmd in [CMD_COMMENT, CMD_ASK, CMD_ERROR]:
-            return cmd + ':' + arg
-        target = cmd + ':' + typ + ':'
-        if cmd == CMD_TELL:
-            try:
-                target, arg = target + arg[0] + ':', arg[1]
-            except Exception:
-                target = target + ':'
-        if typ == 'str':
-            return target + arg
-        if typ == 'int':
-            return target + str( arg )
-        if typ == 'int,int':
-            return target + str( arg[0] ) + ',' + str( arg[1] )
-        if typ == 'float':
-            return target + str( arg )
-        return target + '\n'
+    def join( self, cmd, types, arg ):
+        """
+            types, a list of arg's types
+            arg, a list of values
+        """
+        if cmd in [CMD_COMMENT, CMD_ASK, CMD_ERROR, CMD_NONE]:
+            return cmd + SEP + str( arg )
+        target = cmd + SEP
+        org = ''
+        count = 0
+        for typ in types:
+            if count != 0:
+                target += TYPESEP
+                org += ARGSEP
+            if typ == 'str':
+                org += arg[count]
+            elif typ == 'int':
+                org += str( arg[count] )
+            elif typ == 'float':
+                org += str( arg[count] )
+            elif typ == 'lineup':
+                org += arg[count].toStr()
+            target = target + typ
+            count += 1
+        target += SEP + org + '\n'
+        return target
 
     def send_join( self, cmd = CMD_NONE, typ = None, arg = None ):
         target = self.join( cmd, typ, arg )
         return self.sendline( target )
 
     def send_add( self, cmd = CMD_NONE, typ = None, arg = None ):
-        self.sendstr = self.sendstr + self.join( cmd, typ, arg )
+        self.sendstr = self.sendstr + self.join( cmd, typ, arg ) + '\n'
 
 class MsgSocket( MsgMixin, socket.socket ):
     def __init__( self ):
@@ -174,4 +165,5 @@ class MsgSocket( MsgMixin, socket.socket ):
 
 if __name__ == '__main__':
     m = MsgSocket()
-    print( m )
+    s = m.join( CMD_TELL, ( 'str', 'int', 'float' ), ( 'abcde', 3, 3.0 ) )
+    print( m.split( s ) )

@@ -83,18 +83,17 @@ class SiGuoServer():
             cmd, arg = conn.recv_split()
             print( cmd, arg )
             if cmd == CMD_TELL:
-                filter, arg = arg[0], arg[1]
-                if filter != FIL_ID:
+                if arg[0] != FIL_ID:
                     continue
-                if ( arg >= define.MAXPLAYER ) | ( arg < 0 ):
+                if ( arg[1] >= define.MAXPLAYER ) | ( arg[1] < 0 ):
                     conn.send_join( CMD_ERROR, 'str', 'invalid id number' )
                     conn.close()
                     return
-                if self.clients[arg]:
+                if self.clients[arg[1]]:
                     conn.send_join( CMD_ERROR, 'str', 'duplicate id number' )
                     conn.close()
                     return
-                id = arg
+                id = arg[1]
                 break
             elif cmd == CMD_COMMENT:
                 if define.log_lv & define.LOG_MSG:
@@ -104,14 +103,14 @@ class SiGuoServer():
                 conn.close()
         if define.log_lv & define.LOG_DEF:
             print( 'id = ', id )
+
         conn.send_join( CMD_ASK, 'str', FIL_NAME )
         while True:
             cmd, arg = conn.recv_split()
             if cmd == CMD_TELL:
-                filter, arg = arg[0], arg[1]
-                if filter != FIL_NAME:
+                if arg[0] != FIL_NAME:
                     continue
-                name = arg
+                name = arg[1]
                 break
             elif cmd == CMD_COMMENT:
                 if define.log_lv & define.LOG_MSG:
@@ -121,14 +120,14 @@ class SiGuoServer():
                 conn.close()
         if define.log_lv & define.LOG_DEF:
             print( 'name = ', name )
+
         conn.send_join( CMD_ASK, 'str', FIL_LINEUP )
         while True:
             cmd, arg = conn.recv_split()
             if cmd == CMD_TELL:
-                filter, arg = arg[0], arg[1]
-                if filter != FIL_LINEUP:
+                if arg[0] != FIL_LINEUP:
                     continue
-                lineupstr = arg
+                lineupstr = arg[1]
                 lineup = define.Lineup( id )
                 try:
                     lineup.fromStr( lineupstr )
@@ -147,6 +146,7 @@ class SiGuoServer():
         self.clients[id] = conn
         self.names[id] = name
         self.map.Dump( lineup, id * define.MAXCHESS )
+
         self.gamelock.acquire()
         self.clientcount += 1
         if define.log_lv & define.LOG_DEF:
@@ -154,6 +154,7 @@ class SiGuoServer():
         #tell others about him
         self.gamelock.release()
         conn.send_join( CMD_WAIT, 'int', 1 )
+        self.tell_all( CMD_TELL, ( 'str', 'int', 'str' ), ( FIL_IDNAME, id, name ) )
         return id
 
     def client_run( self, id ):
@@ -168,21 +169,24 @@ class SiGuoServer():
             elif cmd == CMD_ASK:
                 self.locks[id].acquire()
                 if self.stat == define.SRV_INIT:
-                    self.clients[id].send_join( CMD_WAIT, 'int', 1 )
+                    self.clients[id].send_join( CMD_WAIT, ['int'], [1] )
                 elif self.stat == define.SRV_MOVE:
                     if self.onmove == id:
                         self.clients[id].send_join( CMD_ASK, 'str', FIL_MOVE )
                     else:
-                        self.clients[id].send_join( CMD_WAIT, 'int', 1 )
+                        self.clients[id].send_join( CMD_WAIT, ['int'], [1] )
                 self.locks[id].release()
             elif cmd == CMD_TELL:
                 self.locks[id].acquire()
-                filter, arg = arg[0], arg[1]
-                if filter == FIL_MOVE:
+                if arg[0] == FIL_MOVE:
                     if self.onmove == id:
+                        source = arg[1]
+                        target = arg[2]
+                        result = self.map.Result( source, target )
+                        self.tell_all( CMD_TELL, ( 'str', 'int', 'int', 'int' ), ( FIL_MOVE2, source, target, result ) )
                         #verify move, move, tell all players
-                        pass
-                self.clients[id].send_join( CMD_WAIT, 'int', 1 )
+                        self.onmove = ( self.onmove + 1 ) % define.MAXPLAYER
+                self.clients[id].send_join( CMD_WAIT, ['int'], [1] )
                 self.locks[id].release()
             elif cmd == CMD_EXIT:
                 self.client_del( id )
@@ -212,8 +216,9 @@ class SiGuoServer():
     def tell_all( self, cmd, typ, arg ):
         self.gamelock.acquire()
         for id in range( define.MAXPLAYER ):
-            #need buffer in message send
-            self.clients[id].send_add( cmd, typ, arg )
+            if self.clients[id]:
+                #need buffer in message send
+                self.clients[id].send_add( cmd, typ, arg )
         self.gamelock.release()
 """
             self.tell_others( k, Combline( 'placeother', 'int', player ) )

@@ -13,7 +13,9 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+SEP = ':'
+TYPESEP = ','
+ARGSEP = '##'
 MAXERROR = 10
 
 #Constants used in Message/Client/Server
@@ -45,6 +47,7 @@ For CMD_TELL's, things are a little different, arg is a tuple
         int     'id'     id value
         str     'name'   name
         int,int 'move'   fpos,tpos
+        int,int,int 'move2' fpos,tpos,result
         str     'lineup' lineup.toStr*
 
 *this will be implemented in next version        
@@ -52,5 +55,7 @@ For CMD_TELL's, things are a little different, arg is a tuple
 
 FIL_ID = 'id'
 FIL_NAME = 'name'
+FIL_IDNAME = 'idname'
 FIL_LINEUP = 'lineup'
 FIL_MOVE = 'move'
+FIL_MOVE2 = 'move2'

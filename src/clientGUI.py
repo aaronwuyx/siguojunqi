@@ -113,7 +113,6 @@ class clientGUI( Toplevel ):
         Toplevel.__init__( self )
         self.client = client
         self.lift()
-        self.maxsize()
         self.init( client )
 
     def init( self, client ):
@@ -142,9 +141,11 @@ class clientGUI( Toplevel ):
         self.add_events()
         self.minsize( width = 750, height = 550 )
 
-    #one way to tell other widgets about value changes, use virtual events
-    #another is widget.after(...)
     def add_events( self ):
+        """
+            use events to tell other widgets about value changes
+            or use widget.after(...) or client.queue
+        """
         self.event_add( '<<name>>' , '<Button-2>' , 'n', 'a' )
         self.bind( '<<name>>', self.onNameChange )
         self.event_add( '<<id>>' , '<Button-2>' , 'i', 'd' )
@@ -550,6 +551,7 @@ class clientGUI( Toplevel ):
 
     def GUI_Exit( self ):
         if askyesno( 'Warning', 'Do you really want to exit?' ):
+            self.client.Connection_Close()
             self.quit()
 
     def onNameChange( self, event ):

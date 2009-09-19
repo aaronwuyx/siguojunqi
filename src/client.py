@@ -63,9 +63,11 @@ class Client():
         except queue.Empty:
             pass
         else:
+            if data[0] == FIL_ID:
+                pass
+            #nothing to do....currently
             if define.log_lv & define.LOG_QUE:
                 print( data )
-            #nothing to do....currently
         self.gui.after( msec, self.consumer )
 
     def run( self ):
@@ -107,11 +109,11 @@ class Client():
                         print( arg )
                 elif cmd == CMD_ASK:
                     if arg == FIL_ID:
-                        self.socket.send_join( CMD_TELL, 'int', ( FIL_ID, self.prof.id ) )
+                        self.socket.send_join( CMD_TELL, ( 'str', 'int' ), ( FIL_ID, self.prof.id ) )
                     elif arg == FIL_NAME:
-                        self.socket.send_join( CMD_TELL, 'str', ( FIL_NAME, self.prof.name ) )
+                        self.socket.send_join( CMD_TELL, ( 'str', 'str' ), ( FIL_NAME, self.prof.name ) )
                     elif arg == FIL_LINEUP:
-                        self.socket.send_join( CMD_TELL, 'str', ( FIL_LINEUP, self.prof.lineup.toStr() ) )
+                        self.socket.send_join( CMD_TELL, ( 'str', 'str' ), ( FIL_LINEUP, self.prof.lineup.toStr() ) )
                 elif cmd == CMD_WAIT:
                     break
         except Exception as e:
@@ -123,36 +125,48 @@ class Client():
             self.thread = thread.start_new( self.Connection_Run, () )
 
     def Connection_Run( self ):
+        skipask = False
         while True:
             self.lock.acquire()
+            #close connection
             if self.socket == None:
                 self.lock.release()
-                break
-            self.socket.send_join( CMD_ASK, 'str', 'move' )
-            print( 'READING answer' )
+                thread.exit()
+
+            if not skipask:
+                self.socket.send_join( CMD_ASK, 'str', 'move' )
+            skipask = False
             cmd, arg = self.socket.recv_split()
             self.lock.release()
+
             if cmd == CMD_ERROR:
                 raise Exception( arg )
             elif cmd == CMD_COMMENT:
                 if define.log_lv & define.LOG_MSG:
                     print( arg )
-            elif cmd == CMD_TELL:
-                filter, arg = arg[0], arg[1]
-                if filter == FIL_MOVE:
-                    fpos, tpos = arg[0], arg[1]
-                    #todo: move step
             elif cmd == CMD_MOVE:
                 self.stat = define.CLI_MOVE
-                #todo: get user's move
-                self.stat = define.CLI_WAIT
+                self.source = None
+                self.target = None
+                while self.stat == define.CLI_MOVE:
+                    time.sleep( 0.5 )
+                self.socket.send_join( CMD_TELL, ( 'str', 'int', 'int' ), ( 'move', self.source, self.target ) )
+            elif cmd == CMD_TELL:
+                if arg[0] == FIL_MOVE2:
+                    fpos, tpos, res = arg[1], arg[2], arg[3]
+                    self.map.Move( fpos, tpos, res )
+                    self.client.board.OnDoMove( fpos, tpos )
+                    self.client.board.Draw_Chess()
+                elif arg[0] == FIL_IDNAME:
+                    self.queue.put( ( arg[0], arg[1], arg[2] ) )
+
             time.sleep( 1 )
 
     def Connection_Close( self ):
         if self.socket:
             self.lock.acquire()
             try:
-                self.socket.send_join( CMD_EXIT, 'int', self.prof.id )
+                self.socket.send_join( CMD_EXIT, [ 'int' ], [ self.prof.id ] )
             except Exception as e:
                 if define.log_lv & define.LOG_MSG:
                     print( e )
@@ -170,6 +184,12 @@ class Client():
         self.map.RemoveAll()
         self.prof.loadlineup()
         self.map.Dump( self.prof.lineup, self.prof.id * define.MAXCHESS )
+
+    def SetMove( self, fpos, tpos ):
+        if self.stat == define.CLI_MOVE:
+            self.source = fpos
+            self.target = tpos
+            self.stat = define.CLI_WAIT
 
     def test( self ):
         return
