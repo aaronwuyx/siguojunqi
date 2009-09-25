@@ -87,11 +87,11 @@ class SiGuoServer():
                     continue
                 if ( arg[1] >= define.MAXPLAYER ) | ( arg[1] < 0 ):
                     conn.send_join( CMD_ERROR, 'str', 'invalid id number' )
-                    conn.close()
+                    conn.socket.close()
                     return
                 if self.clients[arg[1]]:
                     conn.send_join( CMD_ERROR, 'str', 'duplicate id number' )
-                    conn.close()
+                    conn.socket.close()
                     return
                 id = arg[1]
                 break
@@ -155,6 +155,11 @@ class SiGuoServer():
         self.gamelock.release()
         conn.send_join( CMD_WAIT, 'int', 1 )
         self.tell_all( CMD_TELL, ( 'str', 'int', 'str' ), ( FIL_IDNAME, id, name ) )
+        for count in range( define.MAXPLAYER ):
+            if count == id:
+                continue
+            if self.clients[count]:
+                self.clients[id].send_add( CMD_TELL, ( 'str', 'int', 'str' ), ( FIL_IDNAME, count, self.names[count] ) )
         return id
 
     def client_run( self, id ):
@@ -182,10 +187,16 @@ class SiGuoServer():
                     if self.onmove == id:
                         source = arg[1]
                         target = arg[2]
-                        result = self.map.Result( source, target )
-                        self.tell_all( CMD_TELL, ( 'str', 'int', 'int', 'int' ), ( FIL_MOVE2, source, target, result ) )
-                        #verify move, move, tell all players
-                        self.onmove = ( self.onmove + 1 ) % define.MAXPLAYER
+                        if self.map.CanMove( source, target ):
+                            result = self.map.Result( source, target )
+                            self.map.Move( source, target, result )
+                            self.tell_all( CMD_TELL, ( 'str', 'int', 'int', 'int' ), ( FIL_MOVE2, source, target, result ) )
+                            self.onmove = ( self.onmove + 1 ) % define.MAXPLAYER
+                        else:
+                            #some bug here?
+                            if define.log_lv & define.LOG_MSG:
+                                print( 'Move: from ', source, 'to', target )
+                            self.clients[id].send_join( CMD_ASK, 'str', FIL_MOVE )
                 self.clients[id].send_join( CMD_WAIT, ['int'], [1] )
                 self.locks[id].release()
             elif cmd == CMD_EXIT:
@@ -208,6 +219,10 @@ class SiGuoServer():
 
         self.gamelock.acquire()
         self.clientcount -= 1
+        for pos in self.map.size:
+            if self.map.item[pos].IsChess():
+                if self.map.item[pos].GetChess().GetPlayer() == id:
+                    self.map.Remove( pos )
         self.gamelock.release()
         if define.log_lv & define.LOG_DEF:
             print( 'connection close, id = ', id )
@@ -220,25 +235,6 @@ class SiGuoServer():
                 #need buffer in message send
                 self.clients[id].send_add( cmd, typ, arg )
         self.gamelock.release()
-"""
-            self.tell_others( k, Combline( 'placeother', 'int', player ) )
-
-    def tell_others( self, k, targetstr ):
-        for i in range( 0, DEFAULTPLAYER ):
-            if i != k:
-                pass
-        return
-
-    def run_client( self, k ):
-            elif cmd == CMD_MOVE:
-                fpos = obj[0]
-                tpos = obj[1]
-                if self.map.move( fpos, tpos ):
-                    self.tell_others( k, Combline( CMD_MOVE, 'int,int', obj ) )
-                    if DEBUG:
-                        print( 'move from', fpos, 'to', tpos, ', Player no ', k + 1 )
-                    self.onmove = ( self.onmove + 1 ) % DEFAULTPLAYER
-"""
 
 if __name__ == '__main__':
     s = SiGuoServer()

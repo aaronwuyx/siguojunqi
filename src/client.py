@@ -40,6 +40,7 @@ class Client():
         self.queue = queue.Queue()
         self.socket = None
         self.lock = thread.allocate_lock()
+        self.user = {}
         self.init()
 
     def init( self ):
@@ -63,10 +64,26 @@ class Client():
         except queue.Empty:
             pass
         else:
-            if data[0] == FIL_ID:
+            if data[0] == FIL_IDNAME:
+                id, name = data[1], data[2]
+                self.lock.acquire()
+                self.user[id] = name
+                self.lock.release()
+                self.gui.user_refresh()
+            elif data[0] == FIL_RIDNAME:
+                id = data[1]
+                self.lock.acquire()
+                self.user.pop( id )
+                self.lock.release()
+                self.gui.user_refresh()
+            elif data[0] == FIL_MOVE:
                 pass
-            #nothing to do....currently
-            if define.log_lv & define.LOG_QUE:
+            elif data[0] == FIL_MOVE2:
+                self.lock.acquire()
+                self.map.move( data[1], data[2], data[3] )
+                self.lock.release()
+                self.client.board.OnDoMove( data[1], data[2] )
+                self.client.board.Draw_Chess()
                 print( data )
         self.gui.after( msec, self.consumer )
 
@@ -151,12 +168,11 @@ class Client():
                 while self.stat == define.CLI_MOVE:
                     time.sleep( 0.5 )
                 self.socket.send_join( CMD_TELL, ( 'str', 'int', 'int' ), ( 'move', self.source, self.target ) )
+                skipask = True
             elif cmd == CMD_TELL:
+                skipask = True
                 if arg[0] == FIL_MOVE2:
-                    fpos, tpos, res = arg[1], arg[2], arg[3]
-                    self.map.Move( fpos, tpos, res )
-                    self.client.board.OnDoMove( fpos, tpos )
-                    self.client.board.Draw_Chess()
+                    self.queue.put( ( arg[0], arg[1], arg[2], arg[3] ) )
                 elif arg[0] == FIL_IDNAME:
                     self.queue.put( ( arg[0], arg[1], arg[2] ) )
 
@@ -178,6 +194,8 @@ class Client():
                     print( e )
             self.socket = None
             self.stat = define.CLI_INIT
+            self.user.clear()
+            self.gui.user_refresh()
             self.lock.release()
 
     def OnChangeId( self ):

@@ -56,6 +56,7 @@ For CMD_TELL's, things are a little different, arg is a tuple
 FIL_ID = 'id'
 FIL_NAME = 'name'
 FIL_IDNAME = 'idname'
+FIL_RIDNAME = 'removeidname'
 FIL_LINEUP = 'lineup'
 FIL_MOVE = 'move'
 FIL_MOVE2 = 'move2'
