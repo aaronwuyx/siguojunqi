@@ -46,7 +46,9 @@ class SiGuoServer():
         self.clients = []
         self.names = []
         self.locks = []
+        self.alive = []
         for i in range( define.MAXPLAYER ):
+            self.alive.append( False )
             self.clients.append( None )
             self.names.append( None )
             self.locks.append( thread.allocate_lock() )
@@ -67,6 +69,13 @@ class SiGuoServer():
         while self.clientcount > 0:
             time.sleep( 1 )
         self.socket.close()
+
+    def IsAlive( self, id ):
+        pass
+        '''
+        first, check if its 32 is alive,
+        then the client can move...
+        '''
 
     '''
         check client's id, verify it, then add client into list self.clients,
@@ -145,6 +154,7 @@ class SiGuoServer():
 
         self.clients[id] = conn
         self.names[id] = name
+        self.alive[id] = True
         self.map.Dump( lineup, id * define.MAXCHESS )
 
         self.gamelock.acquire()
@@ -191,7 +201,15 @@ class SiGuoServer():
                             result = self.map.Result( source, target )
                             self.map.Move( source, target, result )
                             self.tell_all( CMD_TELL, ( 'str', 'int', 'int', 'int' ), ( FIL_MOVE2, source, target, result ) )
+                            for i in range( define.MAXPLAYER ):
+                                if self.alive[id]:
+                                    if IsAlive( id ):
+                                        pass
+                                    else:
+                                        self.OneLose( id )
                             self.onmove = ( self.onmove + 1 ) % define.MAXPLAYER
+                            while not self.alive[self.onmove]:
+                                self.onmove = ( self.onmove + 1 ) % define.MAXPLAYER
                         else:
                             #some bug here?
                             if define.log_lv & define.LOG_MSG:
@@ -202,6 +220,16 @@ class SiGuoServer():
             elif cmd == CMD_EXIT:
                 self.client_del( id )
             time.sleep( 1 )
+
+    def OneLose( self, id ):
+        self.gamelock.acquire()
+        for pos in self.map.size():
+            if self.map.item[pos].IsChess():
+                if self.map.item[pos].GetChess().GetPlayer() == id:
+                    self.map.Remove( pos )
+        self.alive[id] = False
+        self.tell_all( CMD_TELL, ['str', 'int'], [FIL_LOSE, id] )
+        self.gamelock.release()
 
     def client_del( self, id ):
         if not self.clients[id]:
@@ -216,6 +244,7 @@ class SiGuoServer():
         self.clients[id] = None
         self.names[id] = None
         self.locks[id].release()
+        self.DestroyAll( id )
 
         self.gamelock.acquire()
         self.clientcount -= 1

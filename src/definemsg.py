@@ -13,12 +13,32 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
+message_doc = """
+Every line transferred can be split into 3 parts:
+1. cmd  - command keywords
+2. type - a list of arg's types in string, or a string only
+3. arg  - a list of arguments
+
+*All valid command keywords are listed in msg_cmd.
+**For CMD_TELL, you can transfer as many arguments as you like.
+But in siguo, the following str in arg[0] are called FIL_*,
+should not alter the types
+"""
+
+'''
+a few defines
+*SEP : seperator between items
+MAXERROR : number of retries before raise exception
+'''
 SEP = ':'
 TYPESEP = ','
 ARGSEP = '##'
 MAXERROR = 10
 
-#Constants used in Message/Client/Server
+'''
+Constants used in Client/Server through message
+'''
 CMD_COMMENT = '#' #COMMENTS ONLY, not treated
 CMD_ERROR = '!' #error raised in server/client
 CMD_NONE = 'none' #nothing
@@ -26,32 +46,21 @@ CMD_ASK = '?' #ask for a value, arg indicates its name
 CMD_TELL = 'tell' #transfer a return value, typ is its type
 CMD_WAIT = 'wait' #tell a client to wait
 CMD_EXIT = 'exit' #disconnect
-CMD_MOVE = 'move'
-msg_cmd = [CMD_COMMENT, CMD_ERROR, CMD_NONE, CMD_ASK, CMD_TELL, CMD_WAIT, CMD_EXIT, CMD_MOVE]
+msg_cmd = [CMD_COMMENT, CMD_ERROR, CMD_NONE, CMD_ASK, CMD_TELL, CMD_WAIT, CMD_EXIT]
 
-msgdocstr = """
-each line transferred can be split into 3 parts
-cmd  - what this line is sent for
-type - type of obj, a str
-arg  - arguments
+''' 
+Filters used in CMD_TELL
+------------------------------
+FILTER NAME Other arguments
+'id'        int -> id
+'name'      str -> name
+'idname'    int -> id,str -> name
+'move'      int -> fpos,int -> tpos
+'move2'     int -> fpos,int -> tpos,int -> result
+'lineup'    str -> lineup.toStr*
 
-valid cmd is listed in msg_cmd above.
-----------------------------------
-value of type      type of arg
-        str        str
-        int        int
-        float      double
-----------------------------------
-For CMD_TELL's, things are a little different, arg is a tuple
-        typ     arg[0]   arg[1]
-        int     'id'     id value
-        str     'name'   name
-        int,int 'move'   fpos,tpos
-        int,int,int 'move2' fpos,tpos,result
-        str     'lineup' lineup.toStr*
-
-*this will be implemented in next version        
-"""
+*In future, will return instance of Lineup instead of a str        
+'''
 
 FIL_ID = 'id'
 FIL_NAME = 'name'
@@ -60,3 +69,5 @@ FIL_RIDNAME = 'removeidname'
 FIL_LINEUP = 'lineup'
 FIL_MOVE = 'move'
 FIL_MOVE2 = 'move2'
+FIL_LOSE = 'lose'
+FIL_WIN = 'win'
