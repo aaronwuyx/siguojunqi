@@ -16,13 +16,15 @@
 
 import os
 import sys
-import queue
 import time
+import gettext
 try:
     #Python 2.x
     import thread
+    import Queue
 except:
     #Python 3.x
+    import queue
     import _thread as thread
 
 import define
@@ -36,6 +38,7 @@ class Client():
     def __init__( self ):
         self.input = sys.stdin
         self.output = sys.stdout
+        #self.text = gettext.GNUTranslations(open('translation/zh_cn.mo'))
         self.map = define.CheckerBoard()
         self.queue = queue.Queue()
         self.socket = None
