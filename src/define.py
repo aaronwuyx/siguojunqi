@@ -21,7 +21,7 @@ import traceback
 
 STABLEVERSION = '0.08'
 STABLESVN = '70'
-ChangeLog = 'Connect & Disconnect successfully'
+ChangeLog = ''
 
 MAXPLAYER = 4 #Number of players
 MAXPOSITION = 129 #Number of positions

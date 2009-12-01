@@ -46,6 +46,7 @@ CMD_ASK = '?' #ask for a value, arg indicates its name
 CMD_TELL = 'tell' #transfer a return value, typ is its type
 CMD_WAIT = 'wait' #tell a client to wait
 CMD_EXIT = 'exit' #disconnect
+CMD_MOVE = 'move'
 msg_cmd = [CMD_COMMENT, CMD_ERROR, CMD_NONE, CMD_ASK, CMD_TELL, CMD_WAIT, CMD_EXIT]
 
 ''' 
