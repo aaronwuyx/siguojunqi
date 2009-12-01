@@ -16,6 +16,10 @@
 
 import socket
 import define
+import logging
+import pickle
+#p = pickle.Pickler( 'file' )
+#p.
 from definemsg import *
 
 DEFAULTPORT = 30000
