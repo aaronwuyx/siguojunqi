@@ -17,12 +17,15 @@
 import sys
 import os
 import traceback
+
 import logging
+from logger import *
 
 #import message # server / client message
 
 from scstat import *
-from profile import *
+
+import profile
 
 STABLEVERSION = '0.08'
 STABLESVN = '70'
@@ -547,9 +550,7 @@ class Lineup( Positions ):
         try:
             f = open ( filename, 'r' )
         except:
-            exc_info = sys.exc_info()
-            logging.exception( str( exc_info[0] ) + ' ' + str( exc_info[1] ) )
-            traceback.print_tb( exc_info[2] )
+            log_err()
             raise
 
         try:
@@ -559,9 +560,7 @@ class Lineup( Positions ):
                 else:
                     logging.info( line )
         except:
-            exc_info = sys.exc_info()
-            logging.exception( str( exc_info[0] ) + ' ' + str( exc_info[1] ) )
-            traceback.print_tb( exc_info[2] )
+            log_err()
             raise
         try:
             f.close()
@@ -573,9 +572,7 @@ class Lineup( Positions ):
         try:
             f = open ( filename, 'w' )
         except:
-            exc_info = sys.exc_info()
-            logging.exception( str( exc_info[0] ) + ' ' + str( exc_info[1] ) )
-            traceback.print_tb( exc_info[2] )
+            log_err()
             raise
 
         f.write( 'You can comment at anywhere except the next line:\n' )

@@ -21,6 +21,7 @@ import pickle # use pickle.Pickler to dump data
 import logging
 
 import define
+from logger import *
 
 #constants
 PROFILEVER = 1 # identify different profiles
@@ -94,23 +95,14 @@ class Profile():
         #open file in read mode
         try:
             f = open( self.filename, 'r' )
-        except:
-            if define.log_lv & define.LOG_DEF:
-                exc_info = sys.exc_info()
-                print( exc_info[0], '\n', exc_info[1] )
-                traceback.print_tb( exc_info[2] )
-            return
-
-        #use pickle to load info
-        p = pickle.Unpickler( f )
-
-        try:
+            #use pickle to load info
+            p = pickle.Unpickler( f )
             obj = p.load()
             self.dump_from( obj )
-        except TypeError:
-            return
+        except IOError, pickle.UnpicklingError:
+            log_err()
 
-        #close the file
+        #always close the file
         try:
             f.close()
         except:
@@ -124,6 +116,7 @@ class Profile():
         #check data type
         for key in obj.__dict__.keys():
             if not key in self.__dict__.keys():
+                logging.exception( 'TypeError : invalid type error in dump_from()' )
                 raise TypeError( "Invalid type" )
 
         #dump data
@@ -136,37 +129,24 @@ class Profile():
             new.Load( self.lineupfile )
             self.lineup = new
         except:
-            exc_info = sys.exc_info()
             logging.exception( 'cannot load lineup' )
-            logging.exception( str( exc_info[0] ) + ' ' + str( exc_info[1] ) )
-            traceback.print_tb( exc_info[2] )
 
     def savelineup( self ):
         try:
             self.lineup.Save( self.lineupfile )
         except:
-            exc_info = sys.exc_info()
             logging.exception( 'cannot save lineup' )
-            logging.exception( str( exc_info[0] ) + ' ' + str( exc_info[1] ) )
-            traceback.print_tb( exc_info[2] )
 
     def save( self ):
         try:
             f = open( self.filename, 'w' )
-        except IOError:
-            exc_info = sys.exc_info()
-            logging.exception( str( exc_info[0] ) + ' ' + str( exc_info[1] ) )
-            traceback.print_tb( exc_info[2] )
-            return
-
-        #use pickle to load info
-        p = pickle.Pickler( f )
-        try:
+            #use pickle to load info
+            p = pickle.Pickler( f )
             p.dump( self )
-        except pickle.PickleError:
-            return
+        except IOError, pickle.PickleError:
+            log_err()
 
-        #close the file
+        #always close the file
         try:
             f.close()
         except:
