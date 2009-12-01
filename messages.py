@@ -17,16 +17,27 @@
 import socket
 import define
 import logging
-import pickle
-#p = pickle.Pickler( 'file' )
-#p.
-from definemsg import *
+
+#from definemsg import *
 
 DEFAULTPORT = 30000
 DEFAULTHOST = 'localhost'
 
 #Existed socket
 class MsgMixin():
+    """
+    this class is used with socket, it provides recvline / sendline /
+    splitline / combline functions
+
+    class MsgMixin():
+        socket - the original socket
+        recvstr - received string buffer
+        sendstr - sent string buffer
+        
+    methods:
+        recvline - read a line from string buffer
+        sendline - write a line to string buffer
+    """
     def __init__( self, socket ):
         self.socket = socket
         #buffer for recv / send in lines
@@ -34,8 +45,12 @@ class MsgMixin():
         self.sendstr = ''
 
     def recvline( self ):
+        """
+        return received lines
+        """
         l = self.recvstr.find( '\n' )
         if l == -1:
+            #no more lines in buffer
             while l == -1:
                 tmp = self.socket.recv( 512 ).decode( 'utf-8' ) #python 3
                 if tmp == '':
@@ -44,43 +59,57 @@ class MsgMixin():
                         self.recvstr = ''
                         return ret
                     else:
+                        logging.exception( 'Connection close' )
                         raise socket.error( 'Connection closed' )
                 else:
                     self.recvstr = self.recvstr + tmp
                     l = self.recvstr.find( '\n' )
-            ret = self.recvstr[0:l]
-            self.recvstr = self.recvstr[( l + 1 ):]
-            if define.log_lv & define.LOG_MSG:
-                print( 'recv :', ret )
-            return ret
-        else:
-            ret = self.recvstr[0:l]
-            self.recvstr = self.recvstr[( l + 1 ):]
-            if define.log_lv & define.LOG_MSG:
-                print( 'received:', ret )
-            return ret
 
-    def sendline( self, target ):
+        ret = self.recvstr[0:l]
+        self.recvstr = self.recvstr[( l + 1 ):]
+        logging.info( 'recv : ' + str( ret ) )
+        return ret
+
+    def recvlines( self ):
+        list = []
+        list.append( self.recvline() )
+        while self.recvstr.find( '\n' ) != -1 :
+            ret = self.recvline()
+            list.append( ret )
+        return list
+
+    def sendline( self, line ):
         if self.sendstr:
-            target = self.sendstr + target
-            self.sendstr = ''
+            target = self.sendstr + line
         if not target:
-            return
-        sent = 0
+            return 0
+        if target[-1] != '\n':
+            target = target + '\n'
+
         count = 0
-        for line in target.splitlines():
-            lcount = 0
-            line = line + '\n'
-            while lcount != len( line ):
-                m = self.socket.send( line.encode( 'utf-8' ) )
-                if m == 0:
-                    count += 1
-                    if count == MAXERROR:
-                        raise socket.error( 'Network is busy' )
-                lcount += m
-            sent += lcount
-            if define.log_lv & define.LOG_MSG:
-                print( 'sent :' , line[:-1] )
+        sent = 0
+
+        while sent != len( target ):
+            m = self.socket.send( target.encode( 'utf-8' ) )
+            if m == 0:
+                count += 1
+                if count >= MAXERROR:
+                    logging.exception( 'Connection closed or network is busy' )
+                    raise socket.error( 'Network is busy' )
+            sent += m
+
+        logging.info( ' send : ' + line[:-1] )
+        self.sendstr = ''
+        return sent
+
+    def sendlines( self, text ):
+        """
+        text - serveral lines of messages to sent
+        return value : bytes of text sent
+        """
+        sent = 0
+        for line in text.splitlines():
+            sent = sent + self.sendline( line )
         return sent
 
     def split( self, target ):
@@ -133,7 +162,7 @@ class MsgMixin():
 
     def join( self, cmd, types, arg ):
         """
-            types, a list of arg's types
+            types, arg's type string
             arg, a list of values
         """
         if cmd in [CMD_COMMENT, CMD_ASK, CMD_ERROR, CMD_NONE]:
