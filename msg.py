@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding:utf-8 -*-
 """
     This program is free software: you can redistribute it and/or modify
@@ -14,16 +15,16 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+
 import socket
 import define
 import logging
 
-#from definemsg import *
+from msgdef import *
 
 DEFAULTPORT = 30000
 DEFAULTHOST = 'localhost'
 
-#Existed socket
 class MsgMixin():
     """
     this class is used with socket, it provides recvline / sendline /
@@ -37,6 +38,8 @@ class MsgMixin():
     methods:
         recvline - read a line from string buffer
         sendline - write a line to string buffer
+        recvlines - read serveral lines from string buffer
+        sendlines - write serveral lines to string buffer
     """
     def __init__( self, socket ):
         self.socket = socket
@@ -151,8 +154,7 @@ class MsgMixin():
                     tmp.fromStr( args[count] )
                     ret.append( tmp )
             except Exception as e:
-                if define.log_lv & define.LOG_MSG:
-                    print( e )
+                logging.info(str(e))
                 return ( CMD_ERROR, target0 )
         return ( cmd, ret )
 
