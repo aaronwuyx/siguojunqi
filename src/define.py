@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding:utf-8 -*-
 """
     This program is free software: you can redistribute it and/or modify
@@ -74,9 +75,9 @@ class Position:
 
     def load( self, pos ):
         """
-        read position data from file
-        
-        Throw TypeError / ValueError
+        this method reads position data from file, and fill in the position pos
+
+        an corrupted input file will lead to TypeError / ValueError exception
         """
         global POSDATA
         if not POSDATA:
@@ -143,10 +144,10 @@ class Position:
     def __str__( self ):
         return str( self.__dict__ )
 
-#Replace MAP_*
+#values set to Chess.visible
 VIS_NONE = 'none'
 VIS_SELF = 'self'
-VIS_TEAM = 'team' #only used in server
+VIS_TEAM = 'team' #special rules for players in the same team to see each other's chess
 VIS_ALL = 'all'
 
 class Chess:
