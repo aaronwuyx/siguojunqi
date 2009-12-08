@@ -71,6 +71,8 @@ class Client():
                 id, name = data[1], data[2]
                 self.lock.acquire()
                 self.user[id] = name
+                p = Lineup( id ).SetToUnknown()
+                self.map.dump( p )
                 self.lock.release()
                 self.gui.user_refresh()
             elif data[0] == FIL_RIDNAME:
