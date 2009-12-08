@@ -16,16 +16,26 @@
 
 import logging
 import time
+import traceback
+import sys
 
 def log_init():
     #LOG_FILENAME = str( time.time() ) + '.log'
-    logging.basicConfig( level = 0, format = '%(asctime)s %(levelname)s %(message)s' )
+    logging.basicConfig( format = '%(asctime)s %(levelname)s %(message)s' )#level = logging.DEBUG, 
     #filename = LOG_FILENAME,filemode = 'w' 
 
 def log_err():
     exc_info = sys.exc_info()
     logging.exception( str( exc_info[0] ) + ' ' + str( exc_info[1] ) )
     traceback.print_tb( exc_info[2] )
+
+try:
+    if LOG_INT == 0:
+        log_init()
+        LOG_INT = 1
+except:
+    log_init()
+    LOG_INT = 1
 
 if __name__ == '__main__':
     logger = logging.getLogger( 'logger' )

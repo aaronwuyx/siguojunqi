@@ -28,8 +28,8 @@ from scstat import *
 
 import profile
 
-STABLEVERSION = '0.08'
-STABLESVN = '70'
+STABLEVERSION = '0.09'
+STABLESVN = '85'
 ChangeLog = ''
 
 MAXPLAYER = 4 #Number of players
@@ -42,8 +42,9 @@ POSDATA = None
 class Position:
     """
     This class describes a position on chessboard, 
-    mainly includes 2 parts - a reference of the chess on it - chess
+    mainly includes 2 parts - a reference to the chess on it - chess
     and the position itself
+    
     class Position():
         pos - position identifier
         chess - referece to chess on it
@@ -215,18 +216,24 @@ class Chess:
 class Positions:
     """
     This class describes a group of Positions
-    It may be a chessboard / lineup
+    It is inherited by Chessboard / Lineup
+    
     class Positions():
         size - number of positions
-        item - a list of position
+        item - a list of positions
+        
     methods:
         __init__(size) 
-        Remove(pos) - remove chess in position
+        __str__()
+        GetSize()
+        Count(pos) - count non-empty positions
         Set(pos,chess) - set chess in position pos
-        Get(pos) - get chess in position pos
-        Dump(other,start,num) - copy "num" positions from "other" into position "start"
-        RemoveAll(pos) - remove all chess in positions
-        Count(pos) - count non-empty positions 
+        Get(pos) - get chess in position pos 
+        Remove(pos) - remove chess in position pos, return the removed chess
+        RemoveAll(pos) - remove all chesses
+
+        Copy(other,start,num) - copy a number of "num" Positions from "other" into Position id "start"
+        
     """
     def __init__( self, size ):
         if size < 0:
@@ -242,13 +249,16 @@ class Positions:
         dict = {'size':self.size, 'non-empty':self.Count()}
         return str( dict )
 
+    def GetSize( self ):
+        return self.size
+
     def Count( self ):
         """
         return number of non-empty Position
         """
         count = 0
-        for i in range( 0, self.size ):
-            if self.item[i].IsChess():
+        for i in range( self.size ):
+            if self.item[i].GetChess():
                 count = count + 1
         return count
 
@@ -257,25 +267,27 @@ class Positions:
         self.item[pos].SetChess( None )
         return tmp
 
+    def RemoveAll( self ):
+        for pos in range( self.size ):
+            self.Remove( pos )
+
     def Set( self, pos, chess ):
         self.item[pos].SetChess( chess )
 
     def Get( self, pos ):
         return self.item[pos].GetChess()
 
-    def Dump( self, other, start = 0, num = -1 ):
-        if num == -1:
+    def Copy( self, other, start = 0, num = -1 ):
+        if not other:
+            return
+        if num < 0 or num > other.size:
             num = other.size
         pos1 = start
         pos2 = 0
-        while ( pos1 < self.size ) & ( pos2 < num ):
+        while ( pos1 < self.size ) and ( pos2 < num ):
             self.item[pos1].SetChess( other.item[pos2].GetChess() )
             pos1 += 1
             pos2 += 1
-
-    def RemoveAll( self ):
-        for pos in range( self.size ):
-            self.Remove( pos )
 
 class CheckerBoard( Positions ):
     """
@@ -289,6 +301,8 @@ class CheckerBoard( Positions ):
         CanMove(fpos,tpos) : return True if move from "fpos" to "tpos" is available
         Result(fpos,tpos) : compare two chess in fpos / tpos
         GetFlyArea(pos) : get all fly areas
+        Clear_Lineup( self, id ) : 
+        Copy_From_Lineup( self, id, lineup ) :  
     """
 
     def __init__( self ):
@@ -411,6 +425,14 @@ class CheckerBoard( Positions ):
             if not flag:
                 break
         return ret.keys()
+
+    def Clear_Lineup( self, id ):
+        start = ( id - 1 ) * MAXCHESS
+        for i in range( start, start + MAXCHESS ):
+            self.Remove( i )
+
+    def Copy_From_Lineup( self, id, lineup ):
+        self.Copy( lineup, ( id - 1 ) * MAXCHESS )
 
 ####### To be deprecated #######
 Railways = [[5, 6, 7, 8, 9], [9, 8, 7, 6, 5], [35, 36, 37, 38, 39], [39, 38, 37, 36, 35], [65, 66, 67, 68, 69], [69, 68, 67, 66, 65], [95, 96, 97, 98, 99], [99, 98, 97, 96, 95],
@@ -538,7 +560,7 @@ class Lineup( Positions ):
         for key, value in count.items():
             if value != 0:
                 raise Exception( 'Number of chess is invalid.' )
-        self.Dump( tmp )
+        self.Copy( tmp )
 
     def toStr( self ):
         ret = ''
@@ -576,7 +598,7 @@ class Lineup( Positions ):
             log_err()
             raise
 
-        f.write( 'You can comment at anywhere except the next line:\n' )
+        f.write( 'You can comment anywhere except in the follwing line:\n' )
         f.write( 'lineup=' + self.toStr() + '\n' )
 
         try:
@@ -586,9 +608,9 @@ class Lineup( Positions ):
 
 if __name__ == '__main__':
     l = Lineup( 0 )
-    l.SetToDefault()
-    l.Save( 'test' )
-    l.Load( 'test' )
-    print( l.toStr() )
-    os.remove( 'test' )
-    p = CheckerBoard()
+#    l.SetToDefault()
+ #   l.Save( 'test' )
+ #   l.Load( 'test' )
+ #   print( l.toStr() )
+ #   os.remove( 'test' )
+ #   p = CheckerBoard()
