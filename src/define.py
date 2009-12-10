@@ -22,10 +22,10 @@ import traceback
 import logging
 from logger import *
 
-#import message # server / client message
+from msgdef import *
+import msg # server / client message
 
 from scstat import *
-
 import profile
 
 STABLEVERSION = '0.09'
@@ -608,9 +608,9 @@ class Lineup( Positions ):
 
 if __name__ == '__main__':
     l = Lineup( 0 )
-#    l.SetToDefault()
- #   l.Save( 'test' )
- #   l.Load( 'test' )
- #   print( l.toStr() )
- #   os.remove( 'test' )
- #   p = CheckerBoard()
+    l.SetToDefault()
+    l.Save( 'test' )
+    l.Load( 'test' )
+    print( l.toStr() )
+    os.remove( 'test' )
+    p = CheckerBoard()
