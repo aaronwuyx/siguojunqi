@@ -199,6 +199,18 @@ CASE R
 RETURN
 """
 
+PLY_ADD = 'add'
+PLY_RMV = 'rem'
+PLY_MDF = 'mod'
+
+"""
+WHEN TRANSFER CMD ON Network
+INFORM "IS0" STARTUP INFORM MESSAGE
+INFORM "1" / "2" INFORM A STEP
+INFORM "SIS" INFORM A PLAYER ADD/REMOVE/MODIFY
+ASK "I" ASK A STEP
+"""
+
 if __name__ == '__main__':
     l = define.Lineup( 0 )
     l.SetToDefault()

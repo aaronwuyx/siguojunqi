@@ -547,10 +547,10 @@ class Lineup( Positions ):
                 break
             value = int( item.strip() )
             if tmp.Place( pos, Chess( value , self.player, VIS_SELF ) ) == False:
-                raise Exception( 'Cannot place ' + item + 'at ' + str( pos ) )
+                raise ValueError( 'Cannot place ' + item + 'at ' + str( pos ) )
             count[value] -= 1
             if count[value] < 0:
-                raise Exception( 'Number of ' + item + ' is invalid' )
+                raise ValueError( 'Number of ' + item + ' is invalid' )
             pos += 1
             if pos >= self.size:
                 break
@@ -559,7 +559,7 @@ class Lineup( Positions ):
                 pos += 1
         for key, value in count.items():
             if value != 0:
-                raise Exception( 'Number of chess is invalid.' )
+                raise ValueError( 'Number of chess is invalid.' )
         self.Copy( tmp )
 
     def toStr( self ):

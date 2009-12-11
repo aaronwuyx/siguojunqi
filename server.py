@@ -16,6 +16,7 @@
 import socket
 import random
 import time
+import logging
 try:
     #python 2.x
     import thread
@@ -24,153 +25,166 @@ except ImportError:
     import _thread as thread
 
 import define
-from message import MsgMixin
-from definemsg import *
+from scstat import *
+from msg import MsgMixin, DEFAULTPORT
+from msgdef import *
 
-class SiGuoServer():
-    def __init__( self, Port = define.DEFAULTPORT ):
+class sgserver():
+    def __init__( self, port = DEFAULTPORT ):
+        self.stat = SRV_INIT
+        self.init_data()
+        self.init_socket( port )
+
+    def init_socket( self , port ):
         self.socket = socket.socket()
-        self.socket.bind( ( 'localhost', Port ) )
-        self.socket.listen( 4 )
-        self.init()
+        self.socket.bind( ( 'localhost', port ) )
+        self.socket.listen( 4 ) #at most 4 players
+        self.stat = SRV_DISCONNECTED
 
-    def init( self ):
+    def init_data( self ):
+        if self.stat != SRV_DISCONNECTED and self.stat != SRV_INIT:
+            return - 1
         self.map = define.CheckerBoard()
-        self.stat = define.SRV_INIT
         self.onmove = random.choice( range( 0, define.MAXPLAYER ) )
 
-        #client info & locks
-        self.clientcount = 0
-        self.gamelock = thread.allocate_lock()
-
-        self.clients = []
-        self.names = []
-        self.locks = []
-        self.alive = []
+        #client info
+        self.cli_num = 0
+        self.cli = []
+        self.cli_addr = []
+        self.cli_name = []
+        self.cli_alive = []
+        self.cli_locks = []
         for i in range( define.MAXPLAYER ):
-            self.alive.append( False )
-            self.clients.append( None )
-            self.names.append( None )
-            self.locks.append( thread.allocate_lock() )
+            self.cli.append( None )
+            self.cli_name.append( '' )
+            self.cli_addr.append( None )
+            self.cli_alive.append( False )
+            t = thread.allocate_lock()
+            self.cli_locks.append( t )
+        self.board_lock = thread.allocate_lock()
 
     def run( self ):
-        while True:
-            ( clientsocket, address ) = self.socket.accept()
-            if define.log_lv & define.LOG_DEF:
-                print( 'Connection from address ', address )
-            id = self.client_add( clientsocket, address )
-            if id == None:
-                continue
-            thread.start_new( self.client_run, ( id, ) )
-            if self.clientcount == define.MAXPLAYER:
-                break
+        if self.stat != SRV_INIT:
+            return - 1
+        onRun = True
+        while onRun:
+            try:
+                err = self.get4cli()
+                if err:
+                    exit( 1 )
+                self.stat = SRV_MOVE1
+                err = self.game_run()
+                if err:
+                    exit( 1 )
+                self.stat = SRV_QUIT
+                err = self.game_quit()
+                if err:
+                    exit( 1 )
+                self.stat = SRV_DISCONNECTED
+                err = self.init_data()
+                if err:
+                    exit( 1 )
+            except KeyboardInterrupt, SystemExit:
+                onRun = False
 
-        self.stat = define.SRV_MOVE
-        while self.clientcount > 0:
-            time.sleep( 1 )
+    def quit( self ):
         self.socket.close()
 
+    def get4cli( self ):
+        if self.stat != SRV_DISCONNECTED:
+            return - 1
+        while True:
+            ( cli_socket, addr ) = self.socket.accept()
+            logging.debug( 'Connection from address ' + str( addr ) )
+            id = self.cli_add( cli_socket, addr )
+            if id == None or id >= define.MAXPLAYER or id < 0:
+                continue
+            thread.start_new( self.cli_run, ( id , ) )
+            if self.cli_num == define.MAXPLAYER:
+                break
+
+    def game_run( self ):
+        pass
+
+    def game_quit( self ):
+        if self.stat != SRV_QUIT:
+            return - 1
+        #send steps, request connection close
+        self.INFORM_ALL( CMD_EXIT )
+        while self.cli_num > 0:
+           time.sleep( 0.5 )
+
+    def cli_add( self, connection, addr ):
+        '''
+        check client's id, verify it, then add client into list self.clients,
+        in this version, add MsgMixin into self.clients
+        return value: client id, or None if it is invalid
+        '''
+
+        self.stat = SRV_CONNECTING
+        conn = MsgMixin( connection )
+        #suppose we will recv "id, name, lineup"
+        #conn.send_join( CMD_ASK, 'sss',('id','name','lineup') )
+        cmd, typ, arg = conn.recv_split()
+        if cmd == CMD_INFORM:
+            try:
+                id, name, lineup = arg[0], arg[1], arg[2]
+            except IndexError:
+                conn.close()
+                return
+            except ValueError:
+                conn.close()
+                return
+            except TypeError:
+                conn.close()
+                return
+        else:
+            conn.close()
+            return
+        if id >= define.MAXPLAYER or id < 0:
+            logging.error( 'invalid id number' )
+            conn.close()
+            return
+        if not name:
+            logging.error( 'no name specified' )
+            conn.close()
+            return
+        self.board_lock.acquire()
+        if self.cli[id]:
+            self.board_lock.release()
+            logging.error( 'duplicated id number' )
+            conn.close()
+            return
+        self.cli[id] = conn
+        self.cli_addr[id] = addr
+        self.cli_name[id] = name
+        self.cli_alive[id] = True
+        self.cli_num = self.cli_num + 1
+        self.map.Copy_From_Lineup( id, lineup )
+        self.board_lock.release()
+        logging.debug( 'id :' + str( id ) + ' name :' + name )
+        #tell new player to add others
+        self.board_lock.acquire()
+        for cid in range( define.MAXPLAYER ):
+            if cid != id and self.cli[cid]:
+                self.cli[id].send_add( CMD_INFORM, 'sis', ( PLY_ADD, cid, self.cli_name[cid] ) )
+        self.board_lock.release()
+
+        #tell others to add the new player
+        self.INFORM_ALL( CMD_INFORM, 'sis' , ( PLY_ADD, id, name ) )
+        self.stat = SRV_DISCONNECTED
+        return id
+
+    def INFORM_ALL( self , cmd, typ, arg ):
+        pass
+
+class SiGuoServer():
     def IsAlive( self, id ):
         pass
         '''
         first, check if its 32 is alive,
         then the client can move...
         '''
-
-    '''
-        check client's id, verify it, then add client into list self.clients,
-        in this version, add MsgMixin into self.clients
-        return value: client id, or None if it is invalid
-    '''
-    def client_add( self, connection, addr ):
-        id = None
-        Name = None
-        lineup = None
-        conn = MsgMixin( connection )
-        conn.send_join( CMD_ASK, 'str', FIL_ID )
-        while True:
-            cmd, arg = conn.recv_split()
-            print( cmd, arg )
-            if cmd == CMD_TELL:
-                if arg[0] != FIL_ID:
-                    continue
-                if ( arg[1] >= define.MAXPLAYER ) | ( arg[1] < 0 ):
-                    conn.send_join( CMD_ERROR, 'str', 'invalid id number' )
-                    conn.socket.close()
-                    return
-                if self.clients[arg[1]]:
-                    conn.send_join( CMD_ERROR, 'str', 'duplicate id number' )
-                    conn.socket.close()
-                    return
-                id = arg[1]
-                break
-            elif cmd == CMD_COMMENT:
-                if define.log_lv & define.LOG_MSG:
-                    print( arg )
-                continue
-            elif cmd == CMD_EXIT:
-                conn.close()
-        if define.log_lv & define.LOG_DEF:
-            print( 'id = ', id )
-
-        conn.send_join( CMD_ASK, 'str', FIL_NAME )
-        while True:
-            cmd, arg = conn.recv_split()
-            if cmd == CMD_TELL:
-                if arg[0] != FIL_NAME:
-                    continue
-                name = arg[1]
-                break
-            elif cmd == CMD_COMMENT:
-                if define.log_lv & define.LOG_MSG:
-                    print( arg )
-                continue
-            elif cmd == CMD_EXIT:
-                conn.close()
-        if define.log_lv & define.LOG_DEF:
-            print( 'name = ', name )
-
-        conn.send_join( CMD_ASK, 'str', FIL_LINEUP )
-        while True:
-            cmd, arg = conn.recv_split()
-            if cmd == CMD_TELL:
-                if arg[0] != FIL_LINEUP:
-                    continue
-                lineupstr = arg[1]
-                lineup = define.Lineup( id )
-                try:
-                    lineup.fromStr( lineupstr )
-                except Exception:
-                    conn.send_join( CMD_ERROR, 'str', 'invalid lineup' )
-                    conn.close()
-                    return
-                break
-            elif cmd == CMD_COMMENT:
-                if define.log_lv & define.LOG_MSG:
-                    print( arg )
-                continue
-            elif cmd == CMD_EXIT:
-                conn.close()
-
-        self.clients[id] = conn
-        self.names[id] = name
-        self.alive[id] = True
-        self.map.Dump( lineup, id * define.MAXCHESS )
-
-        self.gamelock.acquire()
-        self.clientcount += 1
-        if define.log_lv & define.LOG_DEF:
-            print( 'clientnum = ', self.clientcount )
-        #tell others about him
-        self.gamelock.release()
-        conn.send_join( CMD_WAIT, 'int', 1 )
-        self.tell_all( CMD_TELL, ( 'str', 'int', 'str' ), ( FIL_IDNAME, id, name ) )
-        for count in range( define.MAXPLAYER ):
-            if count == id:
-                continue
-            if self.clients[count]:
-                self.clients[id].send_add( CMD_TELL, ( 'str', 'int', 'str' ), ( FIL_IDNAME, count, self.names[count] ) )
-        return id
 
     def client_run( self, id ):
         while self.clients[id]:
@@ -266,5 +280,6 @@ class SiGuoServer():
         self.gamelock.release()
 
 if __name__ == '__main__':
-    s = SiGuoServer()
+    s = sgserver()
     s.run()
+    s.quit()
