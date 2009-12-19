@@ -434,6 +434,24 @@ class CheckerBoard( Positions ):
     def Copy_From_Lineup( self, id, lineup ):
         self.Copy( lineup, ( id - 1 ) * MAXCHESS )
 
+    def Is_Alive( self, id ):
+        """
+        check whether the specified player is alive
+        """
+        #1 Is junqi(32) alive?
+        pos1 = 1 + ( id - 1 ) * MAXCHESS
+        pos2 = 3 + ( id - 1 ) * MAXCHESS
+        if self.item[pos1].GetChess().GetValue() != 32 and self.item[pos2].GetChess().GetValue() != 32:
+            return False
+        #2 Can the player move anymore?
+        for pos in range( self.size ):
+            Pos = self.item[pos]
+            if Pos.IsChess() and Pos.GetChess().GetPlayer == id:
+                for nextpos in Pos.link + Pos.rlink:
+                    if self.CanMove( pos, nextpos ):
+                        return True
+        return False
+
 ####### To be deprecated #######
 Railways = [[5, 6, 7, 8, 9], [9, 8, 7, 6, 5], [35, 36, 37, 38, 39], [39, 38, 37, 36, 35], [65, 66, 67, 68, 69], [69, 68, 67, 66, 65], [95, 96, 97, 98, 99], [99, 98, 97, 96, 95],
           [25, 26, 27, 28, 29], [29, 28, 27, 26, 25], [55, 56, 57, 58, 59], [59, 58, 57, 56, 55], [85, 86, 87, 88, 89], [89, 88, 87, 86, 85], [115, 116, 117, 118, 119], [119, 118, 117, 116, 115],
@@ -451,13 +469,13 @@ Railways = [[5, 6, 7, 8, 9], [9, 8, 7, 6, 5], [35, 36, 37, 38, 39], [39, 38, 37,
 
 class Lineup( Positions ):
     """
-    this class create a Lineup as player "player", and supports load / save operations  
-    
-    class Lineup(Positions):
+    this class create a Lineup as player "player", and supports load / save operations
+
+    class Lineup( Positions ):
         player - player identifier
     methods:
-        __init__(player) :
-        SetToDefault : set the lineup as default value (avoid / correct critical errors)
+        __init__( player ) :
+        SetToDefault : set the lineup as default value ( avoid / correct critical errors )
         SetToNone : clean up the lineup
         SetToUnknown : use it when claim the lineup is other player's
         Place(pos, chess, nopt) : put chess in position pos

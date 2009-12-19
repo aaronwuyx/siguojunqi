@@ -46,6 +46,7 @@ class sgserver():
             return - 1
         self.map = define.CheckerBoard()
         self.onmove = random.choice( range( 0, define.MAXPLAYER ) )
+        self.steps = []
 
         #client info
         self.cli_num = 0
@@ -103,8 +104,36 @@ class sgserver():
             if self.cli_num == define.MAXPLAYER:
                 break
 
+    def game_over( self ):
+        """ 
+        return 0 - game_over
+        return 1 - 1P 0,3P 2 wins
+        return 2 - 2P 1,4P 3 wins
+        return 3 - nobody wins
+        """
+        self.board_lock.acquire()
+        a = not self.cli_alive[0] and not self.cli_alive[2]
+        b = not self.cli_alive[1] and not self.cli_alive[3]
+        self.board_lock.release()
+        if a and b:
+            return 3
+        elif a:
+            return 2
+        elif b:
+            return 1
+        else:
+            return 0
+
     def game_run( self ):
-        pass
+        self.stat = SRV_MOVE1
+        laststep = 0
+        while self.game_over() == 0:
+            if len( self.steps ) != laststep:
+                laststep = len( self.steps )
+                self.onmove = ( self.onmove + 1 ) % define.MAXPLAYER
+                while self.game_over() == 0 and not self.cli_alive[self.onmove]:
+                    self.onmove += 1
+            pass
 
     def game_quit( self ):
         if self.stat != SRV_QUIT:
@@ -164,11 +193,11 @@ class sgserver():
         self.board_lock.release()
         logging.debug( 'id :' + str( id ) + ' name :' + name )
         #tell new player to add others
-        self.board_lock.acquire()
+        self.cli_locks[id].acquire()
         for cid in range( define.MAXPLAYER ):
             if cid != id and self.cli[cid]:
                 self.cli[id].send_add( CMD_INFORM, 'sis', ( PLY_ADD, cid, self.cli_name[cid] ) )
-        self.board_lock.release()
+        self.cli_locks[id].release()
 
         #tell others to add the new player
         self.INFORM_ALL( CMD_INFORM, 'sis' , ( PLY_ADD, id, name ) )
@@ -176,26 +205,65 @@ class sgserver():
         return id
 
     def INFORM_ALL( self , cmd, typ, arg ):
-        pass
+        for id in range( define.MAXPLAYER ):
+            self.cli_locks[id].acquire()
+            self.cli[id].send_add( cmd, typ, arg )
+            self.cli_locks[id].release()
 
-class SiGuoServer():
-    def IsAlive( self, id ):
-        pass
-        '''
-        first, check if its 32 is alive,
-        then the client can move...
-        '''
-
-    def client_run( self, id ):
-        while self.clients[id]:
-            self.locks[id].acquire()
-            cmd, arg = self.clients[id].recv_split()
-            self.locks[id].release()
-            if cmd == CMD_COMMENT:
-                if define.log_lv & define.LOG_MSG:
-                    print( arg )
+    def cli_run( self, id ):
+        while self.cli[id]:
+            cmd, typ, arg = self.cli[id].recv_split()
+            if cmd == CMD_ERROR:
                 continue
             elif cmd == CMD_ASK:
+                if typ == 'i':
+                    p = arg[0]
+                    if p > len( self.steps ):
+                        self.cli_locks[id].acquire()
+                        self.cli[id].send_add( CMD_ERROR, 's', ( 'invalid step number', ) )
+                        self.cli_locks[id].release()
+                    else:
+                        self.cli_locks[id].acquire()
+                        self.cli[id].send_add( CMD_REPLY, '2', ( self.steps[p], ) )
+                        self.cli_locks[id].release()
+            elif cmd == CMD_INFORM:
+                if typ == '1':
+                    self.board_lock.acquire()
+                    #check the step, who moves, and the step numbers is the current one
+                    step = arg[0]
+                    if self.onmove == id and step.num == len( self.steps ):
+                        if self.map.CanMove( step.fpos, step.tpos ):
+                            result = self.map.Result( step.fpos, step.tpos )
+                            self.map.Move( step.fpos, step.tpos, result )
+                            step2 = Move2( len( self.steps ), step.fpos, step.tpos, result )
+                            self.steps.append( step2 )
+                            #do not use INFORM_ALL here, wait for clients to ask for new steps by sending CMD_ASK
+                            #self.INFORM_ALL( cmd_INFORM, '2', step2 )
+                        else:
+                            #do not return errors,either. let te client to check if he continues to move
+                            #this situation was not supposed to happen, if only there are network problems...
+                            pass
+
+                    self.board_lock.release()
+            elif cmd == CMD_EXIT:
+                self.cli_rem( id )
+
+    def cli_rem( self, id ):
+        #tell others to remove the new player
+        self.INFORM_ALL( CMD_INFORM, 'sis' , ( PLY_REM, id, name ) )
+
+        self.board_lock.acquire()
+        self.cli[id] = None
+        self.cli_addr[id] = None
+        self.cli_name[id] = None
+        self.cli_alive[id] = None
+        self.cli_num = self.cli_num - 1
+        self.board.lock.release()
+
+class SiGuoServer():
+
+    def client_run( self, id ):
+            if cmd == CMD_ASK:
                 self.locks[id].acquire()
                 if self.stat == define.SRV_INIT:
                     self.clients[id].send_join( CMD_WAIT, ['int'], [1] )
