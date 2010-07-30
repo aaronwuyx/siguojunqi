@@ -1,6 +1,11 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 """
+    This file describes Layout class, it also supports convertion between
+    Layout and Str
+"""
+
+"""
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -17,52 +22,21 @@
 
 from Positions import Positions
 from Chess import Chess
-from Chess import MAXINITCHESS
-from Rule import canPlaceLayout
-MAXCHESS = 30 #Number of positions of a layout
-
-def load( filename, owner ):
-    f = open ( filename, 'r' )
-    for line in f.readlines():
-        if line.startswith( "lineup=" ) or line.startswith( "layout=" ):
-            ret = fromString( line[7:], owner )
-            f.close()
-            return ret
-    f.close()
-    return None
-
-def fromString( source, owner ):
-    ret = Layout( owner )
-    count = []
-    for inum in Chess.InitNum:
-        count.append( inum )
-    pos = 0
-    p = source.split()
-    if ( len( p ) > MAXINITCHESS ) or ( len( p ) <= 0 ):
-        raise ValueError( "Invalid layout string " + source )
-    for valstr in p:
-        val = int( valstr.strip() )
-        ch = Chess( val, owner )
-        if not canPlaceLayout( ret, pos, ch ):
-            raise ValueError( "Invalid layout string " + source )
-        else:
-            ret.setChess( pos, ch )
-        count[val] -= 1
-        if count[val] < 0:
-            raise ValueError( "Invalid layout string " + source )
-        pos += 1
-        if pos >= MAXCHESS:
-            break
-        while ret.getPos( pos ).isSafe():
-            ret.setChess( pos, None )
-            pos += 1
-    for cnt in count:
-        if cnt:
-            raise ValueError( "Invalid layout string " + source )
-    return ret
 
 class Layout( Positions ):
-    DefaultLayout = [11, 1, 11, 3, 6, \
+    """
+        This class creates a layout. Layout extends Positions.
+
+        Layout(player) : creates an empty layout.
+        setToDefault() : set layout to default value. (mine)
+        setToUnknown() : set layout to default value. (other)
+        toString() : layout -> string convertion.
+        fromString(source, owner) : string -> layout convertion.
+        save(filename) : save layout into file.
+        load(filename, owner) : load layout from file.
+        
+    """
+    defaultLayout = [11, 1, 11, 3, 6, \
                    3, 11, 6, 2, 3, \
                    7, 4, 7, \
                    10, 5, 5, 9, \
@@ -70,43 +44,84 @@ class Layout( Positions ):
                    8, 2, 4, 2, 8]
 
     def __init__( self, player ):
+        from Rule import MAXCHESS
         Positions.__init__( self, MAXCHESS )
-        self.__player = player
-
+        self.player = player
+        self.type = "LAYOUT"
+        
     def setToDefault( self ):
         pos = 0
-        for value in Layout.DefaultLayout:
+        for value in Layout.defaultLayout:
             self.setChess( pos, Chess( value, self.player ) )
             pos += 1
             if pos >= self.getSize():
                 break
             while self.getPos( pos ).isSafe():
-                self.SetChess( pos, None )
+                self.setChess( pos, None )
                 pos += 1
 
     def setToUnknown( self ):
-        for pos in range( self.getSize() ):
-            if self.getPos( pos ).isSafe():
-                self.setChess( pos, None )
+        for Pos in self.item:
+            if Pos.isSafe():
+                Pos.setChess( None )
             else:
-                self.setChess( pos, Chess( 0, self.__player ) )
+                Pos.setChess(Chess( 0, self.player ) )
 
     def toString( self ):
-        ret = ''
-        for pos in range( self.getSize() ):
-            if not self.getPos( pos ).isSafe():
-                if self.getPos( pos ).isChess():
-                    ret = ret + self.getChess().getValue().__str__()
-                else:
-                    ret = ret + '0'
-                ret = ret + ' '
+        list = [str(self.getChess(pos).getValue()) for pos in range(self.getSize()) if self.getPos(pos).isSafe() == False]
+        return ' '.join(list)
+
+    def fromString(cls, source, owner):
+        from Rule import MAXINITCHESS
+        from Rule import MAXCHESS
+        from Rule import canPlace
+        ret = Layout(owner)
+        count = list(Chess.InitNum)
+        p = source.split()
+        if len(p) != MAXINITCHESS:
+            raise ValueError("Invalid layout string %s" %(source))
+        pos = 0
+
+        for valstr in p:
+            val = int(valstr.strip())
+            ch = Chess(val, owner)
+            if not canPlace( ret, pos, ch ):
+                raise ValueError( "Invalid layout string %s" %(source) )
+            else:
+                ret.setChess( pos, ch )
+            count[val] -= 1
+            if count[val] < 0:
+                raise ValueError( "Invalid layout string %s" %(source) )
+            pos += 1
+            if pos >= MAXCHESS:
+                break
+            while ret.getPos( pos ).isSafe():
+                ret.setChess( pos, None )
+                pos += 1
         return ret
 
+    fromString = classmethod(fromString)
+    
+    def load(cls, filename, owner ):
+        f = open ( filename, 'r' )
+        line = f.readline()
+        while line != '':
+            if line.startswith( "lineup=" ) or line.startswith( "layout=" ):
+                ret = Layout.fromString( line[7:], owner )
+                f.close()
+                return ret
+            line = str.strip(f.readline())
+        f.close()
+        return None
+
+    load = classmethod(load)
+    
     def save( self, filename ):
+        from Rule import MAXINITCHESS
         if self.count() != MAXINITCHESS:
             raise ValueError( "Invalid layout status" )
         f = open ( filename, 'w' )
-        f.write( "Add comment anywhere except line start with 'layout='\n" )
+        f.write( "You can add any comment except the line start with 'layout='\n" )
         f.write( 'layout=' + self.toString() + '\n' )
         f.close()
 
@@ -117,11 +132,11 @@ if __name__ == '__main__':
     l = Layout( 0 );
     l.setToDefault()
     p = l.toString()
-    l1 = fromString( p, 0 )
+    l1 = Layout.fromString( p, 0 )
     print( l1 )
     try:
         l1.save( "test" )
-        l2 = load( "test", 1 )
+        l2 = Layout.load( "test", 1 )
         print( l2 )
     except IOError as e:
         e.print_exc()
