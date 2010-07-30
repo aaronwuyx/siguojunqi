@@ -33,22 +33,23 @@ class Positions(object):
     Positions(size) : construct positions
     __str__() : output for debugging
     getSize() : number of positions
-    getItem() : get an item
+    getItem() : get all items
     count(pos) - count non-empty positions
-        Set(pos,chess) - set chess in position pos
-        Get(pos) - get chess in position pos 
-        Remove(pos) - remove chess in position pos, return the removed chess
-        RemoveAll(pos) - remove all chesses
+    setChess(pos,chess) - set chess in position pos
+    getPos(pos) - get position pos
+    getChess(pos) - get chess in position pos 
+    remove(pos) - remove chess in position pos, return the removed chess
+    removeAll(pos) - remove all chesses
 
-        Copy(other,start,num) - copy a number of "num" Positions from "other" into Position id "start"
-        
+    copy(other, start1, start2, num) - copy a number of "num" Positions from "other" into Position id "start"
+
+    copyFrom(other, start1, num)
     """
     def __init__( self, size ):
         if size < 0:
             self.size = 0
         else:
             self.size = size
-        self.type = "POSITIONS"
         
         #initialize with empty position
         self.item = [Position(i) for i in range(self.size)]
@@ -119,7 +120,7 @@ class Positions(object):
         """
             copy chess from another Positions.
         """
-        if not other:
+        if not isinstance(other, Positions):
             return
 
         if ( start1 < 0 or start1 >= self.size ):

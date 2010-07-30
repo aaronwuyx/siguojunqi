@@ -47,7 +47,6 @@ class Layout( Positions ):
         from Rule import MAXCHESS
         Positions.__init__( self, MAXCHESS )
         self.player = player
-        self.type = "LAYOUT"
         
     def setToDefault( self ):
         pos = 0

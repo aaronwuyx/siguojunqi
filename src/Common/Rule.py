@@ -37,18 +37,24 @@ def isValidPlayer( player ):
     """
         verify player id.
     """
+    if not isinstance(player, int):
+        return False
     return player >= 0 and player < PLAYERNUM
 
 def isValidPos( pos ):
     """
         verify position number.
     """
+    if not isinstance(pos, int):
+        return False
     return pos >= 0 and pos < MAXPOSITION
 
 def isValidValue( value ):
     """
         verify chess value.
     """
+    if not isinstance(value, int):
+        return False
     return value >= 0 and value < MAXVALUE
 
 
@@ -64,6 +70,8 @@ def isVisible( c, other ):
     """
         check if the chess is visible to a specified player.
     """
+    if not isinstance(c, ChessBoard):
+        return False
     if not isValidPlayer( other ):
         return False
     if c.getVisible() == Visible.VIS_NONE:
@@ -82,6 +90,8 @@ def canSelect( c, pos, player ):
     """
         check if the player can select the position.
     """
+    if not isinstance(c, ChessBoard):
+        return False
     if not isValidPlayer( player ) or not isValidPos( pos ):
         return False
     if not c.getPos( pos ).isMovable():
@@ -97,7 +107,7 @@ def canMove( c, m ):
     """
         check if the player can select the position.
     """
-    if type(m) != Movement:
+    if not isinstance(m, Movement) or not isinstance(c, ChessBoard):
         return False
     fpos = m.getFromPos()
     tpos = m.getToPos()
@@ -155,6 +165,8 @@ def result( c, fpos, tpos ):
     """
         This method gets chess and calls result_chs.
     """
+    if not isinstance(c, ChessBoard):
+        return False
     if not isValidPos( fpos ):
         raise ValueError( "Invalid position id %d" % ( fpos ) )
     if not isValidPos( tpos ):
@@ -190,9 +202,9 @@ def result_chs( fchs, tchs ):
         return Result.RES_LOS
 
 def canPlace(x, pos, ch):
-    if x.type == "CHESSBOARD":
+    if isinstance(x, ChessBoard):
         return canPlaceChessBoard(x, pos, ch)
-    elif x.type == "LAYOUT":
+    elif isinstance(x, Layout):
         return canPlaceLayout(x, pos, ch)
     else:
         return False
@@ -264,6 +276,10 @@ def isAlive( c, player ):
     """
         This method checks whether the specified player is alive.
     """
+    if not isinstance(c, ChessBoard):
+        return False
+    if not isValidPlayer(player):
+        return False
     # JUNQI(2) is alive
     if findJunQi( c, player ) == -1:
         return False
@@ -279,25 +295,30 @@ def findJunQi( c, player ):
     """
         This method finds player's JUNQI on chessboard.
     """
+    if not isinstance(c, ChessBoard):
+        return False
+    if not isValidPlayer(player):
+        return False
     pos1 = 1 + player * MAXCHESS
     pos2 = 3 + player * MAXCHESS
-    if c.getPos( pos1 ).isChess():
-        if c.getChess( pos1 ).getValue() == 1:
-            return pos1
-    if c.getPos( pos2 ).isChess():
-        if c.getChess( pos2 ).getValue() == 1:
-            return pos2
+    if c.getChess(pos1) and c.getChess(pos1).getValue() == 1:
+        return pos1
+    if c.getChess(pos2) and c.getChess(pos2).getValue() == 2:
+        return pos2
     return -1
  
 def getFlyArea( c, pos ):
     """
         This method finds all positions of GONGBING that can move to.
     """
+    if not isinstance(c, ChessBoard):
+        return []
+    if not isValidPos( pos ):
+        return []
+
     ret = [-1] * c.getSize()
     sel = [False] * c.getSize()
     
-    if not isValidPos( pos ):
-        return ret
     ret[pos] = pos
     sel[pos] = False
     flag = True
@@ -318,6 +339,8 @@ def canSwap( c, pos1, pos2 ):
     """
         check if two chesses can swap.
     """
+    if not isinstance(c, ChessBoard):
+        return False
     if not isValidPos( pos1 ) or not isValidPos( pos2 ):
         return False
     
@@ -335,6 +358,8 @@ def isTeamAlive( c, player ):
     """
         check whether the game is over.
     """
+    if not isinstance(c, ChessBoard):
+        return False
     if not isValidPlayer( player ):
         return False
     for p in TEAMMATE[player]:
@@ -346,6 +371,8 @@ def is40Alive( c, player ):
     """
         check whether the player's SILING is alive.
     """
+    if not isinstance(c, ChessBoard):
+        return False
     if not isValidPlayer( player ):
         return False
     for Pos in c.item:
@@ -359,6 +386,8 @@ def getRoute(cb, fpos, tpos):
         get a route between two positions, sometimes it does not check
         if the move is available.
     """
+    if not isinstance(cb, ChessBoard):
+        return False
     if not isValidPos(fpos) or not isValidPos(tpos):
         return []
 

@@ -79,7 +79,7 @@ class Chess(object):
     def __eq__(self, other):
         if self == other:
             return True
-        if type(other) != type(self):
+        if not isinstance(other, Chess):
             return False
         if (other.value == 0) or (self.value == 0):
             return False

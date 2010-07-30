@@ -59,7 +59,6 @@ class ChessBoard( Positions ):
         """
         from Rule import MAXPOSITION
         Positions.__init__( self, MAXPOSITION )
-        self.type = "CHESSBOARD"
         self.step = 0
         
     def copyFromLayout( self, player, layout ):
@@ -76,7 +75,7 @@ class ChessBoard( Positions ):
             Then this method make all necessary changes, and return
             whether the movement succeed.
         """
-        if type(m) != Movement:
+        if not isinstance(m, Movement):
             raise TypeError("Type mismatch, should pass in a Movement")
         if self.getStep() + 1 != m.getStep():
             print("Step doesn't match Movement!")
@@ -106,7 +105,7 @@ class ChessBoard( Positions ):
             Undo a movement, only effective when step matches, return
             whether the operation succeed.
         """
-        if type(m) != Movement:
+        if not isinstance(m, Movement):
             raise TypeError("Type mismatch, should pass in a Movement")
         if m.getStep() != self.getStep():
             print("Step doesn't match Movement!")
@@ -148,10 +147,17 @@ class ChessBoard( Positions ):
         """
             Decrease current step by one.
         """
+        if self.step <= 0:
+            raise RuntimeError("Step number has already been zero")
         self.step = self.step - 1
-        if self.step < 0:
-            raise RuntimeError("Step number less then zero")
-        
+
+    def setStep(self, num):
+        """
+            Step step number.
+        """
+        if num < 0:
+            raise ValueError("Step number less than zero")
+        self.step = num
 if __name__ == '__main__':
     from Layout import Layout
     chessBoard = ChessBoard()
