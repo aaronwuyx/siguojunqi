@@ -56,6 +56,21 @@ class Player(object):
         self.los = los
         self.equ = equ
 
+    def getTotalNum(self):
+        """
+            get how many times the player plays this game.
+        """
+        return self.win + self.los + self.equ
+
+    def getWinPercentage( self ):
+        """
+            return the percentage of a player winning games
+        """
+        if self.getTotalNum():
+            return float(self.getWin()) * 100 / self.getTotal()
+        else:
+            return 0.0
+
     def getLayout(self):
         return self.layout
 
@@ -73,7 +88,7 @@ class Player(object):
 
     def setPwd(self,pwd):
         self.pwd = pwd
-        
+
     def getName( self ):
         return self.name
 
@@ -85,7 +100,7 @@ class Player(object):
 
     def setName(self, name):
         self.name = name
-    
+
     def setID( self, id ):
         from Rule import isValidPlayer
         if isValidPlayer( id ):
@@ -138,7 +153,7 @@ class Player(object):
         ret.setID(id)
         ret.setColor(uc)
         return ret
-    
+
     fromStringID = classmethod(fromStringID)
 
     def toStringSimple(self):
@@ -151,7 +166,7 @@ class Player(object):
                 'C':self.connection,'c':self.color}
         list = [str(prop[ch]) for ch in format if ch in prop.keys()]
         return Player.PLAYERSEP.join(list)
-    
+
 if __name__=='__main__':
     p = Player('e')
     p.setColor(UserColor.CLR_RED)
@@ -159,7 +174,7 @@ if __name__=='__main__':
     print( m )
     q = Player.fromStringID(m, 0)
     print( q )
-    
+
 """
     move to gui part
     Bgcolor = ['white', '#dd2222', '#dddd22', '#22dd22', '#2222dd', '#000000', '#ffffff']

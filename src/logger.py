@@ -21,7 +21,8 @@ import sys
 
 def log_init():
     #LOG_FILENAME = str( time.time() ) + '.log'
-    logging.basicConfig( format = '%(asctime)s %(levelname)s %(message)s' )#level = logging.DEBUG, 
+    logging.basicConfig( format = '%(asctime)s %(levelname)s %(message)s' )
+    #level = logging.DEBUG, 
     #filename = LOG_FILENAME,filemode = 'w' 
 
 def log_err():
