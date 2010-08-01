@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 """
-    This file defines the MsgHdr class.
+    This file defines the MsgHdr and MsgCtl class.
 """
 
 class MsgHdr(object):
@@ -49,7 +49,7 @@ class MsgCtl(object):
     """
         This is a redesign of JAVA version messages.
     """
-    MESSAGESEP = ";"
+    MESSAGESEP = "||"
     ARGSEP = ","
     #Message to receive
     MSGRCV = []
@@ -102,6 +102,7 @@ class MsgCtl(object):
         if len(args) != len(format):
             return
         ret = []
+        args = list(args)
         args.reverse()
         for ch in format:
             if ch == "i":
@@ -109,10 +110,11 @@ class MsgCtl(object):
             elif ch == "s":
                 arg = str(args.pop())
                 larg = str(len(arg))
-                ret.append(larg, arg)
+                ret.append(larg)
+                ret.append(arg)
             else:
                 return
-        return MsgHdr.ARGSEP.join(ret)
+        return MsgCtl.ARGSEP.join(ret)
 
     def create(self, hdr, args):
         #return None for errors, need subclassing
@@ -122,9 +124,29 @@ class ClientMsgCtl(MsgCtl):
     MSGRCV = MsgHdr.KEYWORDSERVER
     MSGSND = MsgHdr.KEYWORDCLIENT
     def parse(self, message):
-        hdr, args = message[:MsgHdr.HEADERLEN], message[MsgHdr.HEADERLEN:]
+        hdr, msg = message[:MsgHdr.HEADERLEN], message[MsgHdr.HEADERLEN + len(MsgCtl.ARGSEP):]
+        args = ()
         if not hdr in MSGRCV:
             return
+        if hdr in ["PLY_DAT_S"]:
+            args = self.parseBody("ss", msg)
+            if not args:
+                return
+        elif hdr in ["GAM_RST_S", "SND_LAY_S"]:
+            if msg.strip():
+                return
+        elif hdr in ["PLY_NAM_S", "SND_MOV_S", "RCD_STR_S"]:
+            args = self.parseBody("s", msg)
+            if not args:
+                return
+        elif hdr in ["CHT_MSG_S", "JON_POS_S", "LEV_POS_S", "AT__POS_S", "CHS_VAL_S"]:
+            args = self.parseBody("is", msg)
+            if not args:
+                return
+        elif hdr in ["ASK_MOV_S", "STP_NUM_S", "GAM_DIE_S", "GAM_OVR_S", "LOG_RES_S", "REG_RES_S"]:
+            args = self.parseBody("i", msg)
+            if not args:
+                return
         return (hdr, args)
 
     def create(self, hdr, args):
@@ -135,7 +157,7 @@ class ClientMsgCtl(MsgCtl):
             if body:
                 return hdr + MsgCtl.ARGSEP + body
         elif hdr in ["FRS_CRM_C", "ASK_STP_C", "GAM_YLD_C", "GAM_QUT_C", "SAV_LAY_C", "GET_RCD_C"]:
-            if len(args) == 0:
+            if len(args) != 0:
                 return
             return hdr
         elif hdr in ["CHT_MSG_C", "SND_LAY_C", "SND_MOV_C"]:
@@ -152,9 +174,25 @@ class ServerMsgCtl(MsgCtl):
     MSGRCV = MsgHdr.KEYWORDCLIENT
     MSGSND = MsgHdr.KEYWORDSERVER
     def parse(self, message):
-        hdr, args = message[:MsgHdr.HEADERLEN], message[MsgHdr.HEADERLEN:]
+        hdr, msg = message[:MsgHdr.HEADERLEN], message[MsgHdr.HEADERLEN + len(MsgCtl.ARGSEP):]
+        args = ()
         if not hdr in MSGRCV:
             return
+        if hdr in ["PLY_LOG_C", "REG_USR_C"]:
+            args = self.parseBody("ss", msg)
+            if not args:
+                return
+        elif hdr in ["FRS_CRM_C", "ASK_STP_C", "GAM_YLD_C", "GAM_QUT_C", "SAV_LAY_C", "GET_RCD_C"]:
+            if msg.strip() != 0:
+                return
+        elif hdr in ["CHT_MSG_C", "SND_LAY_C", "SND_MOV_C"]:
+            args = self.createBody("s", msg)
+            if not args:
+                return
+        elif hdr in ["JON_POS_C", "LEV_POS_C", "ASK_MOV_C", "ASK_CHS_C", "PLY_DAT_C"]:
+            args = self.createBody("i", msg)
+            if not args:
+                return
         return (hdr, args)
 
     def create(self, hdr, args):
@@ -165,7 +203,7 @@ class ServerMsgCtl(MsgCtl):
             if body:
                 return hdr + MsgCtl.ARGSEP + body
         elif hdr in ["GAM_RST_S", "SND_LAY_S"]:
-            if len(args) == 0:
+            if len(args) != 0:
                 return
             return hdr
         elif hdr in ["PLY_NAM_S", "SND_MOV_S", "RCD_STR_S"]:
@@ -184,5 +222,7 @@ class ServerMsgCtl(MsgCtl):
 
 if __name__=='__main__':
     a = MsgCtl()
-    print a.parseBody('sis','4,abcd,5,5,abcde')
-    print a.parseBody('sis','4,abcd,5,abcde')
+    b = a.parseBody('sis','4,abcd,5,5,abcde')
+    print b
+    c = a.createBody('sis',b)
+    print c
