@@ -4,8 +4,8 @@
     This file defines the GameRecord class.
 """
 
-from xml.sax import saxutils, make_parser
-from xml.sax.handler import feature_namespaces
+from xml.sax import saxutils
+
 from Rule import PLAYERNUM
 
 class RecordEvent(object):
@@ -52,10 +52,15 @@ class GameRecord(object):
     """
         This class defines game records.
     """
-    KW_PLY = 'players'
-    KW_LAY = 'layouts'
-    KW_MOV = 'moves'
-    KW_EVT = 'events'
+    KW_PLY = 'player'
+    KW_LAY = 'layout'
+    KW_MOV = 'move'
+    KW_EVT = 'event'
+    XML_RCD = 'records'
+    XML_PLY = 'players'
+    XML_LAY = 'layouts'
+    XML_MOV = 'movements'
+    XML_EVT = 'events'
     KEYWORD = [KW_PLY, KW_LAY, KW_MOV, KW_EVT]
 
     #for kw in KEYWORD: kw=>self.__getattribute__[kw]
@@ -83,11 +88,11 @@ class GameRecord(object):
             return True
         return False
 
-    def fillLayout(self, la):
-        if isinstance(la, list) and len(la) == PLAYERNUM:
-            self.layouts = la
-            return True
-        return False
+    #def fillLayout(self, la):
+    #    if isinstance(la, list) and len(la) == PLAYERNUM:
+    #        self.layouts = la
+    #        return True
+    #    return False
 
     def startRecord(self, player):
         if len(self.events) > 0:
@@ -125,13 +130,68 @@ class GameRecord(object):
     def storeToFile(self, filename):
         pass
 
-    def loadFromFile(cls, filename):
+    def loadFromFileDOM(cls, filename):
+        from xml.dom import minidom
+        doc = minidom.parse(filename)
+        rec = GameRecord()
+        for node1 in doc.getElementsByTagName(GameRecord.XML_RCD):
+            for node2 in node1.getElementsByTagName(GameRecord.XML_PLY):
+                for node3 in node2.getElementsByTagName(GameRecord.KW_PLY):
+                    idStr = node3.getAttribute('id')
+                    playerStr = ''
+                    for node4 in node3.childNodes:
+                        if node4.nodeType == Node.TEXT_NODE:
+                            playerStr += node4.data
+                    try:
+                        id = int(idStr.strip())
+                    except ValueError:
+                        break
+                    from Rule import isValidPlayer
+                    if not isValidPlayer(id):
+                        from Player import Player
+                        rec.pl[id] = Player.fromStringID(playerStr, id)
+            for node2 in node1.getElementsByTagName(GameRecord.XML_LAY):
+                for node3 in node2.getElementsByTagName(GameRecord.KW_LAY):
+                    idStr = node3.getAttribute('id')
+                    layoutStr = ''
+                    for node4 in node3.childNodes:
+                        if node4.nodeType == Node.TEXT_NODE:
+                            layoutStr += node4.data
+                    try:
+                        id = int(idStr.strip())
+                    except ValueError:
+                        print('Warning: Invalid id number , ignore it')
+                        break
+                    from Rule import isValidPlayer
+                    if not isValidPlayer(id):
+                        from Layout import Layout
+                        rec.la[id] = Layout.fromString(layoutStr, id)
+            for node2 in node1.getElementsByTagName(GameRecord.XML_MOV):
+                for node3 in node2.getElementsByTagName(GameRecord.KW_MOV):
+                    moveStr = ''
+                    for node4 in node3.childNodes:
+                        if node4.nodeType == Node.TEXT_NODE:
+                            moveStr += node4.data
+                    from Movement import Movement
+                    rec.mv.append(Movement.fromString(moveStr))
+            for node2 in node1.getElementsByTagName(GameRecord.XML_EVT):
+                for node3 in node2.getElementsByTagName(GameRecord.KW_EVT):
+                    eventStr = ''
+                    for node4 in node3.childNodes:
+                        if node4.nodeType == Node.TEXT_NODE:
+                            eventStr += node4.data
+                    rec.ev.append(RecordEvent.fromString(eventStr))
+        return rec
+
+    def loadFromFileSAX(cls, filename):
+        from xml.sax import make_parser
+        from xml.sax.handler import feature_namespaces
         parser = make_parser()
         parser.setFeature(feature_namespace, 0)
         dh = recordParserSAX()
         parser.setHandler(dh)
         parser.parse(filename)
-    loadFromFile=classmethod(loadFromFile)
+    loadFromFile=classmethod(loadFromFileDOM)
 
     class recordParserSAX(saxutils.XMLFilterBase):
         def __init__(self):
@@ -203,4 +263,4 @@ class GameRecord(object):
             print('Exception occurred during parsing XML')
 
 if __name__=='__main__':
-    a = GameRecord()
+    grec = GameRecord.loadFromFile("test.xml")

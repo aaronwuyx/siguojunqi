@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<records>
+    <players>
+        <player id=0>"CLR_RED,1"</player>
+        <player id=1>"CLR_BLK,2"</player>
+        <player id=2>"CLR_GRN,3"</player>
+        <player id=3>"CLR_BLU,4"</player>
+    </players>
+    <layouts>
+        <layout id=0>11 1 11 3 6 3 11 6 2 3 7 4 7 10 5 5 9 12 4 12 8 2 4 2 8</layout>
+        <layout id=1>11 1 11 3 6 3 11 6 2 3 7 4 7 10 5 5 9 12 4 12 8 2 4 2 8</layout>
+        <layout id=2>11 1 11 3 6 3 11 6 2 3 7 4 7 10 5 5 9 12 4 12 8 2 4 2 8</layout>
+        <layout id=3>11 1 11 3 6 3 11 6 2 3 7 4 7 10 5 5 9 12 4 12 8 2 4 2 8</layout>
+    </layouts>
+    <movements>
+        <move>0,3,5,0,RES_WIN</move>
+        <move>1,3,5,0,RES_LOS</move>
+    </movements>
+    <events>
+        <event>INIT</event>
+        <event>PLACE,0</event>
+        <event>PLACE,1</event>
+        <event>PLACE,2</event>
+        <event>PLACE,3</event>
+        <event>MOVE,0</event>
+        <event>MOVE,1</event>
+        <event>EXIT,0</event>
+        <event>EXIT,1</event>
+        <event>EXIT,2</event>
+        <event>EXIT,3</event>
+        <event>FINI</event>
+    </events>
+</records>
