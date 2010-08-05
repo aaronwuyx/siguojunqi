@@ -1,4 +1,9 @@
+#!/usr/bin/python
 # -*- coding:utf-8 -*-
+"""
+    This file sets logging options.
+"""
+
 """
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,24 +24,21 @@ import time
 import traceback
 import sys
 
-def log_init():
-    #LOG_FILENAME = str( time.time() ) + '.log'
-    logging.basicConfig( format = '%(asctime)s %(levelname)s %(message)s' )
-    #level = logging.DEBUG, 
-    #filename = LOG_FILENAME,filemode = 'w' 
+def logInit():
+    LOG_FILENAME = 'siguo - '+ time.strftime('%c') + '.log'
+    logging.basicConfig(
+        format = '%(asctime)s %(levelname)s %(message)s',
+        level = logging.DEBUG,
+        filename = LOG_FILENAME,filemode = 'w'
+    )
 
-def log_err():
+def logError():
     exc_info = sys.exc_info()
     logging.exception( str( exc_info[0] ) + ' ' + str( exc_info[1] ) )
-    traceback.print_tb( exc_info[2] )
+    #traceback.print_tb( exc_info[2] )
 
-try:
-    if LOG_INT == 0:
-        log_init()
-        LOG_INT = 1
-except:
-    log_init()
-    LOG_INT = 1
+# Each module is loaded only once, except that we manually reload it
+logInit()
 
 if __name__ == '__main__':
     logger = logging.getLogger( 'logger' )
