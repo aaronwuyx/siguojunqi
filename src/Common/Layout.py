@@ -34,7 +34,7 @@ class Layout( Positions ):
         fromString(source, owner) : string -> layout convertion.
         save(filename) : save layout into file.
         load(filename, owner) : load layout from file.
-        
+
     """
     defaultLayout = [11, 1, 11, 3, 6, \
                    3, 11, 6, 2, 3, \
@@ -47,7 +47,7 @@ class Layout( Positions ):
         from Rule import MAXCHESS
         Positions.__init__( self, MAXCHESS )
         self.player = player
-        
+
     def setToDefault( self ):
         pos = 0
         for value in Layout.defaultLayout:
@@ -76,7 +76,7 @@ class Layout( Positions ):
         from Rule import canPlace
         ret = Layout(owner)
         count = list(Chess.InitNum)
-        p = source.split()
+        p = source.strip().split()
         if len(p) != MAXINITCHESS:
             raise ValueError("Invalid layout string %s" %(source))
         pos = 0
@@ -100,7 +100,7 @@ class Layout( Positions ):
         return ret
 
     fromString = classmethod(fromString)
-    
+
     def load(cls, filename, owner ):
         f = open ( filename, 'r' )
         line = f.readline()
@@ -114,7 +114,7 @@ class Layout( Positions ):
         return None
 
     load = classmethod(load)
-    
+
     def save( self, filename ):
         from Rule import MAXINITCHESS
         if self.count() != MAXINITCHESS:

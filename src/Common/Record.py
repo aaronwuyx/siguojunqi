@@ -4,9 +4,12 @@
     This file defines the GameRecord class.
 """
 
-from xml.sax import saxutils
+from xml.sax import saxutils, make_parser
+from xml.sax.handler import feature_namespaces
+from xml.dom import minidom
+from xml.dom.minidom import Node
 
-from Rule import PLAYERNUM
+from Rule import PLAYERNUM, isValidPlayer
 
 class RecordEvent(object):
     """
@@ -41,6 +44,9 @@ class RecordEvent(object):
         return self.types
 
     def __str__(self):
+        return self.toString()
+
+    def toString(self):
         if self.types in ["INIT", "FINI"]:
             return self.types
         elif self.types in ["PLACE", "MOVE", "EXIT"]:
@@ -94,11 +100,11 @@ class GameRecord(object):
     #        return True
     #    return False
 
-    def startRecord(self, player):
+    def startRecord(self, players):
         if len(self.events) > 0:
-            print('Warning: INIT event is not the first one')
+            print('Warning: INIT event is not the first event')
         self.events.append(RecordEvent('INIT'))
-        self._fillPlayer(player)
+        self._fillPlayer(players)
 
     def stopRecord(self):
         self.events.append(RecordEvent('FINI'))
@@ -113,26 +119,62 @@ class GameRecord(object):
         self.events.append(RecordEvent('MOVE',p))
 
     def recordExit(self, id):
-        from Rule import isValidPlayer
         if not isValidPlayer(id):
-            raise ValueError("Player id is invalid")
+            raise ValueError("Invalid player id: %d"%(id))
         self.events.append(RecordEvent('EXIT',id))
 
     def recordLayout(self, id, lay):
-        from Rule import isValidPlayer
         if not isValidPlayer(id):
-            raise ValueError("Player id is invalid")
+            raise ValueError("Invalid player id: %d"%(id))
         if self.layouts[id]:
             print("Warning: Layout data already exist, overlay it")
-        self.events.append(RecordEvent('PLACES',id))
+        self.events.append(RecordEvent('PLACE',id))
         self.layouts[id] = lay
 
     def storeToFile(self, filename):
-        pass
+        doc = minidom.Document()
+        root = doc.createElement(GameRecord.XML_RCD)
+        doc.appendChild(root)
+        plys = doc.createElement(GameRecord.XML_PLY)
+        lays = doc.createElement(GameRecord.XML_LAY)
+        movs = doc.createElement(GameRecord.XML_MOV)
+        evts = doc.createElement(GameRecord.XML_EVT)
+        root.appendChild(plys)
+        root.appendChild(lays)
+        root.appendChild(movs)
+        root.appendChild(evts)
+        for i in range(PLAYERNUM):
+            if self.players[i]:
+                ply = doc.createElement(GameRecord.KW_PLY)
+                ply.setAttribute('id',str(i))
+                plys.appendChild(ply)
+                ptext = doc.createTextNode(self.players[i].toString())
+                ply.appendChild(ptext)
+            if self.layouts[i]:
+                lay = doc.createElement(GameRecord.KW_LAY)
+                lay.setAttribute('id',str(i))
+                lays.appendChild(lay)
+                ltext = doc.createTextNode(self.layouts[i].toString())
+                lay.appendChild(ltext)
+        for item in self.moves:
+            mov = doc.createElement(GameRecord.KW_MOV)
+            movs.appendChild(mov)
+            mtext = doc.createTextNode(item.toString())
+            mov.appendChild(mtext)
+        for item in self.events:
+            evt = doc.createElement(GameRecord.KW_EVT)
+            evts.appendChild(evt)
+            etext = doc.createTextNode(item.toString())
+            evt.appendChild(etext)
+        output = open(filename, 'w')
+        s = doc.toprettyxml(indent="    ")
+        print s
+        output.write(s)
+        output.close()
 
     def loadFromFileDOM(cls, filename):
-        from xml.dom import minidom
         doc = minidom.parse(filename)
+        #print doc.toprettyxml(indent="    ")
         rec = GameRecord()
         for node1 in doc.getElementsByTagName(GameRecord.XML_RCD):
             for node2 in node1.getElementsByTagName(GameRecord.XML_PLY):
@@ -144,12 +186,12 @@ class GameRecord(object):
                             playerStr += node4.data
                     try:
                         id = int(idStr.strip())
+                        print(type(id))
+                        if isValidPlayer(id):
+                            from Player import Player
+                            rec.players[id] = Player.fromStringID(playerStr.strip(), id)
                     except ValueError:
                         break
-                    from Rule import isValidPlayer
-                    if not isValidPlayer(id):
-                        from Player import Player
-                        rec.pl[id] = Player.fromStringID(playerStr, id)
             for node2 in node1.getElementsByTagName(GameRecord.XML_LAY):
                 for node3 in node2.getElementsByTagName(GameRecord.KW_LAY):
                     idStr = node3.getAttribute('id')
@@ -159,13 +201,12 @@ class GameRecord(object):
                             layoutStr += node4.data
                     try:
                         id = int(idStr.strip())
+                        if isValidPlayer(id):
+                            from Layout import Layout
+                            rec.layouts[id] = Layout.fromString(layoutStr, id)
                     except ValueError:
                         print('Warning: Invalid id number , ignore it')
                         break
-                    from Rule import isValidPlayer
-                    if not isValidPlayer(id):
-                        from Layout import Layout
-                        rec.la[id] = Layout.fromString(layoutStr, id)
             for node2 in node1.getElementsByTagName(GameRecord.XML_MOV):
                 for node3 in node2.getElementsByTagName(GameRecord.KW_MOV):
                     moveStr = ''
@@ -173,19 +214,17 @@ class GameRecord(object):
                         if node4.nodeType == Node.TEXT_NODE:
                             moveStr += node4.data
                     from Movement import Movement
-                    rec.mv.append(Movement.fromString(moveStr))
+                    rec.moves.append(Movement.fromString(moveStr))
             for node2 in node1.getElementsByTagName(GameRecord.XML_EVT):
                 for node3 in node2.getElementsByTagName(GameRecord.KW_EVT):
                     eventStr = ''
                     for node4 in node3.childNodes:
                         if node4.nodeType == Node.TEXT_NODE:
                             eventStr += node4.data
-                    rec.ev.append(RecordEvent.fromString(eventStr))
+                    rec.events.append(RecordEvent.fromString(eventStr))
         return rec
 
     def loadFromFileSAX(cls, filename):
-        from xml.sax import make_parser
-        from xml.sax.handler import feature_namespaces
         parser = make_parser()
         parser.setFeature(feature_namespace, 0)
         dh = recordParserSAX()
@@ -241,26 +280,59 @@ class GameRecord(object):
                 from Rule import isValidPlayer
                 if self.inPlayer and isValidPlayer(self.playerid):
                     from Player import Player
-                    self.pl[self.playerid] = Player.fromStringID(self.playerch, self.playerid)
+                    self.players[self.playerid] = Player.fromStringID(self.playerch, self.playerid)
                 self.playerid = -1
                 self.inPlayer = False
             elif name == GameRecord.KW_LAY:
                 from Rule import isValidPlayer
                 if self.inLayout and isValidPlayer(self.layoutid):
                     from Layout import Layout
-                    self.la[self.layoutid] = Layout.fromString(self.layoutch, self.layoutid)
+                    self.layouts[self.layoutid] = Layout.fromString(self.layoutch, self.layoutid)
                 self.layoutid = -1
                 self.inLayout = False
             elif name == GameRecord.KW_MOV:
                 from Movement import Movement
-                self.mv.append(Movement.fromString(self.movech))
+                self.moves.append(Movement.fromString(self.movech))
                 self.inMove = False
             elif name == GameRecord.KW_EVT:
-                self.ev.append(RecordEvent.fromString(self.eventch))
+                self.events.append(RecordEvent.fromString(self.eventch))
                 self.inEvent = False
 
         def error(self, exception):
-            print('Exception occurred during parsing XML')
+            print('Error occurred during parsing XML')
 
 if __name__=='__main__':
-    grec = GameRecord.loadFromFile("test.xml")
+    testSave = False
+    if testSave:
+        from Player import Player
+        from UserColor import UserColor
+        from Layout import Layout
+        from Movement import Movement
+        #Suppose PLAYERNUM == 4
+        p = [Player('a'), Player('b'), Player('c'), Player('d')]
+        p[0].setColor(UserColor.CLR_RED)
+        p[1].setColor(UserColor.CLR_BLU)
+        p[2].setColor(UserColor.CLR_BLK)
+        p[3].setColor(UserColor.CLR_GRN)
+        q = [Layout(i) for i in range(PLAYERNUM)]
+        for item in q:
+            item.setToDefault()
+        m = [Movement.fromString('0,3,5,0,RES_WIN'),Movement.fromString('1,3,5,0,RES_LOS')]
+
+        grec = GameRecord()
+        grec.startRecord(p)
+        for i in range(PLAYERNUM):
+            grec.recordLayout(i, q[i])
+        for item in m:
+            grec.recordMove(item)
+        for i in range(PLAYERNUM):
+            grec.recordExit(i)
+        grec.stopRecord()
+        grec.storeToFile("test1.xml")
+
+    krec = GameRecord.loadFromFile('test1.xml')
+    from pprint import pprint
+    pprint(krec.players)
+    pprint(krec.layouts)
+    pprint(krec.moves)
+    pprint(krec.events)

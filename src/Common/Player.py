@@ -144,7 +144,7 @@ class Player(object):
 
     def fromStringID(cls, source, id):
         # source = %color "," %name
-        res = source.split(Player.PLAYERSEP, 1)
+        res = source.strip().split(Player.PLAYERSEP, 1)
         uc = UserColor.valueOf(res[0])
         from Rule import isValidPlayer
         if not isValidPlayer(id) or not uc:
@@ -152,14 +152,12 @@ class Player(object):
         ret = Player(res[1])
         ret.setID(id)
         ret.setColor(uc)
+        print "asdfasdf"
         return ret
 
     fromStringID = classmethod(fromStringID)
 
-    def toStringSimple(self):
-        return self.toString("cn")
-
-    def toString(self, format):
+    def toString(self, format = "cn"):
         prop = {'n':self.name,'i':self.id,'w':self.win,
                 'l':self.los,'e':self.equ,'p':self.pwd,
                 'd':self.db_id,'L':self.layout,'s':self.signature,
@@ -170,7 +168,7 @@ class Player(object):
 if __name__=='__main__':
     p = Player('e')
     p.setColor(UserColor.CLR_RED)
-    m = p.toStringSimple()
+    m = p.toString()
     print( m )
     q = Player.fromStringID(m, 0)
     print( q )
